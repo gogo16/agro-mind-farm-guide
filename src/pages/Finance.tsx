@@ -1,64 +1,109 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DollarSign, TrendingUp, TrendingDown, Plus, FileText, PieChart } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DollarSign, TrendingUp, TrendingDown, Calculator, Plus, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Finance = () => {
-  const financialData = {
-    totalBudget: 150000,
-    spent: 89500,
-    income: 125000,
-    profit: 35500
-  };
+  const { toast } = useToast();
+  const [isAddingTransaction, setIsAddingTransaction] = useState(false);
+  const [newTransaction, setNewTransaction] = useState({
+    type: '',
+    amount: '',
+    description: '',
+    category: '',
+    field: '',
+    date: ''
+  });
 
-  const expenses = [
-    { category: 'Semințe', amount: 25000, percentage: 28, color: 'bg-blue-500' },
-    { category: 'Îngrășăminte', amount: 18500, percentage: 21, color: 'bg-green-500' },
-    { category: 'Tratamente', amount: 15000, percentage: 17, color: 'bg-yellow-500' },
-    { category: 'Combustibil', amount: 12000, percentage: 13, color: 'bg-red-500' },
-    { category: 'Utilaje', amount: 10000, percentage: 11, color: 'bg-purple-500' },
-    { category: 'Altele', amount: 9000, percentage: 10, color: 'bg-gray-500' }
-  ];
-
-  const transactions = [
+  const [transactions, setTransactions] = useState([
     {
       id: 1,
       type: 'expense',
-      description: 'Semințe grâu - Glosa',
-      amount: 8500,
-      date: '2024-06-05',
-      category: 'Semințe',
-      field: 'Parcela Nord'
+      amount: 1800,
+      description: 'Îngrășământ NPK 16:16:16',
+      category: 'Fertilizatori',
+      field: 'Parcela Nord',
+      date: '2024-06-01'
     },
     {
       id: 2,
-      type: 'income',
-      description: 'Vânzare porumb 2023',
-      amount: 45000,
-      date: '2024-06-03',
-      category: 'Vânzări',
-      field: 'Câmp Sud'
+      type: 'expense',
+      amount: 450,
+      description: 'Herbicid selectiv',
+      category: 'Tratamente',
+      field: 'Câmp Sud',
+      date: '2024-05-20'
     },
     {
       id: 3,
+      type: 'income',
+      amount: 12000,
+      description: 'Vânzare grâu - 20 tone',
+      category: 'Vânzări',
+      field: 'Parcela Nord',
+      date: '2024-05-15'
+    },
+    {
+      id: 4,
       type: 'expense',
-      description: 'Îngrășământ NPK',
-      amount: 3200,
-      date: '2024-06-01',
-      category: 'Îngrășăminte',
-      field: 'Livada Est'
+      amount: 280,
+      description: 'Combustibil pentru irigare',
+      category: 'Combustibil',
+      field: 'Livada Est',
+      date: '2024-05-10'
     }
-  ];
+  ]);
 
-  const fieldProfitability = [
-    { field: 'Parcela Nord', revenue: 48000, costs: 32000, profit: 16000, margin: 33.3 },
-    { field: 'Câmp Sud', revenue: 42000, costs: 28500, profit: 13500, margin: 32.1 },
-    { field: 'Livada Est', revenue: 35000, costs: 29000, profit: 6000, margin: 17.1 }
-  ];
+  const totalIncome = transactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalExpenses = transactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const profit = totalIncome - totalExpenses;
+
+  const handleAddTransaction = () => {
+    if (!newTransaction.type || !newTransaction.amount || !newTransaction.description) {
+      toast({
+        title: "Eroare",
+        description: "Te rugăm să completezi toate câmpurile obligatorii.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const transaction = {
+      id: Date.now(),
+      ...newTransaction,
+      amount: parseFloat(newTransaction.amount),
+      date: newTransaction.date || new Date().toISOString().split('T')[0]
+    };
+
+    setTransactions([...transactions, transaction]);
+    setNewTransaction({ type: '', amount: '', description: '', category: '', field: '', date: '' });
+    setIsAddingTransaction(false);
+
+    toast({
+      title: "Succes",
+      description: "Tranzacția a fost adăugată cu succes.",
+    });
+  };
+
+  const financialData = {
+    totalCosts: 15600,
+    expectedRevenue: 24000,
+    projectedProfit: 8400,
+    costPerHa: 1248
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
@@ -66,20 +111,23 @@ const Finance = () => {
       
       <div className="container mx-auto px-4 py-6">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-green-800 mb-2">Gestiune Financiară</h1>
-          <p className="text-green-600">Monitorizează bugetul și profitabilitatea fermei</p>
+          <h1 className="text-3xl font-bold text-green-800 mb-2">Management Financiar</h1>
+          <p className="text-green-600">Monitorizează performanța financiară a fermei tale</p>
         </div>
 
-        {/* Financial Overview */}
+        {/* Financial Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="bg-white/80 backdrop-blur-sm border-green-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-green-600 font-medium">Buget Total</p>
-                  <p className="text-2xl font-bold text-green-800">{financialData.totalBudget.toLocaleString()} RON</p>
+                  <p className="text-sm text-green-600 font-medium mb-1">Venituri totale</p>
+                  <p className="text-2xl font-bold text-green-800">{totalIncome.toLocaleString()} RON</p>
+                  <p className="text-xs text-green-600 mt-1">+12% față de luna trecută</p>
                 </div>
-                <DollarSign className="h-8 w-8 text-green-500" />
+                <div className="bg-green-100 p-3 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-green-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -88,11 +136,13 @@ const Finance = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-red-600 font-medium">Cheltuieli</p>
-                  <p className="text-2xl font-bold text-red-800">{financialData.spent.toLocaleString()} RON</p>
-                  <p className="text-xs text-gray-500">{((financialData.spent / financialData.totalBudget) * 100).toFixed(1)}% din buget</p>
+                  <p className="text-sm text-red-600 font-medium mb-1">Cheltuieli totale</p>
+                  <p className="text-2xl font-bold text-red-800">{totalExpenses.toLocaleString()} RON</p>
+                  <p className="text-xs text-red-600 mt-1">+5% față de luna trecută</p>
                 </div>
-                <TrendingDown className="h-8 w-8 text-red-500" />
+                <div className="bg-red-100 p-3 rounded-lg">
+                  <TrendingDown className="h-6 w-6 text-red-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -101,10 +151,13 @@ const Finance = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-blue-600 font-medium">Venituri</p>
-                  <p className="text-2xl font-bold text-blue-800">{financialData.income.toLocaleString()} RON</p>
+                  <p className="text-sm text-blue-600 font-medium mb-1">Profit net</p>
+                  <p className="text-2xl font-bold text-blue-800">{profit.toLocaleString()} RON</p>
+                  <p className="text-xs text-blue-600 mt-1">Marjă: {((profit / totalIncome) * 100).toFixed(1)}%</p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-blue-500" />
+                <div className="bg-blue-100 p-3 rounded-lg">
+                  <DollarSign className="h-6 w-6 text-blue-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -113,168 +166,204 @@ const Finance = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-emerald-600 font-medium">Profit</p>
-                  <p className="text-2xl font-bold text-emerald-800">{financialData.profit.toLocaleString()} RON</p>
-                  <p className="text-xs text-gray-500">Marjă {((financialData.profit / financialData.income) * 100).toFixed(1)}%</p>
+                  <p className="text-sm text-purple-600 font-medium mb-1">ROI estimat</p>
+                  <p className="text-2xl font-bold text-purple-800">34.2%</p>
+                  <p className="text-xs text-purple-600 mt-1">Return on Investment</p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-emerald-500" />
+                <div className="bg-purple-100 p-3 rounded-lg">
+                  <Calculator className="h-6 w-6 text-purple-600" />
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-[500px] bg-white/80 backdrop-blur-sm">
-            <TabsTrigger value="overview">Prezentare</TabsTrigger>
-            <TabsTrigger value="expenses">Cheltuieli</TabsTrigger>
-            <TabsTrigger value="profitability">Profitabilitate</TabsTrigger>
-            <TabsTrigger value="reports">Rapoarte</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Expense Breakdown */}
-              <Card className="bg-white border-green-200">
-                <CardHeader>
-                  <CardTitle className="text-green-800 flex items-center space-x-2">
-                    <PieChart className="h-5 w-5" />
-                    <span>Distribuția cheltuielilor</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {expenses.map((expense) => (
-                    <div key={expense.category} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-4 h-4 rounded ${expense.color}`}></div>
-                        <span className="text-sm font-medium">{expense.category}</span>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold">{expense.amount.toLocaleString()} RON</p>
-                        <p className="text-xs text-gray-500">{expense.percentage}%</p>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              {/* Recent Transactions */}
-              <Card className="bg-white border-green-200">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-green-800">Tranzacții recente</CardTitle>
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                    <Plus className="h-4 w-4 mr-1" />
-                    Adaugă
-                  </Button>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {transactions.map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Transactions */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card className="bg-white border-green-200">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-green-800">Tranzacții recente</CardTitle>
+                <Dialog open={isAddingTransaction} onOpenChange={setIsAddingTransaction}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                      <Plus className="h-4 w-4 mr-1" />
+                      Adaugă
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Adaugă tranzacție nouă</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
                       <div>
-                        <p className="font-medium text-sm">{transaction.description}</p>
-                        <p className="text-xs text-gray-600">{transaction.field} • {transaction.date}</p>
+                        <Label htmlFor="type">Tip tranzacție *</Label>
+                        <Select onValueChange={(value) => setNewTransaction({...newTransaction, type: value})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selectează tipul" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="income">Venit</SelectItem>
+                            <SelectItem value="expense">Cheltuială</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div className="text-right">
-                        <p className={`font-semibold ${
-                          transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toLocaleString()} RON
-                        </p>
-                        <Badge variant="secondary" className="text-xs">
-                          {transaction.category}
-                        </Badge>
+                      <div>
+                        <Label htmlFor="amount">Sumă (RON) *</Label>
+                        <Input
+                          id="amount"
+                          type="number"
+                          value={newTransaction.amount}
+                          onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})}
+                          placeholder="ex: 1500"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="description">Descriere *</Label>
+                        <Input
+                          id="description"
+                          value={newTransaction.description}
+                          onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})}
+                          placeholder="ex: Îngrășământ NPK"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="category">Categorie</Label>
+                        <Select onValueChange={(value) => setNewTransaction({...newTransaction, category: value})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selectează categoria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Fertilizatori">Fertilizatori</SelectItem>
+                            <SelectItem value="Tratamente">Tratamente</SelectItem>
+                            <SelectItem value="Combustibil">Combustibil</SelectItem>
+                            <SelectItem value="Vânzări">Vânzări</SelectItem>
+                            <SelectItem value="Utilaje">Utilaje</SelectItem>
+                            <SelectItem value="Altele">Altele</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="field">Teren</Label>
+                        <Select onValueChange={(value) => setNewTransaction({...newTransaction, field: value})}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selectează terenul" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Parcela Nord">Parcela Nord</SelectItem>
+                            <SelectItem value="Câmp Sud">Câmp Sud</SelectItem>
+                            <SelectItem value="Livada Est">Livada Est</SelectItem>
+                            <SelectItem value="General">General</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="date">Data</Label>
+                        <Input
+                          id="date"
+                          type="date"
+                          value={newTransaction.date}
+                          onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})}
+                        />
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button onClick={() => setIsAddingTransaction(false)} variant="outline" className="flex-1">
+                          Anulează
+                        </Button>
+                        <Button onClick={handleAddTransaction} className="flex-1 bg-green-600 hover:bg-green-700">
+                          Adaugă tranzacție
+                        </Button>
                       </div>
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {transactions.slice(0, 8).map((transaction) => (
+                  <div key={transaction.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-lg ${
+                        transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'
+                      }`}>
+                        {transaction.type === 'income' ? (
+                          <ArrowUpRight className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <ArrowDownRight className="h-4 w-4 text-red-600" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{transaction.description}</p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <Badge variant="secondary" className="text-xs">{transaction.category}</Badge>
+                          <span className="text-xs text-gray-500">{transaction.field}</span>
+                          <span className="text-xs text-gray-500">{transaction.date}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-semibold ${
+                        transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toLocaleString()} RON
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
 
-          <TabsContent value="profitability" className="space-y-6">
+          {/* Quick Actions & Budget */}
+          <div className="space-y-6">
             <Card className="bg-white border-green-200">
               <CardHeader>
-                <CardTitle className="text-green-800">Profitabilitate pe parcele</CardTitle>
+                <CardTitle className="text-green-800">Buget lunar</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-3">Parcela</th>
-                        <th className="text-right p-3">Venituri</th>
-                        <th className="text-right p-3">Costuri</th>
-                        <th className="text-right p-3">Profit</th>
-                        <th className="text-right p-3">Marjă %</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {fieldProfitability.map((field) => (
-                        <tr key={field.field} className="border-b hover:bg-gray-50">
-                          <td className="p-3 font-medium">{field.field}</td>
-                          <td className="p-3 text-right text-green-600">
-                            {field.revenue.toLocaleString()} RON
-                          </td>
-                          <td className="p-3 text-right text-red-600">
-                            {field.costs.toLocaleString()} RON
-                          </td>
-                          <td className="p-3 text-right font-semibold">
-                            {field.profit.toLocaleString()} RON
-                          </td>
-                          <td className="p-3 text-right">
-                            <Badge className={`${
-                              field.margin > 30 ? 'bg-green-100 text-green-800' :
-                              field.margin > 20 ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-red-100 text-red-800'
-                            }`}>
-                              {field.margin.toFixed(1)}%
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              <CardContent className="space-y-4">
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Cheltuieli planificate</span>
+                    <span>75%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">18.750 / 25.000 RON</p>
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Venituri estimate</span>
+                    <span>60%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="bg-green-600 h-2 rounded-full" style={{ width: '60%' }}></div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">12.000 / 20.000 RON</p>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="reports" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card className="bg-white border-green-200 hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <FileText className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                  <h3 className="font-semibold text-green-800 mb-2">Raport lunar</h3>
-                  <p className="text-sm text-gray-600 mb-4">Analiza financiară detaliată pentru luna curentă</p>
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                    Generează PDF
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border-green-200 hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <PieChart className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                  <h3 className="font-semibold text-green-800 mb-2">Analiza costurilor</h3>
-                  <p className="text-sm text-gray-600 mb-4">Comparația cheltuielilor pe categorii</p>
-                  <Button size="sm" variant="outline">
-                    Vezi detalii
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border-green-200 hover:shadow-lg transition-shadow cursor-pointer">
-                <CardContent className="p-6 text-center">
-                  <TrendingUp className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-                  <h3 className="font-semibold text-green-800 mb-2">Prognoză profit</h3>
-                  <p className="text-sm text-gray-600 mb-4">Estimări pentru sezonul curent</p>
-                  <Button size="sm" variant="outline">
-                    Vezi prognoze
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
+            <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0">
+              <CardHeader>
+                <CardTitle>💡 Sfaturi financiare</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="bg-white/10 rounded-lg p-3">
+                  <p className="text-sm font-medium mb-1">Optimizare costuri</p>
+                  <p className="text-xs">
+                    Cheltuielile cu fertilizatorii au crescut cu 15%. Consideră furnizori alternativi.
+                  </p>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3">
+                  <p className="text-sm font-medium mb-1">Oportunitate vânzare</p>
+                  <p className="text-xs">
+                    Prețul porumbului a crescut cu 8%. Momentul ideal pentru vânzare.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

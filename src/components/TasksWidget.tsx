@@ -1,17 +1,31 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Calendar, Clock, AlertTriangle, CheckCircle, Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar, Clock, AlertTriangle, CheckCircle, Plus, Edit } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface TasksWidgetProps {
   detailed?: boolean;
 }
 
 const TasksWidget = ({ detailed = false }: TasksWidgetProps) => {
-  const tasks = [
+  const { toast } = useToast();
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [newTask, setNewTask] = useState({
+    title: '',
+    field: '',
+    priority: '',
+    dueDate: '',
+    time: ''
+  });
+
+  const [tasks, setTasks] = useState([
     {
       id: 1,
       title: 'Irigarea Parcelei Nord',
@@ -56,7 +70,7 @@ const TasksWidget = ({ detailed = false }: TasksWidgetProps) => {
       aiSuggested: true,
       description: 'Umiditatea grâului a atins nivelul optim pentru recoltare.'
     }
-  ];
+  ]);
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
@@ -71,15 +85,117 @@ const TasksWidget = ({ detailed = false }: TasksWidgetProps) => {
     }
   };
 
+  const handleAddTask = () => {
+    if (!newTask.title || !newTask.field || !newTask.priority) {
+      toast({
+        title: "Eroare",
+        description: "Te rugăm să completezi toate câmpurile obligatorii.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const task = {
+      id: Date.now(),
+      ...newTask,
+      status: 'pending',
+      aiSuggested: false,
+      description: 'Sarcină adăugată manual.'
+    };
+
+    setTasks([...tasks, task]);
+    setNewTask({ title: '', field: '', priority: '', dueDate: '', time: '' });
+    setIsAddingTask(false);
+
+    toast({
+      title: "Succes",
+      description: "Sarcina a fost adăugată cu succes.",
+    });
+  };
+
   if (!detailed) {
     return (
       <Card className="bg-white/80 backdrop-blur-sm border-green-200">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-green-800">Sarcini astăzi</CardTitle>
-          <Button size="sm" variant="outline">
-            <Plus className="h-4 w-4 mr-1" />
-            Adaugă
-          </Button>
+          <Dialog open={isAddingTask} onOpenChange={setIsAddingTask}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">
+                <Plus className="h-4 w-4 mr-1" />
+                Adaugă
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Adaugă sarcină nouă</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="title">Titlu sarcină *</Label>
+                  <Input
+                    id="title"
+                    value={newTask.title}
+                    onChange={(e) => setNewTask({...newTask, title: e.target.value})}
+                    placeholder="ex: Irigarea parcelei"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="field">Teren *</Label>
+                  <Select onValueChange={(value) => setNewTask({...newTask, field: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selectează terenul" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Parcela Nord">Parcela Nord</SelectItem>
+                      <SelectItem value="Câmp Sud">Câmp Sud</SelectItem>
+                      <SelectItem value="Livada Est">Livada Est</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="priority">Prioritate *</Label>
+                  <Select onValueChange={(value) => setNewTask({...newTask, priority: value})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selectează prioritatea" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="high">Urgent</SelectItem>
+                      <SelectItem value="medium">Mediu</SelectItem>
+                      <SelectItem value="low">Scăzut</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="dueDate">Data</Label>
+                    <Input
+                      id="dueDate"
+                      type="date"
+                      value={newTask.dueDate}
+                      onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="time">Ora</Label>
+                    <Input
+                      id="time"
+                      type="time"
+                      value={newTask.time}
+                      onChange={(e) => setNewTask({...newTask, time: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <Button onClick={() => setIsAddingTask(false)} variant="outline" className="flex-1">
+                    Anulează
+                  </Button>
+                  <Button onClick={handleAddTask} className="flex-1 bg-green-600 hover:bg-green-700">
+                    Adaugă sarcină
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </CardHeader>
         <CardContent className="space-y-3">
           {tasks.filter(task => task.status === 'pending').slice(0, 3).map((task) => (

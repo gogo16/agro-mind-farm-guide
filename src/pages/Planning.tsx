@@ -4,13 +4,31 @@ import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Plus, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar as CalendarIcon, Clock, Plus, CheckCircle, AlertTriangle, Edit } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 
 const Planning = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const { toast } = useToast();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [editingTask, setEditingTask] = useState<number | null>(null);
+  const [newTask, setNewTask] = useState({
+    title: '',
+    field: '',
+    priority: '',
+    date: '',
+    time: '',
+    description: ''
+  });
 
-  const tasks = [
+  const [tasks, setTasks] = useState([
     {
       id: 1,
       title: 'Irigarea Parcelei Nord',
@@ -59,7 +77,7 @@ const Planning = () => {
       description: 'Umiditatea grâului a atins nivelul optim pentru recoltare.',
       estimatedDuration: '6 ore'
     }
-  ];
+  ]);
 
   const seasons = [
     {
@@ -97,6 +115,82 @@ const Planning = () => {
     }
   };
 
+  const handleAddTask = () => {
+    if (!newTask.title || !newTask.field || !newTask.priority || !newTask.date) {
+      toast({
+        title: "Eroare",
+        description: "Te rugăm să completezi toate câmpurile obligatorii.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const task = {
+      id: Date.now(),
+      ...newTask,
+      status: 'pending',
+      aiSuggested: false,
+      estimatedDuration: '1 oră'
+    };
+
+    setTasks([...tasks, task]);
+    setNewTask({ title: '', field: '', priority: '', date: '', time: '', description: '' });
+    setIsAddingTask(false);
+
+    toast({
+      title: "Succes",
+      description: "Sarcina a fost adăugată cu succes.",
+    });
+  };
+
+  const handleCompleteTask = (taskId: number) => {
+    setTasks(tasks.map(task => 
+      task.id === taskId ? { ...task, status: 'completed' } : task
+    ));
+    
+    toast({
+      title: "Sarcină completată",
+      description: "Sarcina a fost marcată ca fiind completată.",
+    });
+  };
+
+  const handleEditTask = (taskId: number) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      setNewTask({
+        title: task.title,
+        field: task.field,
+        priority: task.priority,
+        date: task.date,
+        time: task.time,
+        description: task.description
+      });
+      setEditingTask(taskId);
+      setIsAddingTask(true);
+    }
+  };
+
+  const handleUpdateTask = () => {
+    if (editingTask) {
+      setTasks(tasks.map(task => 
+        task.id === editingTask ? { ...task, ...newTask } : task
+      ));
+      setEditingTask(null);
+      setNewTask({ title: '', field: '', priority: '', date: '', time: '', description: '' });
+      setIsAddingTask(false);
+      
+      toast({
+        title: "Succes",
+        description: "Sarcina a fost actualizată cu succes.",
+      });
+    }
+  };
+
+  const getTasksForDate = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return tasks.filter(task => task.date === dateStr);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
@@ -120,27 +214,32 @@ const Planning = () => {
               <Card className="bg-white/80 backdrop-blur-sm border-green-200">
                 <CardHeader>
                   <CardTitle className="text-green-800 flex items-center space-x-2">
-                    <Calendar className="h-5 w-5" />
-                    <span>Iunie 2024</span>
+                    <CalendarIcon className="h-5 w-5" />
+                    <span>Calendar</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-7 gap-1 text-center text-sm">
-                    {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day) => (
-                      <div key={day} className="p-2 font-medium text-gray-600">{day}</div>
-                    ))}
-                    {Array.from({ length: 30 }, (_, i) => (
-                      <div 
-                        key={i + 1}
-                        className={`p-2 cursor-pointer hover:bg-green-100 rounded ${
-                          i + 1 === 6 ? 'bg-green-600 text-white' :
-                          [7, 8, 10].includes(i + 1) ? 'bg-amber-100 text-amber-800' :
-                          'text-gray-700'
-                        }`}
-                      >
-                        {i + 1}
-                      </div>
-                    ))}
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => date && setSelectedDate(date)}
+                    className="rounded-md border"
+                  />
+                  <div className="mt-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      Sarcini pentru {selectedDate.toLocaleDateString('ro-RO')}:
+                    </p>
+                    <div className="space-y-2">
+                      {getTasksForDate(selectedDate).map((task) => (
+                        <div key={task.id} className="text-xs p-2 bg-green-100 rounded">
+                          <p className="font-medium">{task.title}</p>
+                          <p className="text-gray-600">{task.time} - {task.field}</p>
+                        </div>
+                      ))}
+                      {getTasksForDate(selectedDate).length === 0 && (
+                        <p className="text-sm text-gray-500">Nu există sarcini programate.</p>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -149,10 +248,106 @@ const Planning = () => {
               <div className="lg:col-span-2 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xl font-semibold text-green-800">Sarcini programate</h3>
-                  <Button className="bg-green-600 hover:bg-green-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Sarcină nouă
-                  </Button>
+                  <Dialog open={isAddingTask} onOpenChange={setIsAddingTask}>
+                    <DialogTrigger asChild>
+                      <Button className="bg-green-600 hover:bg-green-700">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Sarcină nouă
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>
+                          {editingTask ? 'Editează sarcina' : 'Adaugă sarcină nouă'}
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="title">Titlu sarcină *</Label>
+                          <Input
+                            id="title"
+                            value={newTask.title}
+                            onChange={(e) => setNewTask({...newTask, title: e.target.value})}
+                            placeholder="ex: Irigarea parcelei"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="field">Teren *</Label>
+                          <Select onValueChange={(value) => setNewTask({...newTask, field: value})}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selectează terenul" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Parcela Nord">Parcela Nord</SelectItem>
+                              <SelectItem value="Câmp Sud">Câmp Sud</SelectItem>
+                              <SelectItem value="Livada Est">Livada Est</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="priority">Prioritate *</Label>
+                          <Select onValueChange={(value) => setNewTask({...newTask, priority: value})}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selectează prioritatea" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="high">Urgent</SelectItem>
+                              <SelectItem value="medium">Mediu</SelectItem>
+                              <SelectItem value="low">Scăzut</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="date">Data *</Label>
+                            <Input
+                              id="date"
+                              type="date"
+                              value={newTask.date}
+                              onChange={(e) => setNewTask({...newTask, date: e.target.value})}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="time">Ora</Label>
+                            <Input
+                              id="time"
+                              type="time"
+                              value={newTask.time}
+                              onChange={(e) => setNewTask({...newTask, time: e.target.value})}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="description">Descriere</Label>
+                          <Textarea
+                            id="description"
+                            value={newTask.description}
+                            onChange={(e) => setNewTask({...newTask, description: e.target.value})}
+                            placeholder="Detalii despre sarcină..."
+                          />
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            onClick={() => {
+                              setIsAddingTask(false);
+                              setEditingTask(null);
+                              setNewTask({ title: '', field: '', priority: '', date: '', time: '', description: '' });
+                            }} 
+                            variant="outline" 
+                            className="flex-1"
+                          >
+                            Anulează
+                          </Button>
+                          <Button 
+                            onClick={editingTask ? handleUpdateTask : handleAddTask} 
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                          >
+                            {editingTask ? 'Actualizează' : 'Adaugă sarcină'}
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
 
                 {tasks.filter(task => task.status === 'pending').map((task) => (
@@ -176,7 +371,7 @@ const Planning = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4 text-sm text-gray-500">
                           <div className="flex items-center space-x-1">
-                            <Calendar className="h-4 w-4" />
+                            <CalendarIcon className="h-4 w-4" />
                             <span>{task.date}</span>
                           </div>
                           <div className="flex items-center space-x-1">
@@ -186,8 +381,19 @@ const Planning = () => {
                           <span>⏱️ {task.estimatedDuration}</span>
                         </div>
                         <div className="flex space-x-2">
-                          <Button size="sm" variant="outline">Editează</Button>
-                          <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleEditTask(task.id)}
+                          >
+                            <Edit className="h-4 w-4 mr-1" />
+                            Editează
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={() => handleCompleteTask(task.id)}
+                          >
                             <CheckCircle className="h-4 w-4 mr-1" />
                             Completează
                           </Button>

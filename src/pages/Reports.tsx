@@ -1,12 +1,28 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Download, TrendingUp, BarChart, Calendar, Sprout } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Reports = () => {
+  const { toast } = useToast();
+  const [generatingReports, setGeneratingReports] = useState<Record<number, boolean>>({});
+
+  const generateReport = (reportId: number, reportTitle: string) => {
+    setGeneratingReports(prev => ({ ...prev, [reportId]: true }));
+    
+    // Simulate report generation
+    setTimeout(() => {
+      setGeneratingReports(prev => ({ ...prev, [reportId]: false }));
+      toast({
+        title: "Raport generat cu succes",
+        description: `${reportTitle} a fost generat și este gata pentru descărcare.`,
+      });
+    }, 2000);
+  };
+
   const reportTypes = [
     {
       id: 1,
@@ -140,6 +156,7 @@ const Reports = () => {
               <CardContent className="space-y-4">
                 {reportTypes.map((report) => {
                   const IconComponent = report.icon;
+                  const isGenerating = generatingReports[report.id];
                   return (
                     <div key={report.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                       <div className="flex items-center space-x-4">
@@ -155,7 +172,7 @@ const Reports = () => {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
-                        {report.status === 'generating' ? (
+                        {isGenerating ? (
                           <Badge className="bg-amber-100 text-amber-800">Se generează...</Badge>
                         ) : (
                           <Badge className="bg-green-100 text-green-800">Disponibil</Badge>
@@ -163,9 +180,10 @@ const Reports = () => {
                         <Button 
                           size="sm" 
                           className="bg-green-600 hover:bg-green-700"
-                          disabled={report.status === 'generating'}
+                          disabled={isGenerating}
+                          onClick={() => generateReport(report.id, report.title)}
                         >
-                          {report.status === 'generating' ? 'În progres...' : 'Generează'}
+                          {isGenerating ? 'În progres...' : 'Generează'}
                         </Button>
                       </div>
                     </div>

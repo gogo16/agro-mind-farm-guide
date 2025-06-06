@@ -4,14 +4,31 @@ import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin, Satellite, Layers, Plus, Sprout } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const MapView = () => {
+  const { toast } = useToast();
   const [mapType, setMapType] = useState('roadmap');
   const [showFieldInfo, setShowFieldInfo] = useState(false);
   const [selectedField, setSelectedField] = useState(null);
+  const [isAddingField, setIsAddingField] = useState(false);
+  const [newField, setNewField] = useState({
+    name: '',
+    area: '',
+    crop: '',
+    coords: '',
+    color: '#22c55e'
+  });
 
-  const fields = [
+  // For demonstration - replace with your actual Google Maps API key
+  const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY";
+
+  const [fields, setFields] = useState([
     {
       id: 1,
       name: 'Parcela Nord',
@@ -39,7 +56,36 @@ const MapView = () => {
       coords: { lat: 45.7512, lng: 21.2156 },
       status: 'excellent'
     }
-  ];
+  ]);
+
+  const handleAddField = () => {
+    if (!newField.name || !newField.area || !newField.crop) {
+      toast({
+        title: "Eroare",
+        description: "Te rugăm să completezi toate câmpurile obligatorii.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const field = {
+      id: Date.now(),
+      ...newField,
+      coords: newField.coords ? 
+        { lat: parseFloat(newField.coords.split(',')[0]), lng: parseFloat(newField.coords.split(',')[1]) } : 
+        { lat: 45.75, lng: 21.21 },
+      status: 'healthy'
+    };
+
+    setFields([...fields, field]);
+    setNewField({ name: '', area: '', crop: '', coords: '', color: '#22c55e' });
+    setIsAddingField(false);
+
+    toast({
+      title: "Succes",
+      description: `Parcela "${newField.name}" a fost adăugată pe hartă.`,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
@@ -87,10 +133,86 @@ const MapView = () => {
                 </div>
 
                 <div className="border-t pt-4">
-                  <Button className="w-full bg-green-600 hover:bg-green-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adaugă parcelă nouă
-                  </Button>
+                  <Dialog open={isAddingField} onOpenChange={setIsAddingField}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full bg-green-600 hover:bg-green-700">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adaugă parcelă nouă
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Adaugă parcelă nouă pe hartă</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="name">Nume parcelă *</Label>
+                          <Input
+                            id="name"
+                            value={newField.name}
+                            onChange={(e) => setNewField({...newField, name: e.target.value})}
+                            placeholder="ex: Parcela Vest"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="area">Suprafață *</Label>
+                          <Input
+                            id="area"
+                            value={newField.area}
+                            onChange={(e) => setNewField({...newField, area: e.target.value})}
+                            placeholder="ex: 10.5 ha"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="crop">Cultură *</Label>
+                          <Select onValueChange={(value) => setNewField({...newField, crop: value})}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selectează cultura" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Grâu">Grâu</SelectItem>
+                              <SelectItem value="Porumb">Porumb</SelectItem>
+                              <SelectItem value="Floarea-soarelui">Floarea-soarelui</SelectItem>
+                              <SelectItem value="Soia">Soia</SelectItem>
+                              <SelectItem value="Rapiță">Rapiță</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="coords">Coordonate GPS</Label>
+                          <Input
+                            id="coords"
+                            value={newField.coords}
+                            onChange={(e) => setNewField({...newField, coords: e.target.value})}
+                            placeholder="ex: 45.7489, 21.2087"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="color">Culoare pe hartă</Label>
+                          <Select onValueChange={(value) => setNewField({...newField, color: value})}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selectează culoarea" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="#22c55e">Verde</SelectItem>
+                              <SelectItem value="#3b82f6">Albastru</SelectItem>
+                              <SelectItem value="#f59e0b">Portocaliu</SelectItem>
+                              <SelectItem value="#ef4444">Roșu</SelectItem>
+                              <SelectItem value="#8b5cf6">Violet</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button onClick={() => setIsAddingField(false)} variant="outline" className="flex-1">
+                            Anulează
+                          </Button>
+                          <Button onClick={handleAddField} className="flex-1 bg-green-600 hover:bg-green-700">
+                            Adaugă pe hartă
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </CardContent>
             </Card>
@@ -140,39 +262,50 @@ const MapView = () => {
             <Card className="bg-white border-green-200 h-[600px]">
               <CardContent className="p-0 h-full">
                 <div className="relative w-full h-full rounded-lg overflow-hidden">
-                  {/* Placeholder for Google Maps */}
-                  <div className="w-full h-full bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center">
-                    <div className="text-center">
-                      <MapPin className="h-16 w-16 text-green-600 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-green-800 mb-2">Google Maps va fi integrat aici</h3>
-                      <p className="text-gray-600 mb-4">Pentru a activa harta, este necesară o cheie API Google Maps</p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-md mx-auto">
-                        {fields.map((field) => (
-                          <div 
-                            key={field.id}
-                            className="bg-white/80 p-3 rounded-lg border cursor-pointer hover:shadow-md transition-shadow"
-                            onClick={() => {
-                              setSelectedField(field);
-                              setShowFieldInfo(true);
-                            }}
-                          >
-                            <div className="flex items-center space-x-2 mb-2">
-                              <div 
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: field.color }}
-                              ></div>
-                              <span className="text-sm font-medium">{field.name}</span>
+                  {/* Google Maps Integration */}
+                  {GOOGLE_MAPS_API_KEY !== "YOUR_GOOGLE_MAPS_API_KEY" ? (
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      allowFullScreen
+                      src={`https://www.google.com/maps/embed/v1/view?key=${GOOGLE_MAPS_API_KEY}&center=45.7489,21.2087&zoom=14&maptype=${mapType}`}
+                    ></iframe>
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center">
+                      <div className="text-center">
+                        <MapPin className="h-16 w-16 text-green-600 mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold text-green-800 mb-2">Google Maps va fi integrat aici</h3>
+                        <p className="text-gray-600 mb-4">Pentru a activa harta, înlocuiește YOUR_GOOGLE_MAPS_API_KEY cu cheia ta API Google Maps</p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-md mx-auto">
+                          {fields.map((field) => (
+                            <div 
+                              key={field.id}
+                              className="bg-white/80 p-3 rounded-lg border cursor-pointer hover:shadow-md transition-shadow"
+                              onClick={() => {
+                                setSelectedField(field);
+                                setShowFieldInfo(true);
+                              }}
+                            >
+                              <div className="flex items-center space-x-2 mb-2">
+                                <div 
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: field.color }}
+                                ></div>
+                                <span className="text-sm font-medium">{field.name}</span>
+                              </div>
+                              <p className="text-xs text-gray-600">{field.area}</p>
+                              <div className="flex items-center space-x-1 mt-1">
+                                <Sprout className="h-3 w-3 text-green-600" />
+                                <span className="text-xs">{field.crop}</span>
+                              </div>
                             </div>
-                            <p className="text-xs text-gray-600">{field.area}</p>
-                            <div className="flex items-center space-x-1 mt-1">
-                              <Sprout className="h-3 w-3 text-green-600" />
-                              <span className="text-xs">{field.crop}</span>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Field Info Modal */}
                   {showFieldInfo && selectedField && (
