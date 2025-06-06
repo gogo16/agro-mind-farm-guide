@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -29,7 +28,8 @@ const FieldDetails = () => {
     }
   };
 
-  const field = fieldData[id as keyof typeof fieldData];
+  const fieldId = id ? parseInt(id, 10) : null;
+  const field = fieldId ? fieldData[fieldId as keyof typeof fieldData] : null;
 
   const activities = [
     {
