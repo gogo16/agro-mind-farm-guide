@@ -4,12 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Sprout, Calendar, AlertTriangle, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface FieldsOverviewProps {
   detailed?: boolean;
 }
 
 const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
+  const navigate = useNavigate();
+
   const fields = [
     {
       id: 1,
@@ -136,10 +139,19 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
               </div>
 
               <div className="flex space-x-2">
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => navigate('/map')}
+                >
                   Vezi pe hartă
                 </Button>
-                <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700">
+                <Button 
+                  size="sm" 
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                  onClick={() => navigate(`/field/${field.id}`)}
+                >
                   Detalii
                 </Button>
               </div>
