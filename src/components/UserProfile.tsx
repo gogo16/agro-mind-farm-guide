@@ -7,10 +7,12 @@ import { Label } from '@/components/ui/label';
 import { useAppContext } from '@/contexts/AppContext';
 import { User, Settings, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const UserProfile = () => {
   const { user, updateUser } = useAppContext();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState(user);
 
@@ -28,6 +30,7 @@ const UserProfile = () => {
       title: "Deconectat",
       description: "Ați fost deconectat cu succes.",
     });
+    navigate('/login');
   };
 
   return (

@@ -4,15 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DollarSign, TrendingUp, TrendingDown, Calculator, Plus, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Calculator, Plus, ArrowUpRight, ArrowDownRight, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/contexts/AppContext';
 
 const Finance = () => {
   const { toast } = useToast();
+  const { transactions, fields, addTransaction, updateTransaction, deleteTransaction } = useAppContext();
   const [isAddingTransaction, setIsAddingTransaction] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [newTransaction, setNewTransaction] = useState({
     type: '',
     amount: '',
@@ -21,45 +25,6 @@ const Finance = () => {
     field: '',
     date: ''
   });
-
-  const [transactions, setTransactions] = useState([
-    {
-      id: 1,
-      type: 'expense',
-      amount: 1800,
-      description: 'Îngrășământ NPK 16:16:16',
-      category: 'Fertilizatori',
-      field: 'Parcela Nord',
-      date: '2024-06-01'
-    },
-    {
-      id: 2,
-      type: 'expense',
-      amount: 450,
-      description: 'Herbicid selectiv',
-      category: 'Tratamente',
-      field: 'Câmp Sud',
-      date: '2024-05-20'
-    },
-    {
-      id: 3,
-      type: 'income',
-      amount: 12000,
-      description: 'Vânzare grâu - 20 tone',
-      category: 'Vânzări',
-      field: 'Parcela Nord',
-      date: '2024-05-15'
-    },
-    {
-      id: 4,
-      type: 'expense',
-      amount: 280,
-      description: 'Combustibil pentru irigare',
-      category: 'Combustibil',
-      field: 'Livada Est',
-      date: '2024-05-10'
-    }
-  ]);
 
   const totalIncome = transactions
     .filter(t => t.type === 'income')
@@ -81,14 +46,15 @@ const Finance = () => {
       return;
     }
 
-    const transaction = {
-      id: Date.now(),
-      ...newTransaction,
+    addTransaction({
+      type: newTransaction.type as 'income' | 'expense',
       amount: parseFloat(newTransaction.amount),
+      description: newTransaction.description,
+      category: newTransaction.category || 'General',
+      field: newTransaction.field || 'General',
       date: newTransaction.date || new Date().toISOString().split('T')[0]
-    };
+    });
 
-    setTransactions([...transactions, transaction]);
     setNewTransaction({ type: '', amount: '', description: '', category: '', field: '', date: '' });
     setIsAddingTransaction(false);
 
@@ -98,11 +64,39 @@ const Finance = () => {
     });
   };
 
-  const financialData = {
-    totalCosts: 15600,
-    expectedRevenue: 24000,
-    projectedProfit: 8400,
-    costPerHa: 1248
+  const handleEditTransaction = (transaction: any) => {
+    setEditingTransaction({ ...transaction });
+  };
+
+  const handleUpdateTransaction = () => {
+    if (!editingTransaction.description || !editingTransaction.amount) {
+      toast({
+        title: "Eroare",
+        description: "Te rugăm să completezi câmpurile obligatorii.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    updateTransaction(editingTransaction.id, {
+      ...editingTransaction,
+      amount: parseFloat(editingTransaction.amount)
+    });
+
+    toast({
+      title: "Succes",
+      description: "Tranzacția a fost actualizată cu succes.",
+    });
+
+    setEditingTransaction(null);
+  };
+
+  const handleDeleteTransaction = (id: number) => {
+    deleteTransaction(id);
+    toast({
+      title: "Tranzacție ștersă",
+      description: "Tranzacția a fost ștersă cu succes.",
+    });
   };
 
   return (
@@ -153,7 +147,7 @@ const Finance = () => {
                 <div>
                   <p className="text-sm text-blue-600 font-medium mb-1">Profit net</p>
                   <p className="text-2xl font-bold text-blue-800">{profit.toLocaleString()} RON</p>
-                  <p className="text-xs text-blue-600 mt-1">Marjă: {((profit / totalIncome) * 100).toFixed(1)}%</p>
+                  <p className="text-xs text-blue-600 mt-1">Marjă: {totalIncome > 0 ? ((profit / totalIncome) * 100).toFixed(1) : 0}%</p>
                 </div>
                 <div className="bg-blue-100 p-3 rounded-lg">
                   <DollarSign className="h-6 w-6 text-blue-600" />
@@ -167,7 +161,9 @@ const Finance = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-purple-600 font-medium mb-1">ROI estimat</p>
-                  <p className="text-2xl font-bold text-purple-800">34.2%</p>
+                  <p className="text-2xl font-bold text-purple-800">
+                    {totalExpenses > 0 ? ((profit / totalExpenses) * 100).toFixed(1) : 0}%
+                  </p>
                   <p className="text-xs text-purple-600 mt-1">Return on Investment</p>
                 </div>
                 <div className="bg-purple-100 p-3 rounded-lg">
@@ -250,9 +246,9 @@ const Finance = () => {
                             <SelectValue placeholder="Selectează terenul" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Parcela Nord">Parcela Nord</SelectItem>
-                            <SelectItem value="Câmp Sud">Câmp Sud</SelectItem>
-                            <SelectItem value="Livada Est">Livada Est</SelectItem>
+                            {fields.map((field) => (
+                              <SelectItem key={field.id} value={field.name}>{field.name}</SelectItem>
+                            ))}
                             <SelectItem value="General">General</SelectItem>
                           </SelectContent>
                         </Select>
@@ -291,7 +287,7 @@ const Finance = () => {
                           <ArrowDownRight className="h-4 w-4 text-red-600" />
                         )}
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-gray-900">{transaction.description}</p>
                         <div className="flex items-center space-x-2 mt-1">
                           <Badge variant="secondary" className="text-xs">{transaction.category}</Badge>
@@ -300,12 +296,38 @@ const Finance = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className={`font-semibold ${
-                        transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toLocaleString()} RON
-                      </p>
+                    <div className="flex items-center space-x-2">
+                      <div className="text-right">
+                        <p className={`font-semibold ${
+                          transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toLocaleString()} RON
+                        </p>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => handleEditTransaction(transaction)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Ești sigur că vrei să ștergi această tranzacție?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Această acțiune nu poate fi anulată. Tranzacția "{transaction.description}" va fi ștersă permanent.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Anulează</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteTransaction(transaction.id)} className="bg-red-600 hover:bg-red-700">
+                              Șterge definitiv
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 ))}
@@ -365,6 +387,58 @@ const Finance = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Transaction Dialog */}
+      {editingTransaction && (
+        <Dialog open={true} onOpenChange={() => setEditingTransaction(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editează tranzacția</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Descriere</Label>
+                <Input
+                  value={editingTransaction.description}
+                  onChange={(e) => setEditingTransaction({...editingTransaction, description: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Sumă (RON)</Label>
+                <Input
+                  type="number"
+                  value={editingTransaction.amount}
+                  onChange={(e) => setEditingTransaction({...editingTransaction, amount: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Categorie</Label>
+                <Select onValueChange={(value) => setEditingTransaction({...editingTransaction, category: value})} value={editingTransaction.category}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Fertilizatori">Fertilizatori</SelectItem>
+                    <SelectItem value="Tratamente">Tratamente</SelectItem>
+                    <SelectItem value="Combustibil">Combustibil</SelectItem>
+                    <SelectItem value="Vânzări">Vânzări</SelectItem>
+                    <SelectItem value="Utilaje">Utilaje</SelectItem>
+                    <SelectItem value="Altele">Altele</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex space-x-2">
+                <Button onClick={() => setEditingTransaction(null)} variant="outline" className="flex-1">
+                  Anulează
+                </Button>
+                <Button onClick={handleUpdateTransaction} className="flex-1 bg-green-600 hover:bg-green-700">
+                  Salvează modificările
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };

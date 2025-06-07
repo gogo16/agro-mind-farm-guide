@@ -5,79 +5,36 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tractor, Sprout, AlertTriangle, Plus, Edit, Brain } from 'lucide-react';
+import { Tractor, Sprout, AlertTriangle, Plus, Edit, Brain, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/contexts/AppContext';
 
 const InventorySystem = () => {
   const { toast } = useToast();
+  const { inventory, addInventoryItem, updateInventoryItem, deleteInventoryItem, addTransaction } = useAppContext();
   const [activeTab, setActiveTab] = useState('equipment');
   const [isAddingItem, setIsAddingItem] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [newItem, setNewItem] = useState({
+    name: '',
+    type: '',
+    quantity: '',
+    condition: '',
+    location: '',
+    expiration: '',
+    purpose: '',
+    price: '',
+    transactionType: ''
+  });
 
-  const equipment = [
-    {
-      id: 1,
-      name: 'Tractor Fendt 724',
-      type: 'Tractor',
-      condition: 'Bună',
-      location: 'Hangar Principal',
-      lastUsed: '2024-06-05',
-      nextMaintenance: '2024-07-01'
-    },
-    {
-      id: 2,
-      name: 'Plugul 5 trupite',
-      type: 'Echipament arare',
-      condition: 'Foarte bună',
-      location: 'Hangar Principal', 
-      lastUsed: '2024-05-20',
-      nextMaintenance: '2024-08-15'
-    }
-  ];
-
-  const chemicals = [
-    {
-      id: 1,
-      name: 'Glyphosate 360',
-      type: 'Erbicid',
-      quantity: '25L',
-      expiration: '2025-03-15',
-      purpose: 'Combaterea buruienilor',
-      stockLevel: 'normal'
-    },
-    {
-      id: 2,
-      name: 'NPK 16-16-16',
-      type: 'Îngrășământ',
-      quantity: '500kg',
-      expiration: '2025-12-31',
-      purpose: 'Fertilizare de bază',
-      stockLevel: 'low'
-    }
-  ];
-
-  const crops = [
-    {
-      id: 1,
-      name: 'Grâu de toamnă',
-      field: 'Parcela Nord',
-      quantity: '12.5 tone',
-      harvestDate: '2024-07-15',
-      quality: 'Premium',
-      storageLocation: 'Siloz 1'
-    },
-    {
-      id: 2,
-      name: 'Porumb boabe',
-      field: 'Câmp Sud',
-      quantity: '8.2 tone',
-      harvestDate: '2024-09-20',
-      quality: 'Standard',
-      storageLocation: 'Siloz 2'
-    }
-  ];
+  const equipmentItems = inventory.filter(item => item.type === 'equipment');
+  const chemicalItems = inventory.filter(item => item.type === 'chemical');
+  const cropItems = inventory.filter(item => item.type === 'crop');
+  const materialItems = inventory.filter(item => item.type === 'material');
 
   const aiSuggestions = [
     {
@@ -111,11 +68,146 @@ const InventorySystem = () => {
   };
 
   const handleAddItem = () => {
+    if (!newItem.name || !newItem.type) {
+      toast({
+        title: "Eroare",
+        description: "Te rugăm să completezi numele și tipul elementului.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const itemToAdd = {
+      name: newItem.name,
+      type: newItem.type,
+      quantity: newItem.quantity,
+      condition: newItem.condition,
+      location: newItem.location,
+      expiration: newItem.expiration,
+      purpose: newItem.purpose,
+      stockLevel: 'normal' as const
+    };
+
+    addInventoryItem(itemToAdd);
+
+    // If item has price, add transaction
+    if (newItem.price && parseFloat(newItem.price) > 0) {
+      const transactionType = newItem.transactionType || 'expense';
+      addTransaction({
+        type: transactionType as 'income' | 'expense',
+        amount: parseFloat(newItem.price),
+        description: `${transactionType === 'income' ? 'Vânzare' : 'Achiziție'} ${newItem.name}`,
+        category: newItem.type === 'equipment' ? 'Utilaje' : 
+                 newItem.type === 'chemical' ? 'Chimicale' : 
+                 newItem.type === 'crop' ? 'Vânzări' : 'Materiale',
+        field: 'General',
+        date: new Date().toISOString().split('T')[0]
+      });
+    }
+
     toast({
       title: "Element adăugat",
       description: "Elementul a fost adăugat cu succes în inventar.",
     });
+
+    setNewItem({ name: '', type: '', quantity: '', condition: '', location: '', expiration: '', purpose: '', price: '', transactionType: '' });
     setIsAddingItem(false);
+  };
+
+  const handleEditItem = (item: any) => {
+    setEditingItem({ ...item });
+  };
+
+  const handleUpdateItem = () => {
+    if (!editingItem.name || !editingItem.type) {
+      toast({
+        title: "Eroare",
+        description: "Te rugăm să completezi numele și tipul elementului.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    updateInventoryItem(editingItem.id, editingItem);
+    
+    toast({
+      title: "Element actualizat",
+      description: "Elementul a fost actualizat cu succes.",
+    });
+
+    setEditingItem(null);
+  };
+
+  const handleDeleteItem = (id: number) => {
+    deleteInventoryItem(id);
+    toast({
+      title: "Element șters",
+      description: "Elementul a fost șters din inventar.",
+    });
+  };
+
+  const renderInventoryItems = (items: any[], type: string) => {
+    if (items.length === 0) {
+      return (
+        <div className="text-center py-8 text-gray-500">
+          <p>Nu există elemente în această categorie.</p>
+          <Button className="mt-4 bg-green-600 hover:bg-green-700" onClick={() => setIsAddingItem(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Adaugă primul element
+          </Button>
+        </div>
+      );
+    }
+
+    return items.map((item) => (
+      <div key={item.id} className="border border-gray-200 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="font-semibold text-gray-900">{item.name}</h4>
+          <div className="flex items-center space-x-2">
+            {item.stockLevel && getStockBadge(item.stockLevel)}
+            <Button size="sm" variant="outline" onClick={() => handleEditItem(item)}>
+              <Edit className="h-4 w-4 mr-1" />
+              Editează
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Ești sigur că vrei să ștergi acest element?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Această acțiune nu poate fi anulată. Elementul "{item.name}" va fi șters permanent din inventar.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Anulează</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleDeleteItem(item.id)} className="bg-red-600 hover:bg-red-700">
+                    Șterge definitiv
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+          <div>
+            <p><strong>Tip:</strong> {item.type}</p>
+            {item.quantity && <p><strong>Cantitate:</strong> {item.quantity}</p>}
+            {item.condition && <p><strong>Stare:</strong> {item.condition}</p>}
+          </div>
+          <div>
+            {item.location && <p><strong>Locația:</strong> {item.location}</p>}
+            {item.expiration && <p><strong>Expirare:</strong> {item.expiration}</p>}
+            {item.purpose && <p><strong>Scop:</strong> {item.purpose}</p>}
+            {item.lastUsed && <p><strong>Utilizat ultima dată:</strong> {item.lastUsed}</p>}
+            {item.nextMaintenance && <p><strong>Următoarea revizie:</strong> {item.nextMaintenance}</p>}
+          </div>
+        </div>
+      </div>
+    ));
   };
 
   return (
@@ -157,31 +249,66 @@ const InventorySystem = () => {
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label>Categorie</Label>
-                  <Select>
+                  <Label>Categorie *</Label>
+                  <Select onValueChange={(value) => setNewItem({...newItem, type: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selectează categoria" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="equipment">🚜 Echipamente</SelectItem>
-                      <SelectItem value="chemicals">🌿 Chimicale</SelectItem>
-                      <SelectItem value="crops">🌾 Culturi</SelectItem>
-                      <SelectItem value="materials">📦 Materiale</SelectItem>
+                      <SelectItem value="chemical">🌿 Chimicale</SelectItem>
+                      <SelectItem value="crop">🌾 Culturi</SelectItem>
+                      <SelectItem value="material">📦 Materiale</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>Nume element</Label>
-                  <Input placeholder="ex: Tractor John Deere" />
+                  <Label>Nume element *</Label>
+                  <Input 
+                    placeholder="ex: Tractor John Deere" 
+                    value={newItem.name}
+                    onChange={(e) => setNewItem({...newItem, name: e.target.value})}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Cantitate/Status</Label>
-                    <Input placeholder="ex: 500kg, Bună stare" />
+                    <Input 
+                      placeholder="ex: 500kg, Bună stare" 
+                      value={newItem.quantity}
+                      onChange={(e) => setNewItem({...newItem, quantity: e.target.value})}
+                    />
                   </div>
                   <div>
                     <Label>Locația</Label>
-                    <Input placeholder="ex: Hangar Principal" />
+                    <Input 
+                      placeholder="ex: Hangar Principal" 
+                      value={newItem.location}
+                      onChange={(e) => setNewItem({...newItem, location: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Preț (RON)</Label>
+                    <Input 
+                      type="number" 
+                      placeholder="ex: 1500" 
+                      value={newItem.price}
+                      onChange={(e) => setNewItem({...newItem, price: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label>Tip tranzacție</Label>
+                    <Select onValueChange={(value) => setNewItem({...newItem, transactionType: value})}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selectează tipul" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="expense">Cheltuială</SelectItem>
+                        <SelectItem value="income">Venit</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="flex space-x-2">
@@ -206,92 +333,67 @@ const InventorySystem = () => {
             </TabsList>
 
             <TabsContent value="equipment" className="space-y-4">
-              {equipment.map((item) => (
-                <div key={item.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold text-gray-900">{item.name}</h4>
-                    <Button size="sm" variant="outline">
-                      <Edit className="h-4 w-4 mr-1" />
-                      Editează
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                    <div>
-                      <p><strong>Tip:</strong> {item.type}</p>
-                      <p><strong>Stare:</strong> {item.condition}</p>
-                    </div>
-                    <div>
-                      <p><strong>Locația:</strong> {item.location}</p>
-                      <p><strong>Utilizat ultima dată:</strong> {item.lastUsed}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              {renderInventoryItems(equipmentItems, 'equipment')}
             </TabsContent>
 
             <TabsContent value="chemicals" className="space-y-4">
-              {chemicals.map((item) => (
-                <div key={item.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold text-gray-900">{item.name}</h4>
-                    <div className="flex items-center space-x-2">
-                      {getStockBadge(item.stockLevel)}
-                      <Button size="sm" variant="outline">
-                        <Edit className="h-4 w-4 mr-1" />
-                        Editează
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                    <div>
-                      <p><strong>Tip:</strong> {item.type}</p>
-                      <p><strong>Cantitate:</strong> {item.quantity}</p>
-                    </div>
-                    <div>
-                      <p><strong>Expirare:</strong> {item.expiration}</p>
-                      <p><strong>Scop:</strong> {item.purpose}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              {renderInventoryItems(chemicalItems, 'chemical')}
             </TabsContent>
 
             <TabsContent value="crops" className="space-y-4">
-              {crops.map((item) => (
-                <div key={item.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold text-gray-900">{item.name}</h4>
-                    <Button size="sm" variant="outline">
-                      <Edit className="h-4 w-4 mr-1" />
-                      Editează
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                    <div>
-                      <p><strong>Teren:</strong> {item.field}</p>
-                      <p><strong>Cantitate:</strong> {item.quantity}</p>
-                    </div>
-                    <div>
-                      <p><strong>Recoltare:</strong> {item.harvestDate}</p>
-                      <p><strong>Depozitare:</strong> {item.storageLocation}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+              {renderInventoryItems(cropItems, 'crop')}
             </TabsContent>
 
             <TabsContent value="materials" className="space-y-4">
-              <div className="text-center py-8 text-gray-500">
-                <p>Secțiunea materiale va fi implementată în curând.</p>
-                <Button className="mt-4 bg-green-600 hover:bg-green-700">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adaugă primul material
-                </Button>
-              </div>
+              {renderInventoryItems(materialItems, 'material')}
             </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Edit Item Dialog */}
+      {editingItem && (
+        <Dialog open={true} onOpenChange={() => setEditingItem(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editează element inventar</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Nume element</Label>
+                <Input 
+                  value={editingItem.name}
+                  onChange={(e) => setEditingItem({...editingItem, name: e.target.value})}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Cantitate/Status</Label>
+                  <Input 
+                    value={editingItem.quantity || ''}
+                    onChange={(e) => setEditingItem({...editingItem, quantity: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Locația</Label>
+                  <Input 
+                    value={editingItem.location || ''}
+                    onChange={(e) => setEditingItem({...editingItem, location: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button onClick={() => setEditingItem(null)} variant="outline" className="flex-1">
+                  Anulează
+                </Button>
+                <Button onClick={handleUpdateItem} className="flex-1 bg-green-600 hover:bg-green-700">
+                  Salvează modificările
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
