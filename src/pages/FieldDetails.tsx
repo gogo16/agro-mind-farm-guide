@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Sprout, Calendar, ArrowLeft, Edit, History, Camera } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import VisualCropJournal from '@/components/VisualCropJournal';
 
 const FieldDetails = () => {
   const { id } = useParams();
@@ -172,9 +174,10 @@ const FieldDetails = () => {
 
         {/* Detailed Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-[600px] bg-white/80 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-6 lg:w-[720px] bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="overview">Prezentare</TabsTrigger>
             <TabsTrigger value="activities">Activități</TabsTrigger>
+            <TabsTrigger value="journal">Jurnal Foto</TabsTrigger>
             <TabsTrigger value="soil">Sol</TabsTrigger>
             <TabsTrigger value="financial">Financiar</TabsTrigger>
             <TabsTrigger value="weather">Meteo</TabsTrigger>
@@ -265,6 +268,10 @@ const FieldDetails = () => {
                 ))}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="journal" className="space-y-6">
+            <VisualCropJournal />
           </TabsContent>
 
           <TabsContent value="financial" className="space-y-6">

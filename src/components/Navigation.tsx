@@ -13,7 +13,8 @@ import {
   Bell, 
   Menu,
   Settings,
-  Puzzle
+  FileStack,
+  Package
 } from 'lucide-react';
 
 const Navigation = () => {
@@ -27,7 +28,8 @@ const Navigation = () => {
     { icon: Calendar, label: 'Planificare', path: '/planning' },
     { icon: DollarSign, label: 'Finanțe', path: '/finance' },
     { icon: FileText, label: 'Rapoarte', path: '/reports' },
-    { icon: Puzzle, label: 'Module', path: '/modules' },
+    { icon: FileStack, label: 'Documente', path: '/modules' },
+    { icon: Package, label: 'Inventar', path: '/inventory' },
   ];
 
   const isActive = (path: string) => location.pathname === path;

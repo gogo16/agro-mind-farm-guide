@@ -1,23 +1,23 @@
 
 import React from 'react';
 import Navigation from '@/components/Navigation';
-import APIADocumentGenerator from '@/components/APIADocumentGenerator';
+import InventorySystem from '@/components/InventorySystem';
 
-const Modules = () => {
+const Inventory = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-green-800 mb-2">Documente AgroMind</h1>
-          <p className="text-green-600">Generare automată documente APIA/AFIR</p>
+          <h1 className="text-3xl font-bold text-green-800 mb-2">Inventar AgroMind</h1>
+          <p className="text-green-600">Gestionarea echipamentelor, materialelor și culturilor</p>
         </div>
 
-        <APIADocumentGenerator />
+        <InventorySystem />
       </div>
     </div>
   );
 };
 
-export default Modules;
+export default Inventory;
