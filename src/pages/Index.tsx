@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -7,12 +7,39 @@ import WeatherWidget from '@/components/WeatherWidget';
 import FieldsOverview from '@/components/FieldsOverview';
 import TasksWidget from '@/components/TasksWidget';
 import AIAssistant from '@/components/AIAssistant';
+import SeasonalGuidanceAI from '@/components/SeasonalGuidanceAI';
 import Navigation from '@/components/Navigation';
-import { MapPin, Sprout, Calendar, DollarSign, Users } from 'lucide-react';
+import { MapPin, Sprout, Calendar, DollarSign } from 'lucide-react';
 
 const Index = () => {
+  const [currentSeason, setCurrentSeason] = useState('');
+  const [seasonalBackground, setSeasonalBackground] = useState('');
+
+  useEffect(() => {
+    const getCurrentSeason = () => {
+      const month = new Date().getMonth();
+      if (month >= 2 && month <= 4) return 'spring';
+      if (month >= 5 && month <= 7) return 'summer';
+      if (month >= 8 && month <= 10) return 'autumn';
+      return 'winter';
+    };
+
+    const season = getCurrentSeason();
+    setCurrentSeason(season);
+
+    // Set seasonal backgrounds
+    const backgrounds = {
+      spring: 'from-green-50 to-emerald-100',
+      summer: 'from-yellow-50 to-amber-100',
+      autumn: 'from-orange-50 to-red-100',
+      winter: 'from-blue-50 to-cyan-100'
+    };
+
+    setSeasonalBackground(backgrounds[season as keyof typeof backgrounds] || 'from-green-50 to-emerald-100');
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+    <div className={`min-h-screen bg-gradient-to-br ${seasonalBackground}`}>
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
@@ -80,11 +107,12 @@ const Index = () => {
 
         {/* Main Dashboard Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-[400px] bg-white/80 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-5 lg:w-[500px] bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="overview">Prezentare</TabsTrigger>
             <TabsTrigger value="fields">Terenuri</TabsTrigger>
             <TabsTrigger value="tasks">Sarcini</TabsTrigger>
             <TabsTrigger value="ai">AI Asistent</TabsTrigger>
+            <TabsTrigger value="seasonal">AI Sezonier</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -110,6 +138,10 @@ const Index = () => {
 
           <TabsContent value="ai">
             <AIAssistant detailed={true} />
+          </TabsContent>
+
+          <TabsContent value="seasonal">
+            <SeasonalGuidanceAI />
           </TabsContent>
         </Tabs>
       </div>
