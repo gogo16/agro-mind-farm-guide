@@ -1,7 +1,6 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -10,17 +9,16 @@ import {
   Calendar, 
   DollarSign, 
   FileText, 
-  Bell, 
   Menu,
-  Settings,
   FileStack,
   Package
 } from 'lucide-react';
+import NotificationCenter from './NotificationCenter';
+import UserProfile from './UserProfile';
 
 const Navigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [notifications] = useState(3);
 
   const menuItems = [
     { icon: Home, label: 'Acasă', path: '/' },
@@ -70,18 +68,8 @@ const Navigation = () => {
 
           {/* Right side actions */}
           <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5 text-green-700" />
-              {notifications > 0 && (
-                <Badge className="absolute -top-1 -right-1 bg-red-500 text-white text-xs min-w-[20px] h-5 flex items-center justify-center rounded-full">
-                  {notifications}
-                </Badge>
-              )}
-            </Button>
-            
-            <Button variant="ghost" size="icon">
-              <Settings className="h-5 w-5 text-green-700" />
-            </Button>
+            <NotificationCenter />
+            <UserProfile />
 
             {/* Mobile Menu */}
             <Sheet>

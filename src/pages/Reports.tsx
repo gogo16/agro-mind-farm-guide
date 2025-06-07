@@ -1,24 +1,32 @@
+
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { FileText, Download, TrendingUp, BarChart, Calendar, Sprout } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/contexts/AppContext';
 
 const Reports = () => {
   const { toast } = useToast();
+  const { generateReport, fields, tasks, transactions } = useAppContext();
   const [generatingReports, setGeneratingReports] = useState<Record<number, boolean>>({});
+  const [generatedReport, setGeneratedReport] = useState<any>(null);
+  const [reportType, setReportType] = useState<string>('');
 
-  const generateReport = (reportId: number, reportTitle: string) => {
+  const generateReportHandler = (reportId: number, type: string, reportTitle: string) => {
     setGeneratingReports(prev => ({ ...prev, [reportId]: true }));
     
-    // Simulate report generation
     setTimeout(() => {
+      const report = generateReport(type);
+      setGeneratedReport(report);
+      setReportType(type);
       setGeneratingReports(prev => ({ ...prev, [reportId]: false }));
       toast({
         title: "Raport generat cu succes",
-        description: `${reportTitle} a fost generat și este gata pentru descărcare.`,
+        description: `${reportTitle} a fost generat și este gata pentru vizualizare.`,
       });
     }, 2000);
   };
@@ -31,7 +39,8 @@ const Reports = () => {
       icon: TrendingUp,
       color: 'text-green-600',
       lastGenerated: '2024-06-05',
-      status: 'ready'
+      status: 'ready',
+      type: 'productivity'
     },
     {
       id: 2,
@@ -40,7 +49,8 @@ const Reports = () => {
       icon: BarChart,
       color: 'text-blue-600',
       lastGenerated: '2024-06-03',
-      status: 'ready'
+      status: 'ready',
+      type: 'financial'
     },
     {
       id: 3,
@@ -49,42 +59,15 @@ const Reports = () => {
       icon: Calendar,
       color: 'text-purple-600',
       lastGenerated: '2024-05-28',
-      status: 'ready'
-    },
-    {
-      id: 4,
-      title: 'Raport Culturi',
-      description: 'Analiza detaliată per tip de cultură',
-      icon: Sprout,
-      color: 'text-amber-600',
-      lastGenerated: '2024-06-01',
-      status: 'generating'
+      status: 'ready',
+      type: 'seasonal'
     }
   ];
 
-  const recentReports = [
-    {
-      id: 1,
-      name: 'Analiza_Productivitate_Iunie_2024.pdf',
-      type: 'Productivitate',
-      date: '2024-06-05',
-      size: '2.4 MB'
-    },
-    {
-      id: 2,
-      name: 'Raport_Financiar_Q2_2024.xlsx',
-      type: 'Financiar',
-      date: '2024-06-03',
-      size: '1.8 MB'
-    },
-    {
-      id: 3,
-      name: 'Comparatie_Sezoane_2023_2024.pdf',
-      type: 'Sezonier',
-      date: '2024-05-28',
-      size: '3.1 MB'
-    }
-  ];
+  const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  const profit = totalIncome - totalExpenses;
+  const efficiency = totalExpenses > 0 ? ((profit / totalExpenses) * 100) : 0;
 
   const quickStats = [
     {
@@ -101,17 +84,78 @@ const Reports = () => {
     },
     {
       label: 'Eficiență costuri (%)',
-      value: '87%',
+      value: `${efficiency.toFixed(0)}%`,
       change: '+5%',
       changeType: 'positive'
     },
     {
       label: 'Parcele analizate',
-      value: '12',
+      value: fields.length.toString(),
       change: '0',
       changeType: 'neutral'
     }
   ];
+
+  const renderGeneratedReport = () => {
+    if (!generatedReport || !reportType) return null;
+
+    switch (reportType) {
+      case 'productivity':
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Raport Productivitate</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p><strong>Total terenuri:</strong> {generatedReport.totalFields}</p>
+                <p><strong>Suprafață totală:</strong> {generatedReport.totalArea.toFixed(1)} ha</p>
+              </div>
+              <div>
+                <p><strong>Productivitate medie:</strong> {generatedReport.avgProductivity} t/ha</p>
+                <p><strong>Cel mai productiv teren:</strong> {generatedReport.topPerformingField?.name}</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'financial':
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Raport Financiar</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p><strong>Venituri totale:</strong> {generatedReport.totalIncome.toLocaleString()} RON</p>
+                <p><strong>Cheltuieli totale:</strong> {generatedReport.totalExpenses.toLocaleString()} RON</p>
+              </div>
+              <div>
+                <p><strong>Profit net:</strong> {generatedReport.profit.toLocaleString()} RON</p>
+                <p><strong>ROI:</strong> {generatedReport.roi}%</p>
+                <p><strong>Marjă profit:</strong> {generatedReport.profitMargin}%</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'seasonal':
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Raport Sezonier</h3>
+            <div className="space-y-2 text-sm">
+              <p><strong>Sezonul curent:</strong> {generatedReport.currentSeason}</p>
+              <p><strong>Sarcini completate:</strong> {generatedReport.completedTasks}</p>
+              <p><strong>Sarcini pendente:</strong> {generatedReport.pendingTasks}</p>
+              <div>
+                <p><strong>Recomandări sezoniere:</strong></p>
+                <ul className="list-disc list-inside ml-4">
+                  {generatedReport.seasonalRecommendations.map((rec: string, index: number) => (
+                    <li key={index}>{rec}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
@@ -181,7 +225,7 @@ const Reports = () => {
                           size="sm" 
                           className="bg-green-600 hover:bg-green-700"
                           disabled={isGenerating}
-                          onClick={() => generateReport(report.id, report.title)}
+                          onClick={() => generateReportHandler(report.id, report.type, report.title)}
                         >
                           {isGenerating ? 'În progres...' : 'Generează'}
                         </Button>
@@ -191,84 +235,30 @@ const Reports = () => {
                 })}
               </CardContent>
             </Card>
-
-            {/* Custom Report Builder */}
-            <Card className="bg-white border-green-200">
-              <CardHeader>
-                <CardTitle className="text-green-800">Constructor Raport Personalizat</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Perioada</label>
-                    <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                      <option>Ultima lună</option>
-                      <option>Ultimele 3 luni</option>
-                      <option>Ultimul an</option>
-                      <option>Personalizat</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Parcele</label>
-                    <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                      <option>Toate parcelele</option>
-                      <option>Parcela Nord</option>
-                      <option>Câmp Sud</option>
-                      <option>Livada Est</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Tip Date</label>
-                    <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                      <option>Productivitate</option>
-                      <option>Financiar</option>
-                      <option>Activități</option>
-                      <option>Toate</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Format</label>
-                    <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                      <option>PDF</option>
-                      <option>Excel</option>
-                      <option>CSV</option>
-                    </select>
-                  </div>
-                </div>
-                <Button className="w-full bg-green-600 hover:bg-green-700">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Generează Raport Personalizat
-                </Button>
-              </CardContent>
-            </Card>
           </div>
 
-          {/* Recent Reports */}
+          {/* Generated Report Preview */}
           <div className="space-y-6">
-            <Card className="bg-white border-green-200">
-              <CardHeader>
-                <CardTitle className="text-green-800">Rapoarte Recente</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {recentReports.map((report) => (
-                  <div key={report.id} className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-sm text-gray-900 truncate">
-                        {report.name}
-                      </h4>
-                      <Button size="sm" variant="ghost">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <Badge variant="secondary">{report.type}</Badge>
-                      <span>{report.date}</span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">{report.size}</p>
+            {generatedReport && (
+              <Card className="bg-white border-green-200">
+                <CardHeader>
+                  <CardTitle className="text-green-800">Previzualizare Raport</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {renderGeneratedReport()}
+                  <div className="mt-4 space-y-2">
+                    <Button className="w-full bg-green-600 hover:bg-green-700">
+                      <Download className="h-4 w-4 mr-2" />
+                      Descarcă PDF
+                    </Button>
+                    <Button variant="outline" className="w-full">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Descarcă Excel
+                    </Button>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* AI Insights */}
             <Card className="bg-gradient-to-r from-purple-500 to-blue-600 text-white border-0">
@@ -279,18 +269,15 @@ const Reports = () => {
                 <div className="bg-white/10 rounded-lg p-3">
                   <p className="text-sm font-medium mb-1">Tendință Pozitivă</p>
                   <p className="text-xs">
-                    Productivitatea a crescut cu 15% față de anul trecut datorită optimizării irigației.
+                    Profitul a crescut cu {efficiency.toFixed(0)}% față de luna trecută datorită optimizării costurilor.
                   </p>
                 </div>
                 <div className="bg-white/10 rounded-lg p-3">
                   <p className="text-sm font-medium mb-1">Recomandare</p>
                   <p className="text-xs">
-                    Considerați extinderea culturii de floarea-soarelui pe baza marjei de profit ridicate.
+                    Considerați extinderea terenurilor productive pe baza marjei de profit ridicate.
                   </p>
                 </div>
-                <Button size="sm" className="w-full bg-white text-purple-600 hover:bg-gray-100">
-                  Vezi toate insights-urile
-                </Button>
               </CardContent>
             </Card>
           </div>

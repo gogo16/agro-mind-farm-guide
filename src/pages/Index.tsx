@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import WeatherWidget from '@/components/WeatherWidget';
 import FieldsOverview from '@/components/FieldsOverview';
@@ -9,11 +8,18 @@ import TasksWidget from '@/components/TasksWidget';
 import AIAssistant from '@/components/AIAssistant';
 import SeasonalGuidanceAI from '@/components/SeasonalGuidanceAI';
 import Navigation from '@/components/Navigation';
+import { useAppContext } from '@/contexts/AppContext';
 import { MapPin, Sprout, Calendar, DollarSign } from 'lucide-react';
 
 const Index = () => {
+  const { fields, tasks, transactions } = useAppContext();
   const [currentSeason, setCurrentSeason] = useState('');
   const [seasonalBackground, setSeasonalBackground] = useState('');
+
+  const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  const pendingTasks = tasks.filter(t => t.status === 'pending').length;
+  const totalArea = fields.reduce((sum, field) => sum + field.size, 0);
 
   useEffect(() => {
     const getCurrentSeason = () => {
@@ -27,7 +33,6 @@ const Index = () => {
     const season = getCurrentSeason();
     setCurrentSeason(season);
 
-    // Set seasonal backgrounds
     const backgrounds = {
       spring: 'from-green-50 to-emerald-100',
       summer: 'from-yellow-50 to-amber-100',
@@ -60,7 +65,8 @@ const Index = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-green-600 font-medium">Terenuri Active</p>
-                  <p className="text-3xl font-bold text-green-800">12</p>
+                  <p className="text-3xl font-bold text-green-800">{fields.length}</p>
+                  <p className="text-xs text-green-500">{totalArea.toFixed(1)} ha total</p>
                 </div>
                 <MapPin className="h-8 w-8 text-green-500" />
               </div>
@@ -72,7 +78,7 @@ const Index = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-green-600 font-medium">Culturi Plantate</p>
-                  <p className="text-3xl font-bold text-green-800">8</p>
+                  <p className="text-3xl font-bold text-green-800">{fields.filter(f => f.status === 'Plantat').length}</p>
                 </div>
                 <Sprout className="h-8 w-8 text-amber-500" />
               </div>
@@ -83,8 +89,8 @@ const Index = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-green-600 font-medium">Sarcini Astăzi</p>
-                  <p className="text-3xl font-bold text-green-800">5</p>
+                  <p className="text-sm text-green-600 font-medium">Sarcini Pendente</p>
+                  <p className="text-3xl font-bold text-green-800">{pendingTasks}</p>
                 </div>
                 <Calendar className="h-8 w-8 text-blue-500" />
               </div>
@@ -95,8 +101,8 @@ const Index = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-green-600 font-medium">Buget Luna</p>
-                  <p className="text-3xl font-bold text-green-800">15.2K</p>
+                  <p className="text-sm text-green-600 font-medium">Profit Net</p>
+                  <p className="text-3xl font-bold text-green-800">{((totalIncome - totalExpenses) / 1000).toFixed(1)}K</p>
                   <p className="text-xs text-green-500">RON</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-emerald-500" />
