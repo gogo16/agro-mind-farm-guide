@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
+import SatelliteMonitoring from '@/components/SatelliteMonitoring';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,15 +11,18 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin, Satellite, Layers, Plus, Sprout } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/contexts/AppContext';
 
 const MapView = () => {
   const { toast } = useToast();
+  const { fields, addField } = useAppContext();
   const [mapType, setMapType] = useState('roadmap');
   const [showFieldInfo, setShowFieldInfo] = useState(false);
   const [selectedField, setSelectedField] = useState(null);
   const [isAddingField, setIsAddingField] = useState(false);
   const [newField, setNewField] = useState({
     name: '',
+    parcelCode: '',
     area: '',
     crop: '',
     coords: '',
@@ -28,38 +32,8 @@ const MapView = () => {
   // For demonstration - replace with your actual Google Maps API key
   const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY";
 
-  const [fields, setFields] = useState([
-    {
-      id: 1,
-      name: 'Parcela Nord',
-      area: '12.5 ha',
-      crop: 'Grâu',
-      color: '#22c55e',
-      coords: { lat: 45.7489, lng: 21.2087 },
-      status: 'healthy'
-    },
-    {
-      id: 2,
-      name: 'Câmp Sud',
-      area: '8.3 ha',
-      crop: 'Porumb',
-      color: '#f59e0b',
-      coords: { lat: 45.7456, lng: 21.2134 },
-      status: 'attention'
-    },
-    {
-      id: 3,
-      name: 'Livada Est',
-      area: '15.2 ha',
-      crop: 'Floarea-soarelui',
-      color: '#3b82f6',
-      coords: { lat: 45.7512, lng: 21.2156 },
-      status: 'excellent'
-    }
-  ]);
-
   const handleAddField = () => {
-    if (!newField.name || !newField.area || !newField.crop) {
+    if (!newField.name || !newField.parcelCode || !newField.area || !newField.crop) {
       toast({
         title: "Eroare",
         description: "Te rugăm să completezi toate câmpurile obligatorii.",
@@ -68,22 +42,25 @@ const MapView = () => {
       return;
     }
 
-    const field = {
-      id: Date.now(),
-      ...newField,
-      coords: newField.coords ? 
-        { lat: parseFloat(newField.coords.split(',')[0]), lng: parseFloat(newField.coords.split(',')[1]) } : 
-        { lat: 45.75, lng: 21.21 },
-      status: 'healthy'
-    };
+    const coordinates = newField.coords ? 
+      { lat: parseFloat(newField.coords.split(',')[0]), lng: parseFloat(newField.coords.split(',')[1]) } : 
+      { lat: 45.75, lng: 21.21 };
 
-    setFields([...fields, field]);
-    setNewField({ name: '', area: '', crop: '', coords: '', color: '#22c55e' });
+    addField({
+      name: newField.name,
+      parcelCode: newField.parcelCode,
+      size: parseFloat(newField.area),
+      crop: newField.crop,
+      status: 'healthy',
+      coordinates
+    });
+
+    setNewField({ name: '', parcelCode: '', area: '', crop: '', coords: '', color: '#22c55e' });
     setIsAddingField(false);
 
     toast({
       title: "Succes",
-      description: `Parcela "${newField.name}" a fost adăugată pe hartă.`,
+      description: `Parcela "${newField.name}" (${newField.parcelCode}) a fost adăugată pe hartă.`,
     });
   };
 
@@ -155,6 +132,15 @@ const MapView = () => {
                           />
                         </div>
                         <div>
+                          <Label htmlFor="parcelCode">Cod parcelă *</Label>
+                          <Input
+                            id="parcelCode"
+                            value={newField.parcelCode}
+                            onChange={(e) => setNewField({...newField, parcelCode: e.target.value})}
+                            placeholder="ex: PV-001"
+                          />
+                        </div>
+                        <div>
                           <Label htmlFor="area">Suprafață *</Label>
                           <Input
                             id="area"
@@ -217,6 +203,9 @@ const MapView = () => {
               </CardContent>
             </Card>
 
+            {/* Satellite Monitoring */}
+            <SatelliteMonitoring />
+
             {/* Fields List */}
             <Card className="bg-white/80 backdrop-blur-sm border-green-200">
               <CardHeader>
@@ -234,11 +223,11 @@ const MapView = () => {
                   >
                     <div 
                       className="w-4 h-4 rounded-full border-2 border-white shadow"
-                      style={{ backgroundColor: field.color }}
+                      style={{ backgroundColor: '#22c55e' }}
                     ></div>
                     <div className="flex-1">
                       <p className="font-medium text-sm">{field.name}</p>
-                      <p className="text-xs text-gray-600">{field.crop} • {field.area}</p>
+                      <p className="text-xs text-gray-600">{field.crop} • {field.size} ha • {field.parcelCode}</p>
                     </div>
                     <Badge 
                       variant="secondary" 
@@ -291,11 +280,11 @@ const MapView = () => {
                               <div className="flex items-center space-x-2 mb-2">
                                 <div 
                                   className="w-3 h-3 rounded-full"
-                                  style={{ backgroundColor: field.color }}
+                                  style={{ backgroundColor: '#22c55e' }}
                                 ></div>
                                 <span className="text-sm font-medium">{field.name}</span>
                               </div>
-                              <p className="text-xs text-gray-600">{field.area}</p>
+                              <p className="text-xs text-gray-600">{field.size} ha • {field.parcelCode}</p>
                               <div className="flex items-center space-x-1 mt-1">
                                 <Sprout className="h-3 w-3 text-green-600" />
                                 <span className="text-xs">{field.crop}</span>
@@ -321,9 +310,12 @@ const MapView = () => {
                         </Button>
                       </div>
                       <div className="space-y-2 text-sm">
+                        <p><strong>Cod parcelă:</strong> {selectedField.parcelCode}</p>
                         <p><strong>Cultură:</strong> {selectedField.crop}</p>
-                        <p><strong>Suprafață:</strong> {selectedField.area}</p>
-                        <p><strong>Coordonate:</strong> {selectedField.coords.lat}, {selectedField.coords.lng}</p>
+                        <p><strong>Suprafață:</strong> {selectedField.size} ha</p>
+                        {selectedField.coordinates && (
+                          <p><strong>Coordonate:</strong> {selectedField.coordinates.lat}, {selectedField.coordinates.lng}</p>
+                        )}
                       </div>
                       <div className="mt-4 space-y-2">
                         <Button size="sm" className="w-full bg-green-600 hover:bg-green-700">

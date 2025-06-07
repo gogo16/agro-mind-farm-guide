@@ -1,14 +1,29 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface Field {
   id: number;
   name: string;
+  parcelCode: string; // New field for parcel code
   size: number;
   crop: string;
   status: string;
   location?: string;
   coordinates?: { lat: number; lng: number };
+  plantingDate?: string;
+  harvestDate?: string;
+  workType?: string;
+  costs?: number;
+  inputs?: string;
+  roi?: number;
+}
+
+interface SatelliteData {
+  parcelId: number;
+  currentImage: string;
+  previousImage: string;
+  changeDetected: boolean;
+  changePercentage: number;
+  lastUpdated: string;
 }
 
 interface Task {
@@ -72,7 +87,9 @@ interface AppContextType {
   transactions: Transaction[];
   inventory: InventoryItem[];
   notifications: Notification[];
+  satelliteData: SatelliteData[];
   user: User;
+  currentSeason: string;
   addField: (field: Omit<Field, 'id'>) => void;
   updateField: (id: number, field: Partial<Field>) => void;
   deleteField: (id: number) => void;
@@ -88,6 +105,8 @@ interface AppContextType {
   markNotificationAsRead: (id: number) => void;
   updateUser: (userData: Partial<User>) => void;
   generateReport: (type: string) => any;
+  generateAPIADocument: (type: string, data: any) => any;
+  fetchSatelliteData: (parcelId: number) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -102,9 +121,54 @@ export const useAppContext = () => {
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [fields, setFields] = useState<Field[]>([
-    { id: 1, name: 'Parcela Nord', size: 15.5, crop: 'Grâu de toamnă', status: 'Plantat', location: 'Nord', coordinates: { lat: 44.4268, lng: 26.1025 } },
-    { id: 2, name: 'Câmp Sud', size: 22.3, crop: 'Porumb', status: 'Pregătire teren', location: 'Sud', coordinates: { lat: 44.4168, lng: 26.1125 } },
-    { id: 3, name: 'Livada Est', size: 8.7, crop: 'Măr', status: 'Maturitate', location: 'Est', coordinates: { lat: 44.4368, lng: 26.1225 } }
+    { 
+      id: 1, 
+      name: 'Parcela Nord', 
+      parcelCode: 'PN-001',
+      size: 15.5, 
+      crop: 'Grâu de toamnă', 
+      status: 'Plantat', 
+      location: 'Nord', 
+      coordinates: { lat: 44.4268, lng: 26.1025 },
+      plantingDate: '2024-10-15',
+      harvestDate: '2024-07-20',
+      workType: 'Arătură conventională',
+      costs: 2500,
+      inputs: 'NPK 16:16:16, Herbicid',
+      roi: 15.2
+    },
+    { 
+      id: 2, 
+      name: 'Câmp Sud', 
+      parcelCode: 'CS-002',
+      size: 22.3, 
+      crop: 'Porumb', 
+      status: 'Pregătire teren', 
+      location: 'Sud', 
+      coordinates: { lat: 44.4168, lng: 26.1125 },
+      plantingDate: '2024-04-20',
+      harvestDate: '2024-09-15',
+      workType: 'Arătură + Grăpare',
+      costs: 3200,
+      inputs: 'Semințe hibrid, Îngrășământ starter',
+      roi: 18.7
+    },
+    { 
+      id: 3, 
+      name: 'Livada Est', 
+      parcelCode: 'LE-003',
+      size: 8.7, 
+      crop: 'Măr', 
+      status: 'Maturitate', 
+      location: 'Est', 
+      coordinates: { lat: 44.4368, lng: 26.1225 },
+      plantingDate: '2020-03-10',
+      harvestDate: '2024-08-30',
+      workType: 'Întreținere livadă',
+      costs: 1800,
+      inputs: 'Fungicide, Insecticide',
+      roi: 22.1
+    }
   ]);
 
   const [tasks, setTasks] = useState<Task[]>([
@@ -206,6 +270,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   ]);
 
+  const [satelliteData, setSatelliteData] = useState<SatelliteData[]>([]);
+
   const [user, setUser] = useState<User>({
     name: 'Ion Popescu',
     email: 'ion.popescu@email.com',
@@ -213,6 +279,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     location: 'Buzău, România',
     farmName: 'Ferma AgroMind'
   });
+
+  const [currentSeason, setCurrentSeason] = useState(getCurrentSeason());
+
+  const getCurrentSeason = () => {
+    const month = new Date().getMonth();
+    if (month >= 2 && month <= 4) return 'Primăvară';
+    if (month >= 5 && month <= 7) return 'Vară';
+    if (month >= 8 && month <= 10) return 'Toamnă';
+    return 'Iarnă';
+  };
 
   const addField = (field: Omit<Field, 'id'>) => {
     const newField = { ...field, id: Date.now() };
@@ -278,6 +354,77 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setUser(prev => ({ ...prev, ...userData }));
   };
 
+  const generateAPIADocument = (type: string, data: any) => {
+    const baseData = {
+      farmerCode: user.farmName.substring(0, 8).toUpperCase(),
+      farmName: user.farmName,
+      location: user.location,
+      generatedDate: new Date().toLocaleDateString('ro-RO'),
+      ...data
+    };
+
+    switch (type) {
+      case 'apia-cereale':
+        return {
+          documentType: 'APIA - Cerere Cereale',
+          ...baseData,
+          parcels: fields.filter(f => ['Grâu', 'Orz', 'Ovăz'].includes(f.crop.split(' ')[0])),
+          totalArea: fields.reduce((sum, field) => sum + field.size, 0),
+          estimatedProduction: fields.reduce((sum, field) => sum + (field.size * 4.5), 0)
+        };
+      case 'apia-eco-scheme':
+        return {
+          documentType: 'APIA - Eco-scheme',
+          ...baseData,
+          ecoMeasures: ['Rotația culturilor', 'Zone tampon', 'Păstrarea vegetației permanente'],
+          parcels: fields,
+          totalEcoArea: fields.reduce((sum, field) => sum + field.size, 0)
+        };
+      case 'afir-modernizare':
+        return {
+          documentType: 'AFIR - Modernizare Exploatații',
+          ...baseData,
+          investmentType: 'Modernizare echipamente agricole',
+          requestedAmount: 150000,
+          cofinancing: 75000,
+          timeline: '24 luni',
+          equipment: inventory.filter(item => item.type === 'equipment')
+        };
+      default:
+        return baseData;
+    }
+  };
+
+  const fetchSatelliteData = (parcelId: number) => {
+    // Simulate satellite data fetch
+    setTimeout(() => {
+      const mockData: SatelliteData = {
+        parcelId,
+        currentImage: `/api/satellite/current/${parcelId}`,
+        previousImage: `/api/satellite/previous/${parcelId}`,
+        changeDetected: Math.random() > 0.7,
+        changePercentage: Math.random() * 15,
+        lastUpdated: new Date().toISOString()
+      };
+
+      setSatelliteData(prev => [...prev.filter(d => d.parcelId !== parcelId), mockData]);
+
+      if (mockData.changeDetected) {
+        const field = fields.find(f => f.id === parcelId);
+        const newNotification: Notification = {
+          id: Date.now(),
+          type: 'ai',
+          title: 'Modificare teren detectată',
+          message: `Modificare detectată pe ${field?.name} (${field?.parcelCode}) în ultimele 7 zile - ${mockData.changePercentage.toFixed(1)}% din suprafață`,
+          date: new Date().toISOString().split('T')[0],
+          isRead: false,
+          priority: 'high'
+        };
+        setNotifications(prev => [newNotification, ...prev]);
+      }
+    }, 2000);
+  };
+
   const generateReport = (type: string) => {
     const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
     const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
@@ -319,7 +466,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       transactions,
       inventory,
       notifications,
+      satelliteData,
       user,
+      currentSeason,
       addField,
       updateField,
       deleteField,
@@ -334,7 +483,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       deleteInventoryItem,
       markNotificationAsRead,
       updateUser,
-      generateReport
+      generateReport,
+      generateAPIADocument,
+      fetchSatelliteData
     }}>
       {children}
     </AppContext.Provider>
