@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,7 +60,7 @@ const PropertyDocuments = () => {
     }
 
     const docData = {
-      parcelId: newDoc.parcelId ? parseInt(newDoc.parcelId) : undefined,
+      parcelId: newDoc.parcelId && newDoc.parcelId !== 'general' ? parseInt(newDoc.parcelId) : undefined,
       type: newDoc.type,
       name: newDoc.name,
       fileName: newDoc.fileName || `${newDoc.name}.pdf`,
@@ -187,7 +186,7 @@ const PropertyDocuments = () => {
                     <SelectValue placeholder="Selectează parcela (opțional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">General (nu se aplică unei parcele)</SelectItem>
+                    <SelectItem value="general">General (nu se aplică unei parcele)</SelectItem>
                     {fields.map(field => (
                       <SelectItem key={field.id} value={field.id.toString()}>
                         {field.name} ({field.parcelCode})
