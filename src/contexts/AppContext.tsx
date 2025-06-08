@@ -119,6 +119,14 @@ export const useAppContext = () => {
   return context;
 };
 
+const getCurrentSeason = () => {
+  const month = new Date().getMonth();
+  if (month >= 2 && month <= 4) return 'Primăvară';
+  if (month >= 5 && month <= 7) return 'Vară';
+  if (month >= 8 && month <= 10) return 'Toamnă';
+  return 'Iarnă';
+};
+
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [fields, setFields] = useState<Field[]>([
     { 
@@ -281,14 +289,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const [currentSeason, setCurrentSeason] = useState(getCurrentSeason());
-
-  const getCurrentSeason = () => {
-    const month = new Date().getMonth();
-    if (month >= 2 && month <= 4) return 'Primăvară';
-    if (month >= 5 && month <= 7) return 'Vară';
-    if (month >= 8 && month <= 10) return 'Toamnă';
-    return 'Iarnă';
-  };
 
   const addField = (field: Omit<Field, 'id'>) => {
     const newField = { ...field, id: Date.now() };
