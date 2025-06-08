@@ -31,7 +31,7 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
     {
       id: 1,
       date: '2024-06-01',
-      field: 'Parcela Nord',
+      fieldName: 'Parcela Nord',
       activity: 'Semănat',
       cropStage: 'Pregătire sol',
       weather: 'Însorit, 22°C',
@@ -41,7 +41,7 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
     {
       id: 2,
       date: '2024-05-15',
-      field: 'Câmp Sud',
+      fieldName: 'Câmp Sud',
       activity: 'Tratament fitosanitar',
       cropStage: 'Creștere',
       weather: 'Noros, 18°C',
@@ -51,7 +51,7 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
     {
       id: 3,
       date: '2024-05-01',
-      field: 'Livada Est',
+      fieldName: 'Livada Est',
       activity: 'Fertilizare',
       cropStage: 'Dezvoltare',
       weather: 'Ploios, 15°C',
@@ -178,12 +178,12 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
                 <div className="aspect-video bg-gray-100 relative">
                   <img 
                     src={photo.imageUrl} 
-                    alt={`${photo.activity} - ${photo.field || photo.fieldName}`}
+                    alt={`${photo.activity} - ${photo.fieldName}`}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-2 left-2">
                     <Badge className="bg-white/90 text-gray-800">
-                      {photo.field || photo.fieldName}
+                      {photo.fieldName}
                     </Badge>
                   </div>
                 </div>
