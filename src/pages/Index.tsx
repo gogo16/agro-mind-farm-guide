@@ -9,6 +9,7 @@ import SeasonalGuidanceAI from '@/components/SeasonalGuidanceAI';
 import Navigation from '@/components/Navigation';
 import { useAppContext } from '@/contexts/AppContext';
 import { MapPin, Sprout, Calendar, DollarSign, Sun, Snowflake, Leaf, CloudRain } from 'lucide-react';
+
 const Index = () => {
   const {
     fields,
@@ -23,6 +24,7 @@ const Index = () => {
   const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   const pendingTasks = tasks.filter(t => t.status === 'pending').length;
   const totalArea = fields.reduce((sum, field) => sum + field.size, 0);
+  
   useEffect(() => {
     const month = new Date().getMonth();
     let season = '';
@@ -54,6 +56,7 @@ const Index = () => {
     setSeasonalTips(tips);
     setSeasonIcon(icon);
   }, []);
+
   return <div className={`min-h-screen bg-gradient-to-br ${seasonalBackground}`}>
       <Navigation />
       
@@ -74,9 +77,6 @@ const Index = () => {
             
           </div>
         </div>
-
-        {/* Seasonal Tips */}
-        
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -155,15 +155,15 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="fields">
-            <FieldsOverview detailed={true} />
+            <FieldsOverview />
           </TabsContent>
 
           <TabsContent value="tasks">
-            <TasksWidget detailed={true} />
+            <TasksWidget />
           </TabsContent>
 
           <TabsContent value="ai">
-            <AIAssistant detailed={true} />
+            <AIAssistant />
           </TabsContent>
 
           <TabsContent value="seasonal">
@@ -173,4 +173,5 @@ const Index = () => {
       </div>
     </div>;
 };
+
 export default Index;

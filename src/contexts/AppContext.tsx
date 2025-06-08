@@ -114,6 +114,18 @@ interface User {
   farmName: string;
 }
 
+interface FieldPhoto {
+  id: number;
+  fieldId: number;
+  fieldName: string;
+  date: string;
+  activity: string;
+  cropStage: string;
+  weather: string;
+  notes: string;
+  imageUrl: string;
+}
+
 interface AppContextType {
   fields: Field[];
   tasks: Task[];
@@ -124,6 +136,7 @@ interface AppContextType {
   workHistory: WorkHistory[];
   ownerHistory: OwnerHistory[];
   propertyDocuments: PropertyDocument[];
+  fieldPhotos: FieldPhoto[];
   user: User;
   currentSeason: string;
   addField: (field: Omit<Field, 'id'>) => void;
@@ -147,6 +160,7 @@ interface AppContextType {
   addPropertyDocument: (doc: Omit<PropertyDocument, 'id'>) => void;
   updatePropertyDocument: (id: number, doc: Partial<PropertyDocument>) => void;
   deletePropertyDocument: (id: number) => void;
+  addFieldPhoto: (photo: Omit<FieldPhoto, 'id'>) => void;
   markNotificationAsRead: (id: number) => void;
   updateUser: (userData: Partial<User>) => void;
   generateReport: (type: string) => any;
@@ -391,6 +405,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   ]);
 
+  const [fieldPhotos, setFieldPhotos] = useState<FieldPhoto[]>([]);
+
   const [user, setUser] = useState<User>({
     name: 'Ion Popescu',
     email: 'ion.popescu@email.com',
@@ -492,6 +508,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const deletePropertyDocument = (id: number) => {
     setPropertyDocuments(prev => prev.filter(doc => doc.id !== id));
+  };
+
+  const addFieldPhoto = (photo: Omit<FieldPhoto, 'id'>) => {
+    const newPhoto = { ...photo, id: Date.now() };
+    setFieldPhotos(prev => [...prev, newPhoto]);
   };
 
   const markNotificationAsRead = (id: number) => {
@@ -620,6 +641,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       workHistory,
       ownerHistory,
       propertyDocuments,
+      fieldPhotos,
       user,
       currentSeason,
       addField,
@@ -643,6 +665,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addPropertyDocument,
       updatePropertyDocument,
       deletePropertyDocument,
+      addFieldPhoto,
       markNotificationAsRead,
       updateUser,
       generateReport,
