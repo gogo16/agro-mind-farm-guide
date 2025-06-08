@@ -9,7 +9,6 @@ import Index from "./pages/Index";
 import MapView from "./pages/MapView";
 import Planning from "./pages/Planning";
 import Finance from "./pages/Finance";
-import Reports from "./pages/Reports";
 import FieldDetails from "./pages/FieldDetails";
 import Modules from "./pages/Modules";
 import Documents from "./pages/Documents";
@@ -31,7 +30,6 @@ const App = () => (
             <Route path="/map" element={<MapView />} />
             <Route path="/planning" element={<Planning />} />
             <Route path="/finance" element={<Finance />} />
-            <Route path="/reports" element={<Reports />} />
             <Route path="/modules" element={<Modules />} />
             <Route path="/documents" element={<Documents />} />
             <Route path="/inventory" element={<Inventory />} />

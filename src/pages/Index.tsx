@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import WeatherWidget from '@/components/WeatherWidget';
 import FieldsOverview from '@/components/FieldsOverview';
 import TasksWidget from '@/components/TasksWidget';
@@ -8,22 +10,31 @@ import AIAssistant from '@/components/AIAssistant';
 import SeasonalGuidanceAI from '@/components/SeasonalGuidanceAI';
 import Navigation from '@/components/Navigation';
 import { useAppContext } from '@/contexts/AppContext';
-import { MapPin, Sprout, Calendar, DollarSign, Sun, Snowflake, Leaf, CloudRain } from 'lucide-react';
+import { MapPin, Sprout, Calendar, DollarSign, Sun, Snowflake, Leaf, CloudRain, TrendingUp, BarChart, FileText, Download } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const {
     fields,
     tasks,
     transactions,
+    generateReport,
     currentSeason
   } = useAppContext();
+  const { toast } = useToast();
   const [seasonalBackground, setSeasonalBackground] = useState('');
   const [seasonalTips, setSeasonalTips] = useState<string[]>([]);
   const [seasonIcon, setSeasonIcon] = useState<React.ReactNode>(null);
+  const [generatedReport, setGeneratedReport] = useState<any>(null);
+  const [reportType, setReportType] = useState<string>('');
+  const [generatingReports, setGeneratingReports] = useState<Record<number, boolean>>({});
+  
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   const pendingTasks = tasks.filter(t => t.status === 'pending').length;
   const totalArea = fields.reduce((sum, field) => sum + field.size, 0);
+  const profit = totalIncome - totalExpenses;
+  const efficiency = totalExpenses > 0 ? ((profit / totalExpenses) * 100) : 0;
   
   useEffect(() => {
     const month = new Date().getMonth();
@@ -57,6 +68,106 @@ const Index = () => {
     setSeasonIcon(icon);
   }, []);
 
+  const generateReportHandler = (reportId: number, type: string, reportTitle: string) => {
+    setGeneratingReports(prev => ({ ...prev, [reportId]: true }));
+    
+    setTimeout(() => {
+      const report = generateReport(type);
+      setGeneratedReport(report);
+      setReportType(type);
+      setGeneratingReports(prev => ({ ...prev, [reportId]: false }));
+      toast({
+        title: "Raport generat cu succes",
+        description: `${reportTitle} a fost generat și este gata pentru vizualizare.`,
+      });
+    }, 2000);
+  };
+
+  const reportTypes = [
+    {
+      id: 1,
+      title: 'Raport Productivitate',
+      description: 'Analiza randamentului pe hectar pentru fiecare parcelă',
+      icon: TrendingUp,
+      color: 'text-green-600',
+      lastGenerated: '2024-06-05',
+      status: 'ready',
+      type: 'productivity'
+    },
+    {
+      id: 2,
+      title: 'Raport Financiar',
+      description: 'Analiza cheltuielilor, veniturilor și profitabilității',
+      icon: BarChart,
+      color: 'text-blue-600',
+      lastGenerated: '2024-06-03',
+      status: 'ready',
+      type: 'financial'
+    },
+    {
+      id: 3,
+      title: 'Raport Sezonier',
+      description: 'Comparația performanței între sezoane',
+      icon: Calendar,
+      color: 'text-purple-600',
+      lastGenerated: '2024-05-28',
+      status: 'ready',
+      type: 'seasonal'
+    }
+  ];
+
+  const renderGeneratedReport = () => {
+    if (!generatedReport || !reportType) return null;
+
+    switch (reportType) {
+      case 'productivity':
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Raport Productivitate</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p><strong>Total terenuri:</strong> {generatedReport.totalFields}</p>
+                <p><strong>Suprafață totală:</strong> {generatedReport.totalArea.toFixed(1)} ha</p>
+              </div>
+              <div>
+                <p><strong>Productivitate medie:</strong> {generatedReport.avgProductivity} t/ha</p>
+                <p><strong>Cel mai productiv teren:</strong> {generatedReport.topPerformingField?.name}</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'financial':
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Raport Financiar</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p><strong>Venituri totale:</strong> {generatedReport.totalIncome.toLocaleString()} RON</p>
+                <p><strong>Cheltuieli totale:</strong> {generatedReport.totalExpenses.toLocaleString()} RON</p>
+              </div>
+              <div>
+                <p><strong>Profit net:</strong> {generatedReport.profit.toLocaleString()} RON</p>
+                <p><strong>ROI:</strong> {generatedReport.roi}%</p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'seasonal':
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Raport Sezonier</h3>
+            <div className="space-y-2 text-sm">
+              <p><strong>Sezonul curent:</strong> {generatedReport.currentSeason}</p>
+              <p><strong>Sarcini completate:</strong> {generatedReport.completedTasks}</p>
+              <p><strong>Sarcini pendente:</strong> {generatedReport.pendingTasks}</p>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return <div className={`min-h-screen bg-gradient-to-br ${seasonalBackground}`}>
       <Navigation />
       
@@ -72,10 +183,6 @@ const Index = () => {
           <p className="text-green-600 text-lg mb-2">
             Gestionează-ți ferma inteligent cu AgroMind
           </p>
-          <div className="flex items-center space-x-2">
-            
-            
-          </div>
         </div>
 
         {/* Quick Stats */}
@@ -133,11 +240,10 @@ const Index = () => {
 
         {/* Main Dashboard Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-[500px] bg-white/80 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-4 lg:w-[400px] bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="overview">Prezentare</TabsTrigger>
             <TabsTrigger value="fields">Terenuri</TabsTrigger>
             <TabsTrigger value="tasks">Sarcini</TabsTrigger>
-            <TabsTrigger value="ai">AI Asistent</TabsTrigger>
             <TabsTrigger value="seasonal">AI Sezonier</TabsTrigger>
           </TabsList>
 
@@ -146,10 +252,83 @@ const Index = () => {
               <div className="lg:col-span-2 space-y-6">
                 <WeatherWidget />
                 <FieldsOverview />
+                
+                {/* Reports Section */}
+                <Card className="bg-white border-green-200">
+                  <CardHeader>
+                    <CardTitle className="text-green-800">Rapoarte și Analize</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {reportTypes.map((report) => {
+                      const IconComponent = report.icon;
+                      const isGenerating = generatingReports[report.id];
+                      return (
+                        <div key={report.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                          <div className="flex items-center space-x-4">
+                            <div className="bg-gray-100 p-3 rounded-lg">
+                              <IconComponent className={`h-6 w-6 ${report.color}`} />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-gray-900">{report.title}</h4>
+                              <p className="text-sm text-gray-600">{report.description}</p>
+                            </div>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            className="bg-green-600 hover:bg-green-700"
+                            disabled={isGenerating}
+                            onClick={() => generateReportHandler(report.id, report.type, report.title)}
+                          >
+                            {isGenerating ? 'În progres...' : 'Generează'}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
               </div>
+              
               <div className="space-y-6">
                 <TasksWidget />
                 <AIAssistant />
+                
+                {/* AI Insights - renamed from AI Insights */}
+                {generatedReport && (
+                  <Card className="bg-white border-green-200">
+                    <CardHeader>
+                      <CardTitle className="text-green-800">Previzualizare Raport</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {renderGeneratedReport()}
+                      <div className="mt-4 space-y-2">
+                        <Button className="w-full bg-green-600 hover:bg-green-700">
+                          <Download className="h-4 w-4 mr-2" />
+                          Descarcă PDF
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <Card className="bg-gradient-to-r from-purple-500 to-blue-600 text-white border-0">
+                  <CardHeader>
+                    <CardTitle>🤖 Perspective AI</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="bg-white/10 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-1">Tendință Pozitivă</p>
+                      <p className="text-xs">
+                        Profitul a crescut cu {efficiency.toFixed(0)}% față de luna trecută datorită optimizării costurilor.
+                      </p>
+                    </div>
+                    <div className="bg-white/10 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-1">Recomandare</p>
+                      <p className="text-xs">
+                        Considerați extinderea terenurilor productive pe baza marjei de profit ridicate.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </TabsContent>
@@ -160,10 +339,6 @@ const Index = () => {
 
           <TabsContent value="tasks">
             <TasksWidget />
-          </TabsContent>
-
-          <TabsContent value="ai">
-            <AIAssistant />
           </TabsContent>
 
           <TabsContent value="seasonal">

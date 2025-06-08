@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle, Clock, AlertTriangle, Plus, Bot } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CheckCircle, Clock, AlertTriangle, Plus, Bot, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 
@@ -16,6 +17,7 @@ const TasksWidget = () => {
   const { toast } = useToast();
   const { tasks, fields, addTask, updateTask } = useAppContext();
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [lastTaskCount, setLastTaskCount] = useState(tasks.length);
   const [newTask, setNewTask] = useState({
     title: '',
     field: '',
@@ -25,6 +27,18 @@ const TasksWidget = () => {
     description: '',
     estimatedDuration: ''
   });
+
+  // Check for new tasks and show notification
+  useEffect(() => {
+    if (tasks.length > lastTaskCount) {
+      const newTaskAdded = tasks[tasks.length - 1];
+      toast({
+        title: "Sarcină nouă adăugată",
+        description: `"${newTaskAdded.title}" a fost adăugată cu succes.`,
+      });
+    }
+    setLastTaskCount(tasks.length);
+  }, [tasks.length, lastTaskCount, toast]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -74,11 +88,6 @@ const TasksWidget = () => {
       estimatedDuration: newTask.estimatedDuration
     });
 
-    toast({
-      title: "Succes",
-      description: `Sarcina "${newTask.title}" a fost adăugată cu succes.`,
-    });
-    
     setNewTask({
       title: '',
       field: '',
@@ -100,11 +109,12 @@ const TasksWidget = () => {
   };
 
   const pendingTasks = tasks.filter(task => task.status === 'pending');
+  const completedTasks = tasks.filter(task => task.status === 'completed');
 
   return (
     <Card className="bg-white/80 backdrop-blur-sm border-green-200">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-green-800">Sarcini de astăzi</CardTitle>
+        <CardTitle className="text-green-800">Sarcini</CardTitle>
         <Dialog open={isAddingTask} onOpenChange={setIsAddingTask}>
           <DialogTrigger asChild>
             <Button size="sm" className="bg-green-600 hover:bg-green-700">
@@ -202,39 +212,71 @@ const TasksWidget = () => {
           </DialogContent>
         </Dialog>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {pendingTasks.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">Nu ai sarcini programate pentru astăzi</p>
-        ) : (
-          pendingTasks.slice(0, 3).map((task) => (
-            <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                {task.aiSuggested && (
-                  <div className="bg-blue-100 p-1 rounded">
-                    <Bot className="h-3 w-3 text-blue-600" />
+      <CardContent>
+        <Tabs defaultValue="pending" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="pending">De astăzi ({pendingTasks.length})</TabsTrigger>
+            <TabsTrigger value="completed">Completate ({completedTasks.length})</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="pending" className="space-y-3 mt-4">
+            {pendingTasks.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">Nu ai sarcini programate pentru astăzi</p>
+            ) : (
+              pendingTasks.slice(0, 3).map((task) => (
+                <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    {task.aiSuggested && (
+                      <div className="bg-blue-100 p-1 rounded">
+                        <Bot className="h-3 w-3 text-blue-600" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-medium text-gray-900">{task.title}</p>
+                      <p className="text-sm text-gray-600">{task.field} • {task.time}</p>
+                    </div>
                   </div>
-                )}
-                <div>
-                  <p className="font-medium text-gray-900">{task.title}</p>
-                  <p className="text-sm text-gray-600">{task.field} • {task.time}</p>
+                  <div className="flex items-center space-x-2">
+                    <Badge className={getPriorityColor(task.priority)}>
+                      {getPriorityIcon(task.priority)}
+                      <span className="ml-1 capitalize">{task.priority === 'high' ? 'Înaltă' : task.priority === 'medium' ? 'Medie' : 'Scăzută'}</span>
+                    </Badge>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => handleCompleteTask(task.id)}
+                    >
+                      Finalizează
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Badge className={getPriorityColor(task.priority)}>
-                  {getPriorityIcon(task.priority)}
-                  <span className="ml-1 capitalize">{task.priority === 'high' ? 'Înaltă' : task.priority === 'medium' ? 'Medie' : 'Scăzută'}</span>
-                </Badge>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => handleCompleteTask(task.id)}
-                >
-                  Finalizează
-                </Button>
-              </div>
-            </div>
-          ))
-        )}
+              ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="completed" className="space-y-3 mt-4">
+            {completedTasks.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">Nu ai sarcini completate</p>
+            ) : (
+              completedTasks.slice(0, 5).map((task) => (
+                <div key={task.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="bg-green-100 p-1 rounded">
+                      <Check className="h-3 w-3 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{task.title}</p>
+                      <p className="text-sm text-gray-600">{task.field} • {task.date}</p>
+                    </div>
+                  </div>
+                  <Badge className="bg-green-100 text-green-800">
+                    Completată
+                  </Badge>
+                </div>
+              ))
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
