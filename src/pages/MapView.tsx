@@ -203,9 +203,6 @@ const MapView = () => {
               </CardContent>
             </Card>
 
-            {/* Satellite Monitoring */}
-            <SatelliteMonitoring />
-
             {/* Fields List */}
             <Card className="bg-white/80 backdrop-blur-sm border-green-200">
               <CardHeader>
@@ -331,6 +328,11 @@ const MapView = () => {
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        {/* Satellite Monitoring - moved below the map */}
+        <div className="mt-6">
+          <SatelliteMonitoring />
         </div>
       </div>
     </div>
