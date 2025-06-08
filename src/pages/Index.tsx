@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,74 +9,52 @@ import SeasonalGuidanceAI from '@/components/SeasonalGuidanceAI';
 import Navigation from '@/components/Navigation';
 import { useAppContext } from '@/contexts/AppContext';
 import { MapPin, Sprout, Calendar, DollarSign, Sun, Snowflake, Leaf, CloudRain } from 'lucide-react';
-
 const Index = () => {
-  const { fields, tasks, transactions, currentSeason } = useAppContext();
+  const {
+    fields,
+    tasks,
+    transactions,
+    currentSeason
+  } = useAppContext();
   const [seasonalBackground, setSeasonalBackground] = useState('');
   const [seasonalTips, setSeasonalTips] = useState<string[]>([]);
   const [seasonIcon, setSeasonIcon] = useState<React.ReactNode>(null);
-
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   const pendingTasks = tasks.filter(t => t.status === 'pending').length;
   const totalArea = fields.reduce((sum, field) => sum + field.size, 0);
-
   useEffect(() => {
     const month = new Date().getMonth();
     let season = '';
     let background = '';
     let tips: string[] = [];
     let icon: React.ReactNode = null;
-
     if (month >= 2 && month <= 4) {
       season = 'Primăvară';
       background = 'from-green-50 to-emerald-100';
-      tips = [
-        'Pregătirea solului pentru însămânțare',
-        'Verificarea și întreținerea utilajelor',
-        'Aplicarea îngrășămintelor de bază',
-        'Monitorizarea temperaturilor pentru însămânțare'
-      ];
+      tips = ['Pregătirea solului pentru însămânțare', 'Verificarea și întreținerea utilajelor', 'Aplicarea îngrășămintelor de bază', 'Monitorizarea temperaturilor pentru însămânțare'];
       icon = <Leaf className="h-6 w-6 text-green-600" />;
     } else if (month >= 5 && month <= 7) {
       season = 'Vară';
       background = 'from-yellow-50 to-amber-100';
-      tips = [
-        'Irigarea regulată a culturilor',
-        'Monitorizarea și combaterea dăunătorilor',
-        'Aplicarea tratamentelor foliare',
-        'Pregătirea pentru recoltare'
-      ];
+      tips = ['Irigarea regulată a culturilor', 'Monitorizarea și combaterea dăunătorilor', 'Aplicarea tratamentelor foliare', 'Pregătirea pentru recoltare'];
       icon = <Sun className="h-6 w-6 text-yellow-600" />;
     } else if (month >= 8 && month <= 10) {
       season = 'Toamnă';
       background = 'from-orange-50 to-red-100';
-      tips = [
-        'Recoltarea culturilor mature',
-        'Pregătirea terenului pentru culturile de toamnă',
-        'Depozitarea și conservarea recoltei',
-        'Planificarea rotației culturilor'
-      ];
+      tips = ['Recoltarea culturilor mature', 'Pregătirea terenului pentru culturile de toamnă', 'Depozitarea și conservarea recoltei', 'Planificarea rotației culturilor'];
       icon = <CloudRain className="h-6 w-6 text-orange-600" />;
     } else {
       season = 'Iarnă';
       background = 'from-blue-50 to-cyan-100';
-      tips = [
-        'Întreținerea și repararea utilajelor',
-        'Planificarea culturilor pentru anul următor',
-        'Gestionarea stocurilor și inventarului',
-        'Pregătirea documentelor și rapoartelor'
-      ];
+      tips = ['Întreținerea și repararea utilajelor', 'Planificarea culturilor pentru anul următor', 'Gestionarea stocurilor și inventarului', 'Pregătirea documentelor și rapoartelor'];
       icon = <Snowflake className="h-6 w-6 text-blue-600" />;
     }
-
     setSeasonalBackground(background);
     setSeasonalTips(tips);
     setSeasonIcon(icon);
   }, []);
-
-  return (
-    <div className={`min-h-screen bg-gradient-to-br ${seasonalBackground}`}>
+  return <div className={`min-h-screen bg-gradient-to-br ${seasonalBackground}`}>
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
@@ -93,7 +70,7 @@ const Index = () => {
             Gestionează-ți ferma inteligent cu AgroMind
           </p>
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-green-700">Sezonul curent:</span>
+            
             <span className="bg-white/80 px-3 py-1 rounded-full text-sm font-semibold text-green-800">
               {currentSeason}
             </span>
@@ -110,11 +87,9 @@ const Index = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {seasonalTips.map((tip, index) => (
-                <div key={index} className="bg-green-50 border border-green-200 rounded-lg p-3">
+              {seasonalTips.map((tip, index) => <div key={index} className="bg-green-50 border border-green-200 rounded-lg p-3">
                   <p className="text-sm text-green-800 font-medium">• {tip}</p>
-                </div>
-              ))}
+                </div>)}
             </div>
           </CardContent>
         </Card>
@@ -212,8 +187,6 @@ const Index = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
