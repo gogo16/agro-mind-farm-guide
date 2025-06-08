@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,30 +8,20 @@ import { Badge } from '@/components/ui/badge';
 import { MapPin, Sprout, Calendar, ArrowLeft, Edit, History, Camera } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import VisualCropJournal from '@/components/VisualCropJournal';
+import EditFieldDialog from '@/components/EditFieldDialog';
+import AddPhotoDialog from '@/components/AddPhotoDialog';
+import SoilSection from '@/components/SoilSection';
+import { useAppContext } from '@/contexts/AppContext';
 
 const FieldDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-
-  // Mock data - în aplicația reală ar veni din API
-  const fieldData = {
-    1: {
-      id: 1,
-      name: 'Parcela Nord',
-      area: '12.5 ha',
-      crop: 'Grâu',
-      variety: 'Glosa',
-      plantingDate: '2024-10-15',
-      status: 'healthy',
-      coords: '45.7489, 21.2087',
-      soilType: 'Cernoziom',
-      lastActivity: 'Fertilizare',
-      nextTask: 'Irigare'
-    }
-  };
+  const { fields } = useAppContext();
+  const [isEditingField, setIsEditingField] = useState(false);
+  const [isAddingPhoto, setIsAddingPhoto] = useState(false);
 
   const fieldId = id ? parseInt(id, 10) : null;
-  const field = fieldId ? fieldData[fieldId as keyof typeof fieldData] : null;
+  const field = fieldId ? fields.find(f => f.id === fieldId) : null;
 
   const activities = [
     {
@@ -59,22 +49,6 @@ const FieldDetails = () => {
       weather: 'Uscat, 28°C'
     }
   ];
-
-  const soilAnalysis = {
-    pH: 7.2,
-    nitrogen: 85,
-    phosphorus: 45,
-    potassium: 120,
-    organicMatter: 3.8,
-    lastAnalysis: '2024-03-15'
-  };
-
-  const financialData = {
-    totalCosts: 15600,
-    expectedRevenue: 24000,
-    projectedProfit: 8400,
-    costPerHa: 1248
-  };
 
   if (!field) {
     return (
@@ -110,18 +84,32 @@ const FieldDetails = () => {
             </Button>
             <div>
               <h1 className="text-3xl font-bold text-green-800">{field.name}</h1>
-              <p className="text-green-600">{field.crop} • {field.area}</p>
+              <p className="text-green-600">{field.crop} • {field.size} ha • {field.parcelCode}</p>
             </div>
           </div>
           <div className="flex space-x-2">
-            <Button variant="outline">
-              <Camera className="h-4 w-4 mr-2" />
-              Adaugă poză
-            </Button>
-            <Button className="bg-green-600 hover:bg-green-700">
-              <Edit className="h-4 w-4 mr-2" />
-              Editează
-            </Button>
+            <AddPhotoDialog 
+              fieldId={field.id}
+              isOpen={isAddingPhoto}
+              onOpenChange={setIsAddingPhoto}
+              trigger={
+                <Button variant="outline">
+                  <Camera className="h-4 w-4 mr-2" />
+                  Adaugă poză
+                </Button>
+              }
+            />
+            <EditFieldDialog 
+              field={field}
+              isOpen={isEditingField}
+              onOpenChange={setIsEditingField}
+              trigger={
+                <Button className="bg-green-600 hover:bg-green-700">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editează
+                </Button>
+              }
+            />
           </div>
         </div>
 
@@ -134,7 +122,7 @@ const FieldDetails = () => {
                 <span className="text-sm font-medium text-gray-700">Cultură</span>
               </div>
               <p className="text-lg font-bold text-green-800">{field.crop}</p>
-              <p className="text-sm text-gray-600">{field.variety}</p>
+              <p className="text-sm text-gray-600">{field.parcelCode}</p>
             </CardContent>
           </Card>
 
@@ -144,8 +132,8 @@ const FieldDetails = () => {
                 <MapPin className="h-5 w-5 text-blue-600" />
                 <span className="text-sm font-medium text-gray-700">Suprafață</span>
               </div>
-              <p className="text-lg font-bold text-green-800">{field.area}</p>
-              <p className="text-sm text-gray-600">{field.coords}</p>
+              <p className="text-lg font-bold text-green-800">{field.size} ha</p>
+              <p className="text-sm text-gray-600">{field.coordinates ? `${field.coordinates.lat}, ${field.coordinates.lng}` : 'N/A'}</p>
             </CardContent>
           </Card>
 
@@ -155,8 +143,8 @@ const FieldDetails = () => {
                 <Calendar className="h-5 w-5 text-purple-600" />
                 <span className="text-sm font-medium text-gray-700">Plantat</span>
               </div>
-              <p className="text-lg font-bold text-green-800">{field.plantingDate}</p>
-              <p className="text-sm text-gray-600">Acum 8 luni</p>
+              <p className="text-lg font-bold text-green-800">{field.plantingDate || 'N/A'}</p>
+              <p className="text-sm text-gray-600">Data însămânțare</p>
             </CardContent>
           </Card>
 
@@ -174,13 +162,11 @@ const FieldDetails = () => {
 
         {/* Detailed Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-[720px] bg-white/80 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-4 lg:w-[480px] bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="overview">Prezentare</TabsTrigger>
             <TabsTrigger value="activities">Activități</TabsTrigger>
             <TabsTrigger value="journal">Jurnal Foto</TabsTrigger>
             <TabsTrigger value="soil">Sol</TabsTrigger>
-            <TabsTrigger value="financial">Financiar</TabsTrigger>
-            <TabsTrigger value="weather">Meteo</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -192,20 +178,20 @@ const FieldDetails = () => {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm text-gray-600">Tip sol</p>
-                      <p className="font-medium">{soilAnalysis.pH ? 'Cernoziom' : 'N/A'}</p>
+                      <p className="text-sm text-gray-600">Cod parcelă</p>
+                      <p className="font-medium">{field.parcelCode}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">pH sol</p>
-                      <p className="font-medium">{soilAnalysis.pH}</p>
+                      <p className="text-sm text-gray-600">Tip lucrare</p>
+                      <p className="font-medium">{field.workType || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Ultima activitate</p>
-                      <p className="font-medium">{field.lastActivity}</p>
+                      <p className="text-sm text-gray-600">Inputuri</p>
+                      <p className="font-medium">{field.inputs || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Următoarea sarcină</p>
-                      <p className="font-medium text-green-600">{field.nextTask}</p>
+                      <p className="text-sm text-gray-600">ROI</p>
+                      <p className="font-medium text-green-600">{field.roi ? `${field.roi}%` : 'N/A'}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -271,43 +257,11 @@ const FieldDetails = () => {
           </TabsContent>
 
           <TabsContent value="journal" className="space-y-6">
-            <VisualCropJournal />
+            <VisualCropJournal fieldId={field.id} />
           </TabsContent>
 
-          <TabsContent value="financial" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-white border-green-200">
-                <CardContent className="p-4">
-                  <p className="text-sm text-gray-600 mb-1">Costuri totale</p>
-                  <p className="text-xl font-bold text-red-600">{financialData.totalCosts.toLocaleString()} RON</p>
-                  <p className="text-xs text-gray-500">{financialData.costPerHa} RON/ha</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border-green-200">
-                <CardContent className="p-4">
-                  <p className="text-sm text-gray-600 mb-1">Venituri estimate</p>
-                  <p className="text-xl font-bold text-blue-600">{financialData.expectedRevenue.toLocaleString()} RON</p>
-                  <p className="text-xs text-gray-500">La preț curent</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border-green-200">
-                <CardContent className="p-4">
-                  <p className="text-sm text-gray-600 mb-1">Profit proiectat</p>
-                  <p className="text-xl font-bold text-green-600">{financialData.projectedProfit.toLocaleString()} RON</p>
-                  <p className="text-xs text-gray-500">Marjă 35%</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border-green-200">
-                <CardContent className="p-4">
-                  <p className="text-sm text-gray-600 mb-1">ROI estimat</p>
-                  <p className="text-xl font-bold text-purple-600">54%</p>
-                  <p className="text-xs text-gray-500">Return on Investment</p>
-                </CardContent>
-              </Card>
-            </div>
+          <TabsContent value="soil" className="space-y-6">
+            <SoilSection fieldId={field.id} />
           </TabsContent>
         </Tabs>
       </div>
