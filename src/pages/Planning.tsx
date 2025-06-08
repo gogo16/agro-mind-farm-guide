@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -370,7 +369,7 @@ const Planning = () => {
                             Anulează
                           </Button>
                           <Button 
-                            onClick={editingTask ? handleUpdateTask : handleAddTask} 
+                            onClick={editingTask ? handleAddTask : handleAddTask} 
                             className="flex-1 bg-green-600 hover:bg-green-700"
                           >
                             {editingTask ? 'Actualizează' : 'Adaugă sarcină'}
