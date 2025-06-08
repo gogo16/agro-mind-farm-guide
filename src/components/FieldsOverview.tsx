@@ -232,7 +232,17 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
                   <p className="text-sm text-gray-600">{field.crop} • {field.size} ha • {field.parcelCode}</p>
                 </div>
               </div>
-              {getStatusBadge(field.status)}
+              <div className="flex items-center space-x-2">
+                {getStatusBadge(field.status)}
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => navigate(`/field/${field.id}`)}
+                  className="text-xs"
+                >
+                  Detalii
+                </Button>
+              </div>
             </div>
           ))}
         </CardContent>
