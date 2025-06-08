@@ -71,28 +71,12 @@ const Index = () => {
           </p>
           <div className="flex items-center space-x-2">
             
-            <span className="bg-white/80 px-3 py-1 rounded-full text-sm font-semibold text-green-800">
-              {currentSeason}
-            </span>
+            
           </div>
         </div>
 
         {/* Seasonal Tips */}
-        <Card className="mb-8 bg-white/80 backdrop-blur-sm border-green-200">
-          <CardHeader>
-            <CardTitle className="text-green-800 flex items-center space-x-2">
-              {seasonIcon}
-              <span>Recomandări pentru {currentSeason}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {seasonalTips.map((tip, index) => <div key={index} className="bg-green-50 border border-green-200 rounded-lg p-3">
-                  <p className="text-sm text-green-800 font-medium">• {tip}</p>
-                </div>)}
-            </div>
-          </CardContent>
-        </Card>
+        
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
