@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useAppContext } from '@/contexts/AppContext';
+import { useNavigate } from 'react-router-dom';
 import { Bell, AlertTriangle, CheckCircle, Brain, TrendingDown } from 'lucide-react';
 
 const NotificationCenter = () => {
   const { notifications, markNotificationAsRead } = useAppContext();
+  const navigate = useNavigate();
   
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -41,6 +43,37 @@ const NotificationCenter = () => {
     }
   };
 
+  const handleNotificationClick = (notification: any) => {
+    if (!notification.isRead) {
+      markNotificationAsRead(notification.id);
+    }
+
+    // Redirecționare în funcție de tipul notificării
+    switch (notification.type) {
+      case 'task':
+        navigate('/planning');
+        break;
+      case 'inventory':
+        navigate('/inventory');
+        break;
+      case 'ai':
+        if (notification.message.includes('teren detectată')) {
+          navigate('/map');
+        } else {
+          navigate('/');
+        }
+        break;
+      case 'weather':
+        navigate('/');
+        break;
+      case 'financial':
+        navigate('/finance');
+        break;
+      default:
+        navigate('/');
+    }
+  };
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -64,10 +97,10 @@ const NotificationCenter = () => {
             notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`p-4 border-l-4 ${getPriorityColor(notification.priority)} bg-gray-50 rounded-r-lg ${
-                  !notification.isRead ? 'bg-blue-50' : ''
+                className={`p-4 border-l-4 ${getPriorityColor(notification.priority)} bg-gray-50 rounded-r-lg cursor-pointer hover:bg-gray-100 transition-colors ${
+                  !notification.isRead ? 'bg-blue-50 hover:bg-blue-100' : ''
                 }`}
-                onClick={() => !notification.isRead && markNotificationAsRead(notification.id)}
+                onClick={() => handleNotificationClick(notification)}
               >
                 <div className="flex items-start space-x-3">
                   {getNotificationIcon(notification.type)}
@@ -81,7 +114,10 @@ const NotificationCenter = () => {
                       )}
                     </div>
                     <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
-                    <p className="text-xs text-gray-500">{notification.date}</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-gray-500">{notification.date}</p>
+                      <span className="text-xs text-blue-600 hover:text-blue-800">Click pentru a vedea detalii →</span>
+                    </div>
                   </div>
                 </div>
               </div>

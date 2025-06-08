@@ -11,7 +11,8 @@ import {
   FileText, 
   Menu,
   FileStack,
-  Package
+  Package,
+  FolderOpen
 } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
 import UserProfile from './UserProfile';
@@ -26,7 +27,8 @@ const Navigation = () => {
     { icon: Calendar, label: 'Planificare', path: '/planning' },
     { icon: DollarSign, label: 'Finanțe', path: '/finance' },
     { icon: FileText, label: 'Rapoarte', path: '/reports' },
-    { icon: FileStack, label: 'Documente', path: '/modules' },
+    { icon: FolderOpen, label: 'Documente', path: '/documents' },
+    { icon: FileStack, label: 'APIA/AFIR', path: '/modules' },
     { icon: Package, label: 'Inventar', path: '/inventory' },
   ];
 

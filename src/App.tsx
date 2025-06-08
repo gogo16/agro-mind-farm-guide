@@ -12,6 +12,7 @@ import Finance from "./pages/Finance";
 import Reports from "./pages/Reports";
 import FieldDetails from "./pages/FieldDetails";
 import Modules from "./pages/Modules";
+import Documents from "./pages/Documents";
 import Inventory from "./pages/Inventory";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/finance" element={<Finance />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/modules" element={<Modules />} />
+            <Route path="/documents" element={<Documents />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/field/:id" element={<FieldDetails />} />
             <Route path="/login" element={<Login />} />

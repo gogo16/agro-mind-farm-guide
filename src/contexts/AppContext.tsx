@@ -17,6 +17,39 @@ interface Field {
   roi?: number;
 }
 
+interface WorkHistory {
+  id: number;
+  parcelId: number;
+  workType: string;
+  date: string;
+  description: string;
+  worker: string;
+  cost?: number;
+}
+
+interface OwnerHistory {
+  id: number;
+  parcelId: number;
+  ownerName: string;
+  startDate: string;
+  endDate?: string;
+  ownershipType: string;
+  notes?: string;
+}
+
+interface PropertyDocument {
+  id: number;
+  parcelId?: number;
+  type: string;
+  name: string;
+  fileName: string;
+  uploadDate: string;
+  issueDate?: string;
+  validUntil?: string;
+  status: 'verified' | 'missing' | 'expired' | 'complete';
+  notes?: string;
+}
+
 interface SatelliteData {
   parcelId: number;
   currentImage: string;
@@ -88,6 +121,9 @@ interface AppContextType {
   inventory: InventoryItem[];
   notifications: Notification[];
   satelliteData: SatelliteData[];
+  workHistory: WorkHistory[];
+  ownerHistory: OwnerHistory[];
+  propertyDocuments: PropertyDocument[];
   user: User;
   currentSeason: string;
   addField: (field: Omit<Field, 'id'>) => void;
@@ -102,6 +138,15 @@ interface AppContextType {
   addInventoryItem: (item: Omit<InventoryItem, 'id'>) => void;
   updateInventoryItem: (id: number, item: Partial<InventoryItem>) => void;
   deleteInventoryItem: (id: number) => void;
+  addWorkHistory: (work: Omit<WorkHistory, 'id'>) => void;
+  updateWorkHistory: (id: number, work: Partial<WorkHistory>) => void;
+  deleteWorkHistory: (id: number) => void;
+  addOwnerHistory: (owner: Omit<OwnerHistory, 'id'>) => void;
+  updateOwnerHistory: (id: number, owner: Partial<OwnerHistory>) => void;
+  deleteOwnerHistory: (id: number) => void;
+  addPropertyDocument: (doc: Omit<PropertyDocument, 'id'>) => void;
+  updatePropertyDocument: (id: number, doc: Partial<PropertyDocument>) => void;
+  deletePropertyDocument: (id: number) => void;
   markNotificationAsRead: (id: number) => void;
   updateUser: (userData: Partial<User>) => void;
   generateReport: (type: string) => any;
@@ -280,6 +325,72 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [satelliteData, setSatelliteData] = useState<SatelliteData[]>([]);
 
+  const [workHistory, setWorkHistory] = useState<WorkHistory[]>([
+    {
+      id: 1,
+      parcelId: 1,
+      workType: 'Arătură',
+      date: '2024-03-15',
+      description: 'Arătură de primăvară cu tractorul',
+      worker: 'Ion Popescu',
+      cost: 500
+    },
+    {
+      id: 2,
+      parcelId: 1,
+      workType: 'Însămânțare',
+      date: '2024-04-10',
+      description: 'Însămânțare grâu de toamnă',
+      worker: 'Maria Ionescu',
+      cost: 800
+    }
+  ]);
+
+  const [ownerHistory, setOwnerHistory] = useState<OwnerHistory[]>([
+    {
+      id: 1,
+      parcelId: 1,
+      ownerName: 'Ion Popescu',
+      startDate: '2020-01-01',
+      ownershipType: 'Proprietar',
+      notes: 'Cumpărat prin succesiune'
+    },
+    {
+      id: 2,
+      parcelId: 2,
+      ownerName: 'Ferma AgroMind SRL',
+      startDate: '2021-06-15',
+      ownershipType: 'Închiriere',
+      notes: 'Contract închiriere pe 10 ani'
+    }
+  ]);
+
+  const [propertyDocuments, setPropertyDocuments] = useState<PropertyDocument[]>([
+    {
+      id: 1,
+      parcelId: 1,
+      type: 'Certificat de Atestare Fiscală',
+      name: 'CF Parcela Nord',
+      fileName: 'cf_parcela_nord.pdf',
+      uploadDate: '2024-01-15',
+      issueDate: '2024-01-10',
+      validUntil: '2025-01-10',
+      status: 'complete',
+      notes: 'Document valabil pentru APIA'
+    },
+    {
+      id: 2,
+      parcelId: 2,
+      type: 'Contract închiriere',
+      name: 'Contract Câmp Sud',
+      fileName: 'contract_camp_sud.pdf',
+      uploadDate: '2024-02-01',
+      issueDate: '2021-06-15',
+      validUntil: '2031-06-15',
+      status: 'verified'
+    }
+  ]);
+
   const [user, setUser] = useState<User>({
     name: 'Ion Popescu',
     email: 'ion.popescu@email.com',
@@ -342,6 +453,45 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteInventoryItem = (id: number) => {
     setInventory(prev => prev.filter(item => item.id !== id));
+  };
+
+  const addWorkHistory = (work: Omit<WorkHistory, 'id'>) => {
+    const newWork = { ...work, id: Date.now() };
+    setWorkHistory(prev => [...prev, newWork]);
+  };
+
+  const updateWorkHistory = (id: number, workUpdate: Partial<WorkHistory>) => {
+    setWorkHistory(prev => prev.map(work => work.id === id ? { ...work, ...workUpdate } : work));
+  };
+
+  const deleteWorkHistory = (id: number) => {
+    setWorkHistory(prev => prev.filter(work => work.id !== id));
+  };
+
+  const addOwnerHistory = (owner: Omit<OwnerHistory, 'id'>) => {
+    const newOwner = { ...owner, id: Date.now() };
+    setOwnerHistory(prev => [...prev, newOwner]);
+  };
+
+  const updateOwnerHistory = (id: number, ownerUpdate: Partial<OwnerHistory>) => {
+    setOwnerHistory(prev => prev.map(owner => owner.id === id ? { ...owner, ...ownerUpdate } : owner));
+  };
+
+  const deleteOwnerHistory = (id: number) => {
+    setOwnerHistory(prev => prev.filter(owner => owner.id !== id));
+  };
+
+  const addPropertyDocument = (doc: Omit<PropertyDocument, 'id'>) => {
+    const newDoc = { ...doc, id: Date.now() };
+    setPropertyDocuments(prev => [...prev, newDoc]);
+  };
+
+  const updatePropertyDocument = (id: number, docUpdate: Partial<PropertyDocument>) => {
+    setPropertyDocuments(prev => prev.map(doc => doc.id === id ? { ...doc, ...docUpdate } : doc));
+  };
+
+  const deletePropertyDocument = (id: number) => {
+    setPropertyDocuments(prev => prev.filter(doc => doc.id !== id));
   };
 
   const markNotificationAsRead = (id: number) => {
@@ -467,6 +617,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       inventory,
       notifications,
       satelliteData,
+      workHistory,
+      ownerHistory,
+      propertyDocuments,
       user,
       currentSeason,
       addField,
@@ -481,6 +634,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addInventoryItem,
       updateInventoryItem,
       deleteInventoryItem,
+      addWorkHistory,
+      updateWorkHistory,
+      deleteWorkHistory,
+      addOwnerHistory,
+      updateOwnerHistory,
+      deleteOwnerHistory,
+      addPropertyDocument,
+      updatePropertyDocument,
+      deletePropertyDocument,
       markNotificationAsRead,
       updateUser,
       generateReport,

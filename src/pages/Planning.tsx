@@ -13,9 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar as CalendarIcon, Clock, Plus, CheckCircle, AlertTriangle, Edit } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { useAppContext } from '@/contexts/AppContext';
+import WorkHistory from '@/components/WorkHistory';
 
 const Planning = () => {
   const { toast } = useToast();
+  const { tasks, addTask, updateTask, fields, currentSeason } = useAppContext();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [editingTask, setEditingTask] = useState<number | null>(null);
@@ -28,79 +31,54 @@ const Planning = () => {
     description: ''
   });
 
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      title: 'Irigarea Parcelei Nord',
-      field: 'Parcela Nord',
-      priority: 'high',
-      date: '2024-06-06',
-      time: '06:00',
-      status: 'pending',
-      aiSuggested: true,
-      description: 'Condițiile meteo sunt ideale pentru irigare dimineața devreme.',
-      estimatedDuration: '2 ore'
-    },
-    {
-      id: 2,
-      title: 'Fertilizare Câmp Sud',
-      field: 'Câmp Sud',
-      priority: 'medium',
-      date: '2024-06-07',
-      time: '14:00',
-      status: 'pending',
-      aiSuggested: true,
-      description: 'Aplicare îngrășământ NPK conform planificării.',
-      estimatedDuration: '3 ore'
-    },
-    {
-      id: 3,
-      title: 'Monitorizare dăunători',
-      field: 'Livada Est',
-      priority: 'low',
-      date: '2024-06-08',
-      time: '10:00',
-      status: 'completed',
-      aiSuggested: false,
-      description: 'Verificare vizuală a semnelor de infestare.',
-      estimatedDuration: '1 oră'
-    },
-    {
-      id: 4,
-      title: 'Recoltare porumb',
-      field: 'Câmp Sud',
-      priority: 'high',
-      date: '2024-06-10',
-      time: '08:00',
-      status: 'pending',
-      aiSuggested: true,
-      description: 'Umiditatea grâului a atins nivelul optim pentru recoltare.',
-      estimatedDuration: '6 ore'
-    }
-  ]);
-
   const seasons = [
     {
       name: 'Primăvara',
       tasks: ['Pregătirea solului', 'Semănat', 'Fertilizare de bază'],
-      color: 'bg-green-100 text-green-800'
+      color: 'bg-green-100 text-green-800',
+      recommendations: [
+        'Pregătirea și fertilizarea solului',
+        'Semănatul culturilor de primăvară',
+        'Verificarea și întreținerea utilajelor',
+        'Aplicarea tratamentelor pre-emergente'
+      ]
     },
     {
       name: 'Vara',
       tasks: ['Irigare', 'Tratamente fitosanitare', 'Fertilizare foliară'],
-      color: 'bg-yellow-100 text-yellow-800'
+      color: 'bg-yellow-100 text-yellow-800',
+      recommendations: [
+        'Irigarea regulată a culturilor',
+        'Monitorizarea și combaterea dăunătorilor',
+        'Aplicarea tratamentelor foliare',
+        'Pregătirea pentru recoltare'
+      ]
     },
     {
       name: 'Toamna',
       tasks: ['Recoltare', 'Lucru sol după recoltare', 'Semănat culturi de toamnă'],
-      color: 'bg-orange-100 text-orange-800'
+      color: 'bg-orange-100 text-orange-800',
+      recommendations: [
+        'Recoltarea culturilor mature',
+        'Pregătirea terenului pentru culturile de toamnă',
+        'Depozitarea și conservarea recoltei',
+        'Planificarea rotației culturilor'
+      ]
     },
     {
       name: 'Iarna',
       tasks: ['Întreținere echipamente', 'Planificare sezon următor', 'Administrare'],
-      color: 'bg-blue-100 text-blue-800'
+      color: 'bg-blue-100 text-blue-800',
+      recommendations: [
+        'Întreținerea și repararea utilajelor',
+        'Planificarea culturilor pentru anul următor',
+        'Gestionarea stocurilor și inventarului',
+        'Pregătirea documentelor și rapoartelor'
+      ]
     }
   ];
+
+  const [selectedSeason, setSelectedSeason] = useState<string | null>(null);
 
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
@@ -126,31 +104,41 @@ const Planning = () => {
     }
 
     const task = {
-      id: Date.now(),
-      ...newTask,
-      status: 'pending',
+      title: newTask.title,
+      field: newTask.field,
+      priority: newTask.priority as 'high' | 'medium' | 'low',
+      date: newTask.date,
+      time: newTask.time,
+      status: 'pending' as 'pending' | 'completed',
       aiSuggested: false,
+      description: newTask.description,
       estimatedDuration: '1 oră'
     };
 
-    setTasks([...tasks, task]);
+    if (editingTask) {
+      updateTask(editingTask, task);
+      setEditingTask(null);
+      toast({
+        title: "Succes",
+        description: "Sarcina a fost actualizată cu succes."
+      });
+    } else {
+      addTask(task);
+      toast({
+        title: "Succes",
+        description: "Sarcina a fost adăugată cu succes."
+      });
+    }
+
     setNewTask({ title: '', field: '', priority: '', date: '', time: '', description: '' });
     setIsAddingTask(false);
-
-    toast({
-      title: "Succes",
-      description: "Sarcina a fost adăugată cu succes.",
-    });
   };
 
   const handleCompleteTask = (taskId: number) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId ? { ...task, status: 'completed' } : task
-    ));
-    
+    updateTask(taskId, { status: 'completed' });
     toast({
       title: "Sarcină completată",
-      description: "Sarcina a fost marcată ca fiind completată.",
+      description: "Sarcina a fost marcată ca fiind completată."
     });
   };
 
@@ -170,25 +158,44 @@ const Planning = () => {
     }
   };
 
-  const handleUpdateTask = () => {
-    if (editingTask) {
-      setTasks(tasks.map(task => 
-        task.id === editingTask ? { ...task, ...newTask } : task
-      ));
-      setEditingTask(null);
-      setNewTask({ title: '', field: '', priority: '', date: '', time: '', description: '' });
-      setIsAddingTask(false);
-      
-      toast({
-        title: "Succes",
-        description: "Sarcina a fost actualizată cu succes.",
-      });
-    }
-  };
-
   const getTasksForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
     return tasks.filter(task => task.date === dateStr);
+  };
+
+  const getDateColor = (date: Date) => {
+    const tasksForDate = getTasksForDate(date);
+    if (tasksForDate.length === 0) return '';
+    
+    const hasHighPriority = tasksForDate.some(t => t.priority === 'high');
+    const hasCompletedTasks = tasksForDate.some(t => t.status === 'completed');
+    
+    if (hasHighPriority && !hasCompletedTasks) return 'bg-red-200 text-red-800';
+    if (hasCompletedTasks) return 'bg-gray-200 text-gray-600';
+    return 'bg-yellow-200 text-yellow-800';
+  };
+
+  const handleQuickAddTask = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    setNewTask({
+      ...newTask,
+      date: dateStr
+    });
+    setIsAddingTask(true);
+  };
+
+  const getSeasonRecommendations = (seasonName: string) => {
+    const season = seasons.find(s => s.name === seasonName);
+    if (!season) return [];
+
+    return season.recommendations.map((rec, index) => ({
+      id: index,
+      title: rec,
+      field: 'Toate parcelele',
+      priority: 'medium' as 'medium',
+      description: `Recomandare sezonieră pentru ${seasonName.toLowerCase()}`,
+      estimatedDuration: '2-4 ore'
+    }));
   };
 
   return (
@@ -202,15 +209,16 @@ const Planning = () => {
         </div>
 
         <Tabs defaultValue="calendar" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-[400px] bg-white/80 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-4 lg:w-[500px] bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="seasonal">Sezonier</TabsTrigger>
+            <TabsTrigger value="history">Istoric</TabsTrigger>
             <TabsTrigger value="ai-planner">AI Planificare</TabsTrigger>
           </TabsList>
 
           <TabsContent value="calendar" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Calendar Widget */}
+              {/* Enhanced Calendar Widget */}
               <Card className="bg-white/80 backdrop-blur-sm border-green-200">
                 <CardHeader>
                   <CardTitle className="text-green-800 flex items-center space-x-2">
@@ -224,15 +232,38 @@ const Planning = () => {
                     selected={selectedDate}
                     onSelect={(date) => date && setSelectedDate(date)}
                     className="rounded-md border"
+                    modifiers={{
+                      hasHighTasks: (date) => getDateColor(date).includes('red'),
+                      hasCompletedTasks: (date) => getDateColor(date).includes('gray'),
+                      hasNormalTasks: (date) => getDateColor(date).includes('yellow')
+                    }}
+                    modifiersClassNames={{
+                      hasHighTasks: 'bg-red-100 text-red-800 font-bold',
+                      hasCompletedTasks: 'bg-gray-100 text-gray-600',
+                      hasNormalTasks: 'bg-yellow-100 text-yellow-800'
+                    }}
                   />
                   <div className="mt-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">
-                      Sarcini pentru {selectedDate.toLocaleDateString('ro-RO')}:
-                    </p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium text-gray-700">
+                        Sarcini pentru {selectedDate.toLocaleDateString('ro-RO')}:
+                      </p>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleQuickAddTask(selectedDate)}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Adaugă
+                      </Button>
+                    </div>
                     <div className="space-y-2">
                       {getTasksForDate(selectedDate).map((task) => (
                         <div key={task.id} className="text-xs p-2 bg-green-100 rounded">
-                          <p className="font-medium">{task.title}</p>
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium">{task.title}</p>
+                            {getPriorityBadge(task.priority)}
+                          </div>
                           <p className="text-gray-600">{task.time} - {task.field}</p>
                         </div>
                       ))}
@@ -419,13 +450,72 @@ const Planning = () => {
                         <p className="text-sm font-medium">{task}</p>
                       </div>
                     ))}
-                    <Button size="sm" variant="outline" className="w-full mt-3">
-                      Vezi planificarea detaliată
-                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="w-full mt-3"
+                          onClick={() => setSelectedSeason(season.name)}
+                        >
+                          Vezi planificarea detaliată
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Planificare detaliată - {season.name}</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <p className="text-gray-600">
+                            Recomandări sezoniere pentru {season.name.toLowerCase()} bazate pe culturile active și perioada anului:
+                          </p>
+                          <div className="space-y-3">
+                            {getSeasonRecommendations(season.name).map((rec) => (
+                              <div key={rec.id} className="border border-gray-200 rounded-lg p-4">
+                                <div className="flex items-start justify-between mb-2">
+                                  <div>
+                                    <h4 className="font-medium text-gray-900">{rec.title}</h4>
+                                    <p className="text-sm text-gray-600">{rec.field}</p>
+                                  </div>
+                                  <div className="flex space-x-2">
+                                    {getPriorityBadge(rec.priority)}
+                                  </div>
+                                </div>
+                                <p className="text-sm text-gray-700 mb-3">{rec.description}</p>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-gray-500">⏱️ {rec.estimatedDuration}</span>
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => {
+                                      setNewTask({
+                                        title: rec.title,
+                                        field: rec.field,
+                                        priority: rec.priority,
+                                        date: new Date().toISOString().split('T')[0],
+                                        time: '09:00',
+                                        description: rec.description
+                                      });
+                                      setIsAddingTask(true);
+                                    }}
+                                  >
+                                    Adaugă ca sarcină
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </CardContent>
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="history">
+            <WorkHistory />
           </TabsContent>
 
           <TabsContent value="ai-planner" className="space-y-6">
