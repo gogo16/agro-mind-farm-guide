@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, Sprout, Calendar, AlertTriangle, Plus } from 'lucide-react';
+import { MapPin, Sprout, Calendar, AlertTriangle, Plus, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
@@ -19,8 +18,9 @@ interface FieldsOverviewProps {
 const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { fields, addField } = useAppContext();
+  const { fields, addField, deleteField, tasks } = useAppContext();
   const [isAddingField, setIsAddingField] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
   const [newField, setNewField] = useState({
     name: '',
     parcelCode: '',
@@ -46,6 +46,22 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
       default:
         return <Badge variant="secondary">Necunoscut</Badge>;
     }
+  };
+
+  const getTaskStats = (fieldName: string) => {
+    const fieldTasks = tasks.filter(task => task.field === fieldName && task.status === 'pending');
+    const highPriority = fieldTasks.filter(task => task.priority === 'high').length;
+    const mediumPriority = fieldTasks.filter(task => task.priority === 'medium').length;
+    const lowPriority = fieldTasks.filter(task => task.priority === 'low').length;
+
+    if (highPriority > 0) {
+      return { count: highPriority, color: 'bg-red-500', textColor: 'text-white' };
+    } else if (mediumPriority > 0) {
+      return { count: mediumPriority, color: 'bg-amber-500', textColor: 'text-white' };
+    } else if (lowPriority > 0) {
+      return { count: lowPriority, color: 'bg-green-500', textColor: 'text-white' };
+    }
+    return null;
   };
 
   const handleAddField = () => {
@@ -85,6 +101,15 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
     
     setNewField({ name: '', parcelCode: '', size: '', crop: '', variety: '', coords: '', plantingDate: '', harvestDate: '', workType: '', costs: '', inputs: '' });
     setIsAddingField(false);
+  };
+
+  const handleDeleteField = (fieldId: number, fieldName: string) => {
+    deleteField(fieldId);
+    toast({
+      title: "Teren șters",
+      description: `Terenul "${fieldName}" a fost șters cu succes.`,
+    });
+    setIsDeleting(null);
   };
 
   const addFieldDialog = (
@@ -142,6 +167,14 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
                 <SelectItem value="Rapiță">Rapiță</SelectItem>
                 <SelectItem value="Orz">Orz</SelectItem>
                 <SelectItem value="Ovăz">Ovăz</SelectItem>
+                <SelectItem value="Secară">Secară</SelectItem>
+                <SelectItem value="Mazăre">Mazăre</SelectItem>
+                <SelectItem value="Fasole">Fasole</SelectItem>
+                <SelectItem value="Lucernă">Lucernă</SelectItem>
+                <SelectItem value="Trifoiul">Trifoiul</SelectItem>
+                <SelectItem value="Cartof">Cartof</SelectItem>
+                <SelectItem value="Sfeclă de zahăr">Sfeclă de zahăr</SelectItem>
+                <SelectItem value="Altul">Altul</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -221,30 +254,38 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
           {addFieldDialog}
         </CardHeader>
         <CardContent className="space-y-4">
-          {fields.slice(0, 3).map((field) => (
-            <div key={field.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="bg-green-100 p-2 rounded-lg">
-                  <MapPin className="h-4 w-4 text-green-600" />
+          {fields.slice(0, 3).map((field) => {
+            const taskStats = getTaskStats(field.name);
+            return (
+              <div key={field.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-green-100 p-2 rounded-lg">
+                    <MapPin className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{field.name}</p>
+                    <p className="text-sm text-gray-600">{field.crop} • {field.size} ha • {field.parcelCode}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-gray-900">{field.name}</p>
-                  <p className="text-sm text-gray-600">{field.crop} • {field.size} ha • {field.parcelCode}</p>
+                <div className="flex items-center space-x-2">
+                  {taskStats && (
+                    <div className={`${taskStats.color} ${taskStats.textColor} rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium`}>
+                      {taskStats.count}
+                    </div>
+                  )}
+                  {getStatusBadge(field.status)}
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => navigate(`/field/${field.id}`)}
+                    className="text-xs"
+                  >
+                    Detalii
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                {getStatusBadge(field.status)}
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => navigate(`/field/${field.id}`)}
-                  className="text-xs"
-                >
-                  Detalii
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
     );
@@ -258,71 +299,113 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {fields.map((field) => (
-          <Card key={field.id} className="bg-white border-green-200 hover:shadow-lg transition-all duration-200">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg text-green-800">{field.name}</CardTitle>
-                  <p className="text-sm text-green-600 font-medium">{field.parcelCode}</p>
-                </div>
-                {getStatusBadge(field.status)}
-              </div>
-              <p className="text-sm text-gray-600">{field.size} ha</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Sprout className="h-4 w-4 text-green-600" />
-                  <span className="text-sm">{field.crop}</span>
-                </div>
-                {field.plantingDate && (
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm">Plantat: {field.plantingDate}</span>
+        {fields.map((field) => {
+          const taskStats = getTaskStats(field.name);
+          return (
+            <Card key={field.id} className="bg-white border-green-200 hover:shadow-lg transition-all duration-200">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg text-green-800">{field.name}</CardTitle>
+                    <p className="text-sm text-green-600 font-medium">{field.parcelCode}</p>
                   </div>
-                )}
-                {field.coordinates && (
                   <div className="flex items-center space-x-2">
-                    <MapPin className="h-4 w-4 text-gray-600" />
-                    <span className="text-sm">{field.coordinates.lat}, {field.coordinates.lng}</span>
+                    {taskStats && (
+                      <div className={`${taskStats.color} ${taskStats.textColor} rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium`}>
+                        {taskStats.count}
+                      </div>
+                    )}
+                    {getStatusBadge(field.status)}
                   </div>
-                )}
-              </div>
-
-              {field.costs && (
-                <div className="border-t pt-3">
-                  <p className="text-xs text-gray-500 mb-1">Costuri:</p>
-                  <p className="text-sm font-medium">{field.costs.toLocaleString()} RON</p>
-                  {field.roi && (
-                    <>
-                      <p className="text-xs text-gray-500 mt-2 mb-1">ROI:</p>
-                      <p className="text-sm font-medium text-green-600">{field.roi}%</p>
-                    </>
+                </div>
+                <p className="text-sm text-gray-600">{field.size} ha</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Sprout className="h-4 w-4 text-green-600" />
+                    <span className="text-sm">{field.crop}</span>
+                  </div>
+                  {field.plantingDate && (
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4 text-blue-600" />
+                      <span className="text-sm">Plantat: {field.plantingDate}</span>
+                    </div>
+                  )}
+                  {field.coordinates && (
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="h-4 w-4 text-gray-600" />
+                      <span className="text-sm">{field.coordinates.lat}, {field.coordinates.lng}</span>
+                    </div>
                   )}
                 </div>
-              )}
 
-              <div className="flex space-x-2">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => navigate('/map')}
-                >
-                  Vezi pe hartă
-                </Button>
-                <Button 
-                  size="sm" 
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                  onClick={() => navigate(`/field/${field.id}`)}
-                >
-                  Detalii
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                {field.costs && (
+                  <div className="border-t pt-3">
+                    <p className="text-xs text-gray-500 mb-1">Costuri:</p>
+                    <p className="text-sm font-medium">{field.costs.toLocaleString()} RON</p>
+                    {field.roi && (
+                      <>
+                        <p className="text-xs text-gray-500 mt-2 mb-1">ROI:</p>
+                        <p className="text-sm font-medium text-green-600">{field.roi}%</p>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex space-x-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => navigate('/map')}
+                  >
+                    Vezi pe hartă
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    onClick={() => navigate(`/field/${field.id}`)}
+                  >
+                    Detalii
+                  </Button>
+                  <Dialog open={isDeleting === field.id} onOpenChange={(open) => setIsDeleting(open ? field.id : null)}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Confirmare ștergere</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <p>Ești sigur că vrei să ștergi terenul <strong>"{field.name}"</strong>?</p>
+                        <p className="text-sm text-gray-600">Această acțiune nu poate fi anulată.</p>
+                        <div className="flex space-x-2">
+                          <Button onClick={() => setIsDeleting(null)} variant="outline" className="flex-1">
+                            Anulează
+                          </Button>
+                          <Button 
+                            onClick={() => handleDeleteField(field.id, field.name)} 
+                            variant="destructive" 
+                            className="flex-1"
+                          >
+                            Șterge
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

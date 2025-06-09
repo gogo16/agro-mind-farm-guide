@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import SatelliteMonitoring from '@/components/SatelliteMonitoring';
@@ -161,6 +160,30 @@ const MapView = () => {
                               <SelectItem value="Floarea-soarelui">Floarea-soarelui</SelectItem>
                               <SelectItem value="Soia">Soia</SelectItem>
                               <SelectItem value="Rapiță">Rapiță</SelectItem>
+                              <SelectItem value="Orz">Orz</SelectItem>
+                              <SelectItem value="Ovăz">Ovăz</SelectItem>
+                              <SelectItem value="Secară">Secară</SelectItem>
+                              <SelectItem value="Mazăre">Mazăre</SelectItem>
+                              <SelectItem value="Fasole">Fasole</SelectItem>
+                              <SelectItem value="Linte">Linte</SelectItem>
+                              <SelectItem value="Năut">Năut</SelectItem>
+                              <SelectItem value="Lucernă">Lucernă</SelectItem>
+                              <SelectItem value="Trifoiul">Trifoiul</SelectItem>
+                              <SelectItem value="Cartof">Cartof</SelectItem>
+                              <SelectItem value="Sfeclă de zahăr">Sfeclă de zahăr</SelectItem>
+                              <SelectItem value="Morcov">Morcov</SelectItem>
+                              <SelectItem value="Ceapă">Ceapă</SelectItem>
+                              <SelectItem value="Usturoi">Usturoi</SelectItem>
+                              <SelectItem value="Varză">Varză</SelectItem>
+                              <SelectItem value="Roșii">Roșii</SelectItem>
+                              <SelectItem value="Ardei">Ardei</SelectItem>
+                              <SelectItem value="Castraveti">Castraveti</SelectItem>
+                              <SelectItem value="Dovleci">Dovleci</SelectItem>
+                              <SelectItem value="Pepeni">Pepeni</SelectItem>
+                              <SelectItem value="Capsuni">Capsuni</SelectItem>
+                              <SelectItem value="Zmeură">Zmeură</SelectItem>
+                              <SelectItem value="Mure">Mure</SelectItem>
+                              <SelectItem value="Altul">Altul</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -185,6 +208,16 @@ const MapView = () => {
                               <SelectItem value="#f59e0b">Portocaliu</SelectItem>
                               <SelectItem value="#ef4444">Roșu</SelectItem>
                               <SelectItem value="#8b5cf6">Violet</SelectItem>
+                              <SelectItem value="#ec4899">Roz</SelectItem>
+                              <SelectItem value="#06b6d4">Cyan</SelectItem>
+                              <SelectItem value="#84cc16">Verde deschis</SelectItem>
+                              <SelectItem value="#f97316">Portocaliu închis</SelectItem>
+                              <SelectItem value="#6366f1">Indigo</SelectItem>
+                              <SelectItem value="#a855f7">Mov</SelectItem>
+                              <SelectItem value="#10b981">Emerald</SelectItem>
+                              <SelectItem value="#f59e0b">Galben</SelectItem>
+                              <SelectItem value="#64748b">Gri</SelectItem>
+                              <SelectItem value="#7c2d12">Maro</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>

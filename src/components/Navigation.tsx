@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -26,8 +25,7 @@ const Navigation = () => {
     { icon: MapPin, label: 'Hartă', path: '/map' },
     { icon: Calendar, label: 'Planificare', path: '/planning' },
     { icon: DollarSign, label: 'Finanțe', path: '/finance' },
-    { icon: FileText, label: 'Rapoarte', path: '/reports' },
-    { icon: FolderOpen, label: 'Documente', path: '/documents' },
+    { icon: FileText, label: 'Documente', path: '/documents' },
     { icon: FileStack, label: 'APIA/AFIR', path: '/modules' },
     { icon: Package, label: 'Inventar', path: '/inventory' },
   ];

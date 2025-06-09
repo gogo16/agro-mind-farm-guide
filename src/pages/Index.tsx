@@ -240,9 +240,8 @@ const Index = () => {
 
         {/* Main Dashboard Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-[400px] bg-white/80 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-3 lg:w-[350px] bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="overview">Prezentare</TabsTrigger>
-            <TabsTrigger value="fields">Terenuri</TabsTrigger>
             <TabsTrigger value="tasks">Sarcini</TabsTrigger>
             <TabsTrigger value="seasonal">AI Sezonier</TabsTrigger>
           </TabsList>
@@ -292,7 +291,7 @@ const Index = () => {
                 <TasksWidget />
                 <AIAssistant />
                 
-                {/* AI Insights - renamed from AI Insights */}
+                {/* Generated Report Preview */}
                 {generatedReport && (
                   <Card className="bg-white border-green-200">
                     <CardHeader>
@@ -331,10 +330,6 @@ const Index = () => {
                 </Card>
               </div>
             </div>
-          </TabsContent>
-
-          <TabsContent value="fields">
-            <FieldsOverview />
           </TabsContent>
 
           <TabsContent value="tasks">
