@@ -171,6 +171,7 @@ interface AppContextType {
   generateReport: (type: string) => any;
   generateAPIADocument: (type: string, data: any) => any;
   fetchSatelliteData: (parcelId: number) => void;
+  addNotification: (notification: Omit<Notification, 'id'>) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -642,6 +643,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const addNotification = (notification: Omit<Notification, 'id'>) => {
+    const newNotification = { ...notification, id: Date.now() };
+    setNotifications(prev => [newNotification, ...prev]);
+  };
+
   return (
     <AppContext.Provider value={{
       fields,
@@ -682,7 +688,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       updateUser,
       generateReport,
       generateAPIADocument,
-      fetchSatelliteData
+      fetchSatelliteData,
+      addNotification
     }}>
       {children}
     </AppContext.Provider>
