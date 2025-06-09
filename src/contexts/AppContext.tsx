@@ -15,6 +15,7 @@ interface Field {
   costs?: number;
   inputs?: string;
   roi?: number;
+  color?: string; // Added color property
 }
 
 interface WorkHistory {
@@ -66,10 +67,14 @@ interface Task {
   priority: 'high' | 'medium' | 'low';
   date: string;
   time: string;
-  status: 'pending' | 'completed';
+  dueDate?: string; // Added dueDate property
+  dueTime?: string; // Added dueTime property
+  status: 'pending' | 'completed' | 'in-progress'; // Added 'in-progress' status
   aiSuggested: boolean;
   description: string;
   estimatedDuration?: string;
+  duration?: number; // Added duration property
+  category?: string; // Added category property
 }
 
 interface Transaction {
@@ -202,7 +207,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       workType: 'Arătură conventională',
       costs: 2500,
       inputs: 'NPK 16:16:16, Herbicid',
-      roi: 15.2
+      roi: 15.2,
+      color: '#22c55e'
     },
     { 
       id: 2, 
@@ -218,7 +224,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       workType: 'Arătură + Grăpare',
       costs: 3200,
       inputs: 'Semințe hibrid, Îngrășământ starter',
-      roi: 18.7
+      roi: 18.7,
+      color: '#3b82f6'
     },
     { 
       id: 3, 
@@ -234,7 +241,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       workType: 'Întreținere livadă',
       costs: 1800,
       inputs: 'Fungicide, Insecticide',
-      roi: 22.1
+      roi: 22.1,
+      color: '#f59e0b'
     }
   ]);
 
@@ -246,6 +254,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       priority: 'high',
       date: '2024-06-06',
       time: '06:00',
+      dueDate: '2024-06-06',
+      dueTime: '06:00',
       status: 'pending',
       aiSuggested: true,
       description: 'Condițiile meteo sunt ideale pentru irigare dimineața devreme.',
@@ -258,6 +268,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       priority: 'medium',
       date: '2024-06-07',
       time: '14:00',
+      dueDate: '2024-06-07',
+      dueTime: '14:00',
       status: 'pending',
       aiSuggested: true,
       description: 'Aplicare îngrășământ NPK conform planificării.',
