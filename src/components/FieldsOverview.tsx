@@ -11,15 +11,22 @@ import { MapPin, Sprout, Calendar, AlertTriangle, Plus, Trash2 } from 'lucide-re
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
-
 interface FieldsOverviewProps {
   detailed?: boolean;
 }
-
-const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
+const FieldsOverview = ({
+  detailed = false
+}: FieldsOverviewProps) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { fields, addField, deleteField, tasks } = useAppContext();
+  const {
+    toast
+  } = useToast();
+  const {
+    fields,
+    addField,
+    deleteField,
+    tasks
+  } = useAppContext();
   const [isAddingField, setIsAddingField] = useState(false);
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
   const [newField, setNewField] = useState({
@@ -36,7 +43,6 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
     inputs: '',
     color: '#22c55e'
   });
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'excellent':
@@ -49,23 +55,32 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
         return <Badge variant="secondary">Necunoscut</Badge>;
     }
   };
-
   const getTaskStats = (fieldName: string) => {
     const fieldTasks = tasks.filter(task => task.field === fieldName && task.status === 'pending');
     const highPriority = fieldTasks.filter(task => task.priority === 'high').length;
     const mediumPriority = fieldTasks.filter(task => task.priority === 'medium').length;
     const lowPriority = fieldTasks.filter(task => task.priority === 'low').length;
-
     if (highPriority > 0) {
-      return { count: highPriority, color: 'bg-red-500', textColor: 'text-white' };
+      return {
+        count: highPriority,
+        color: 'bg-red-500',
+        textColor: 'text-white'
+      };
     } else if (mediumPriority > 0) {
-      return { count: mediumPriority, color: 'bg-amber-500', textColor: 'text-white' };
+      return {
+        count: mediumPriority,
+        color: 'bg-amber-500',
+        textColor: 'text-white'
+      };
     } else if (lowPriority > 0) {
-      return { count: lowPriority, color: 'bg-green-500', textColor: 'text-white' };
+      return {
+        count: lowPriority,
+        color: 'bg-green-500',
+        textColor: 'text-white'
+      };
     }
     return null;
   };
-
   const handleAddField = () => {
     if (!newField.name || !newField.parcelCode || !newField.size || !newField.crop) {
       toast({
@@ -75,11 +90,10 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
       });
       return;
     }
-
-    const coordinates = newField.coords ? 
-      { lat: parseFloat(newField.coords.split(',')[0]), lng: parseFloat(newField.coords.split(',')[1]) } : 
-      undefined;
-
+    const coordinates = newField.coords ? {
+      lat: parseFloat(newField.coords.split(',')[0]),
+      lng: parseFloat(newField.coords.split(',')[1])
+    } : undefined;
     addField({
       name: newField.name,
       parcelCode: newField.parcelCode,
@@ -96,27 +110,35 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
       roi: 0,
       color: newField.color
     });
-
     toast({
       title: "Succes",
-      description: `Terenul "${newField.name}" (${newField.parcelCode}) a fost adăugat cu succes.`,
+      description: `Terenul "${newField.name}" (${newField.parcelCode}) a fost adăugat cu succes.`
     });
-    
-    setNewField({ name: '', parcelCode: '', size: '', crop: '', variety: '', coords: '', plantingDate: '', harvestDate: '', workType: '', costs: '', inputs: '', color: '#22c55e' });
+    setNewField({
+      name: '',
+      parcelCode: '',
+      size: '',
+      crop: '',
+      variety: '',
+      coords: '',
+      plantingDate: '',
+      harvestDate: '',
+      workType: '',
+      costs: '',
+      inputs: '',
+      color: '#22c55e'
+    });
     setIsAddingField(false);
   };
-
   const handleDeleteField = (fieldId: number, fieldName: string) => {
     deleteField(fieldId);
     toast({
       title: "Teren șters",
-      description: `Terenul "${fieldName}" a fost șters cu succes.`,
+      description: `Terenul "${fieldName}" a fost șters cu succes.`
     });
     setIsDeleting(null);
   };
-
-  const addFieldDialog = (
-    <Dialog open={isAddingField} onOpenChange={setIsAddingField}>
+  const addFieldDialog = <Dialog open={isAddingField} onOpenChange={setIsAddingField}>
       <DialogTrigger asChild>
         <Button size="sm" className="bg-green-600 hover:bg-green-700">
           <Plus className="h-4 w-4 mr-1" />
@@ -130,35 +152,31 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="name">Nume teren *</Label>
-            <Input
-              id="name"
-              value={newField.name}
-              onChange={(e) => setNewField({...newField, name: e.target.value})}
-              placeholder="ex: Parcela Vest"
-            />
+            <Input id="name" value={newField.name} onChange={e => setNewField({
+            ...newField,
+            name: e.target.value
+          })} placeholder="ex: Parcela Vest" />
           </div>
           <div>
             <Label htmlFor="parcelCode">Cod parcelă *</Label>
-            <Input
-              id="parcelCode"
-              value={newField.parcelCode}
-              onChange={(e) => setNewField({...newField, parcelCode: e.target.value})}
-              placeholder="ex: PV-001"
-            />
+            <Input id="parcelCode" value={newField.parcelCode} onChange={e => setNewField({
+            ...newField,
+            parcelCode: e.target.value
+          })} placeholder="ex: PV-001" />
           </div>
           <div>
             <Label htmlFor="size">Suprafață (ha) *</Label>
-            <Input
-              id="size"
-              type="number"
-              value={newField.size}
-              onChange={(e) => setNewField({...newField, size: e.target.value})}
-              placeholder="ex: 10.5"
-            />
+            <Input id="size" type="number" value={newField.size} onChange={e => setNewField({
+            ...newField,
+            size: e.target.value
+          })} placeholder="ex: 10.5" />
           </div>
           <div>
             <Label htmlFor="crop">Cultură *</Label>
-            <Select onValueChange={(value) => setNewField({...newField, crop: value})}>
+            <Select onValueChange={value => setNewField({
+            ...newField,
+            crop: value
+          })}>
               <SelectTrigger>
                 <SelectValue placeholder="Selectează cultura" />
               </SelectTrigger>
@@ -195,44 +213,26 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
           </div>
           <div>
             <Label htmlFor="plantingDate">Data însămânțare</Label>
-            <Input
-              id="plantingDate"
-              type="date"
-              value={newField.plantingDate}
-              onChange={(e) => setNewField({...newField, plantingDate: e.target.value})}
-            />
+            <Input id="plantingDate" type="date" value={newField.plantingDate} onChange={e => setNewField({
+            ...newField,
+            plantingDate: e.target.value
+          })} />
           </div>
           <div>
             <Label htmlFor="harvestDate">Data recoltare</Label>
-            <Input
-              id="harvestDate"
-              type="date"
-              value={newField.harvestDate}
-              onChange={(e) => setNewField({...newField, harvestDate: e.target.value})}
-            />
+            <Input id="harvestDate" type="date" value={newField.harvestDate} onChange={e => setNewField({
+            ...newField,
+            harvestDate: e.target.value
+          })} />
           </div>
-          <div>
-            <Label htmlFor="workType">Tip lucrare</Label>
-            <Input
-              id="workType"
-              value={newField.workType}
-              onChange={(e) => setNewField({...newField, workType: e.target.value})}
-              placeholder="ex: Arătură conventională"
-            />
-          </div>
-          <div>
-            <Label htmlFor="costs">Costuri (RON)</Label>
-            <Input
-              id="costs"
-              type="number"
-              value={newField.costs}
-              onChange={(e) => setNewField({...newField, costs: e.target.value})}
-              placeholder="ex: 2500"
-            />
-          </div>
+          
+          
           <div>
             <Label htmlFor="color">Culoare pe hartă</Label>
-            <Select onValueChange={(value) => setNewField({...newField, color: value})}>
+            <Select onValueChange={value => setNewField({
+            ...newField,
+            color: value
+          })}>
               <SelectTrigger>
                 <SelectValue placeholder="Selectează culoarea" />
               </SelectTrigger>
@@ -257,21 +257,17 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
           </div>
           <div className="col-span-2">
             <Label htmlFor="inputs">Inputuri folosite</Label>
-            <Input
-              id="inputs"
-              value={newField.inputs}
-              onChange={(e) => setNewField({...newField, inputs: e.target.value})}
-              placeholder="ex: NPK 16:16:16, Herbicid"
-            />
+            <Input id="inputs" value={newField.inputs} onChange={e => setNewField({
+            ...newField,
+            inputs: e.target.value
+          })} placeholder="ex: NPK 16:16:16, Herbicid" />
           </div>
           <div className="col-span-2">
             <Label htmlFor="coords">Coordonate GPS</Label>
-            <Input
-              id="coords"
-              value={newField.coords}
-              onChange={(e) => setNewField({...newField, coords: e.target.value})}
-              placeholder="ex: 45.7489, 21.2087"
-            />
+            <Input id="coords" value={newField.coords} onChange={e => setNewField({
+            ...newField,
+            coords: e.target.value
+          })} placeholder="ex: 45.7489, 21.2087" />
           </div>
         </div>
         <div className="flex space-x-2 mt-4">
@@ -283,26 +279,21 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
           </Button>
         </div>
       </DialogContent>
-    </Dialog>
-  );
-
+    </Dialog>;
   if (!detailed) {
-    return (
-      <Card className="bg-white/80 backdrop-blur-sm border-green-200">
+    return <Card className="bg-white/80 backdrop-blur-sm border-green-200">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-green-800">Terenurile tale</CardTitle>
           {addFieldDialog}
         </CardHeader>
         <CardContent className="space-y-4">
-          {fields.slice(0, 3).map((field) => {
-            const taskStats = getTaskStats(field.name);
-            return (
-              <div key={field.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          {fields.slice(0, 3).map(field => {
+          const taskStats = getTaskStats(field.name);
+          return <div key={field.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-3">
-                  <div 
-                    className="p-2 rounded-lg border-2 border-white shadow"
-                    style={{ backgroundColor: field.color || '#22c55e' }}
-                  >
+                  <div className="p-2 rounded-lg border-2 border-white shadow" style={{
+                backgroundColor: field.color || '#22c55e'
+              }}>
                     <MapPin className="h-4 w-4 text-white" />
                   </div>
                   <div>
@@ -311,41 +302,29 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  {taskStats && (
-                    <div className={`${taskStats.color} ${taskStats.textColor} rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium`}>
+                  {taskStats && <div className={`${taskStats.color} ${taskStats.textColor} rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium`}>
                       {taskStats.count}
-                    </div>
-                  )}
+                    </div>}
                   {getStatusBadge(field.status)}
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => navigate(`/field/${field.id}`)}
-                    className="text-xs"
-                  >
+                  <Button size="sm" variant="outline" onClick={() => navigate(`/field/${field.id}`)} className="text-xs">
                     Detalii
                   </Button>
                 </div>
-              </div>
-            );
-          })}
+              </div>;
+        })}
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-green-800">Gestionarea Terenurilor</h2>
         {addFieldDialog}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {fields.map((field) => {
-          const taskStats = getTaskStats(field.name);
-          return (
-            <Card key={field.id} className="bg-white border-green-200 hover:shadow-lg transition-all duration-200">
+        {fields.map(field => {
+        const taskStats = getTaskStats(field.name);
+        return <Card key={field.id} className="bg-white border-green-200 hover:shadow-lg transition-all duration-200">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -353,11 +332,9 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
                     <p className="text-sm text-green-600 font-medium">{field.parcelCode}</p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {taskStats && (
-                      <div className={`${taskStats.color} ${taskStats.textColor} rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium`}>
+                    {taskStats && <div className={`${taskStats.color} ${taskStats.textColor} rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium`}>
                         {taskStats.count}
-                      </div>
-                    )}
+                      </div>}
                     {getStatusBadge(field.status)}
                   </div>
                 </div>
@@ -369,56 +346,35 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
                     <Sprout className="h-4 w-4 text-green-600" />
                     <span className="text-sm">{field.crop}</span>
                   </div>
-                  {field.plantingDate && (
-                    <div className="flex items-center space-x-2">
+                  {field.plantingDate && <div className="flex items-center space-x-2">
                       <Calendar className="h-4 w-4 text-blue-600" />
                       <span className="text-sm">Plantat: {field.plantingDate}</span>
-                    </div>
-                  )}
-                  {field.coordinates && (
-                    <div className="flex items-center space-x-2">
+                    </div>}
+                  {field.coordinates && <div className="flex items-center space-x-2">
                       <MapPin className="h-4 w-4 text-gray-600" />
                       <span className="text-sm">{field.coordinates.lat}, {field.coordinates.lng}</span>
-                    </div>
-                  )}
+                    </div>}
                 </div>
 
-                {field.costs && (
-                  <div className="border-t pt-3">
+                {field.costs && <div className="border-t pt-3">
                     <p className="text-xs text-gray-500 mb-1">Costuri:</p>
                     <p className="text-sm font-medium">{field.costs.toLocaleString()} RON</p>
-                    {field.roi && (
-                      <>
+                    {field.roi && <>
                         <p className="text-xs text-gray-500 mt-2 mb-1">ROI:</p>
                         <p className="text-sm font-medium text-green-600">{field.roi}%</p>
-                      </>
-                    )}
-                  </div>
-                )}
+                      </>}
+                  </div>}
 
                 <div className="flex space-x-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={() => navigate('/map')}
-                  >
+                  <Button size="sm" variant="outline" className="flex-1" onClick={() => navigate('/map')}>
                     Vezi pe hartă
                   </Button>
-                  <Button 
-                    size="sm" 
-                    className="flex-1 bg-green-600 hover:bg-green-700"
-                    onClick={() => navigate(`/field/${field.id}`)}
-                  >
+                  <Button size="sm" className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => navigate(`/field/${field.id}`)}>
                     Detalii
                   </Button>
-                  <AlertDialog open={isDeleting === field.id} onOpenChange={(open) => setIsDeleting(open ? field.id : null)}>
+                  <AlertDialog open={isDeleting === field.id} onOpenChange={open => setIsDeleting(open ? field.id : null)}>
                     <AlertDialogTrigger asChild>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
+                      <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
@@ -434,10 +390,7 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
                         <AlertDialogCancel onClick={() => setIsDeleting(null)}>
                           Anulează
                         </AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={() => handleDeleteField(field.id, field.name)}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
+                        <AlertDialogAction onClick={() => handleDeleteField(field.id, field.name)} className="bg-red-600 hover:bg-red-700">
                           Șterge
                         </AlertDialogAction>
                       </AlertDialogFooter>
@@ -445,12 +398,9 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
                   </AlertDialog>
                 </div>
               </CardContent>
-            </Card>
-          );
-        })}
+            </Card>;
+      })}
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default FieldsOverview;
