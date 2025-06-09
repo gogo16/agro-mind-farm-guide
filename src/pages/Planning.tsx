@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,10 +42,14 @@ const Planning = () => {
       title: newTask.title,
       description: newTask.description,
       field: newTask.field,
+      date: newTask.dueDate, // Map dueDate to date
+      time: newTask.dueTime || '08:00', // Map dueTime to time with default
       dueDate: newTask.dueDate,
       dueTime: newTask.dueTime,
       priority: newTask.priority as 'low' | 'medium' | 'high',
       status: 'pending',
+      aiSuggested: false, // Add required aiSuggested property
+      estimatedDuration: newTask.duration ? `${newTask.duration} ore` : undefined,
       duration: newTask.duration ? parseInt(newTask.duration) : undefined,
       category: newTask.category
     });
@@ -257,7 +260,7 @@ const Planning = () => {
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-gray-600">
                         <Calendar className="h-3 w-3" />
-                        <span>{task.dueDate} {task.dueTime && `la ${task.dueTime}`}</span>
+                        <span>{task.dueDate || task.date} {(task.dueTime || task.time) && `la ${task.dueTime || task.time}`}</span>
                       </div>
                     </div>
                   ))}
@@ -290,7 +293,7 @@ const Planning = () => {
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-gray-600">
                         <Calendar className="h-3 w-3" />
-                        <span>{task.dueDate} {task.dueTime && `la ${task.dueTime}`}</span>
+                        <span>{task.dueDate || task.date} {(task.dueTime || task.time) && `la ${task.dueTime || task.time}`}</span>
                       </div>
                     </div>
                   ))}
@@ -323,7 +326,7 @@ const Planning = () => {
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-gray-600">
                         <Calendar className="h-3 w-3" />
-                        <span>{task.dueDate} {task.dueTime && `la ${task.dueTime}`}</span>
+                        <span>{task.dueDate || task.date} {(task.dueTime || task.time) && `la ${task.dueTime || task.time}`}</span>
                       </div>
                     </div>
                   ))}
