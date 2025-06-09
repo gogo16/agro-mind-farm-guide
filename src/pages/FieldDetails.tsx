@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -16,39 +15,24 @@ import { useAppContext } from '@/contexts/AppContext';
 const FieldDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { fields } = useAppContext();
+  const { fields, tasks } = useAppContext();
   const [isEditingField, setIsEditingField] = useState(false);
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
 
   const fieldId = id ? parseInt(id, 10) : null;
   const field = fieldId ? fields.find(f => f.id === fieldId) : null;
 
-  const activities = [
-    {
-      id: 1,
-      date: '2024-06-01',
-      activity: 'Fertilizare NPK',
-      details: 'Aplicat 300 kg/ha îngrășământ complex NPK 16:16:16',
-      cost: 1800,
-      weather: 'Însorit, 22°C'
-    },
-    {
-      id: 2,
-      date: '2024-05-20',
-      activity: 'Tratament herbicid',
-      details: 'Aplicat herbicid selectiv pentru controlul buruienilor',
-      cost: 450,
-      weather: 'Înnorat, vânt slab'
-    },
-    {
-      id: 3,
-      date: '2024-05-10',
-      activity: 'Irigare',
-      details: 'Irigare prin aspersie - 35mm apă',
-      cost: 280,
-      weather: 'Uscat, 28°C'
-    }
-  ];
+  // Get completed tasks for this field
+  const completedActivities = tasks.filter(task => 
+    task.field === field?.name && task.status === 'completed'
+  ).map(task => ({
+    id: task.id,
+    date: task.dueDate || new Date().toISOString().split('T')[0],
+    activity: task.title,
+    details: task.description || 'Activitate completată',
+    cost: 0, // Tasks don't have costs by default
+    weather: 'N/A'
+  }));
 
   if (!field) {
     return (
@@ -164,7 +148,7 @@ const FieldDetails = () => {
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 lg:w-[480px] bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="overview">Prezentare</TabsTrigger>
-            <TabsTrigger value="activities">Activități</TabsTrigger>
+            <TabsTrigger value="activities">Istoric Activități</TabsTrigger>
             <TabsTrigger value="journal">Jurnal Foto</TabsTrigger>
             <TabsTrigger value="soil">Sol</TabsTrigger>
           </TabsList>
@@ -239,19 +223,27 @@ const FieldDetails = () => {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                {activities.map((activity) => (
-                  <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-semibold text-gray-900">{activity.activity}</h4>
-                      <Badge variant="secondary" className="text-xs">{activity.date}</Badge>
+                {completedActivities.length > 0 ? (
+                  completedActivities.map((activity) => (
+                    <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-semibold text-gray-900">{activity.activity}</h4>
+                        <Badge variant="secondary" className="text-xs">{activity.date}</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">{activity.details}</p>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-gray-500">Sarcină completată</span>
+                        <span className="font-medium text-green-600">Finalizat</span>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">{activity.details}</p>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-500">🌤️ {activity.weather}</span>
-                      <span className="font-medium text-green-600">{activity.cost} RON</span>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <History className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p>Nu există activități completate pentru acest teren</p>
+                    <p className="text-sm">Activitățile completate vor apărea aici</p>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
           </TabsContent>

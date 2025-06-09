@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { MapPin, Sprout, Calendar, AlertTriangle, Plus, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -32,7 +33,8 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
     harvestDate: '',
     workType: '',
     costs: '',
-    inputs: ''
+    inputs: '',
+    color: '#22c55e'
   });
 
   const getStatusBadge = (status: string) => {
@@ -91,7 +93,8 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
       workType: newField.workType,
       costs: newField.costs ? parseFloat(newField.costs) : undefined,
       inputs: newField.inputs,
-      roi: 0
+      roi: 0,
+      color: newField.color
     });
 
     toast({
@@ -99,7 +102,7 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
       description: `Terenul "${newField.name}" (${newField.parcelCode}) a fost adăugat cu succes.`,
     });
     
-    setNewField({ name: '', parcelCode: '', size: '', crop: '', variety: '', coords: '', plantingDate: '', harvestDate: '', workType: '', costs: '', inputs: '' });
+    setNewField({ name: '', parcelCode: '', size: '', crop: '', variety: '', coords: '', plantingDate: '', harvestDate: '', workType: '', costs: '', inputs: '', color: '#22c55e' });
     setIsAddingField(false);
   };
 
@@ -174,6 +177,18 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
                 <SelectItem value="Trifoiul">Trifoiul</SelectItem>
                 <SelectItem value="Cartof">Cartof</SelectItem>
                 <SelectItem value="Sfeclă de zahăr">Sfeclă de zahăr</SelectItem>
+                <SelectItem value="Morcov">Morcov</SelectItem>
+                <SelectItem value="Ceapă">Ceapă</SelectItem>
+                <SelectItem value="Usturoi">Usturoi</SelectItem>
+                <SelectItem value="Varză">Varză</SelectItem>
+                <SelectItem value="Roșii">Roșii</SelectItem>
+                <SelectItem value="Ardei">Ardei</SelectItem>
+                <SelectItem value="Castraveti">Castraveti</SelectItem>
+                <SelectItem value="Dovleci">Dovleci</SelectItem>
+                <SelectItem value="Pepeni">Pepeni</SelectItem>
+                <SelectItem value="Capsuni">Capsuni</SelectItem>
+                <SelectItem value="Zmeură">Zmeură</SelectItem>
+                <SelectItem value="Mure">Mure</SelectItem>
                 <SelectItem value="Altul">Altul</SelectItem>
               </SelectContent>
             </Select>
@@ -214,6 +229,31 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
               onChange={(e) => setNewField({...newField, costs: e.target.value})}
               placeholder="ex: 2500"
             />
+          </div>
+          <div>
+            <Label htmlFor="color">Culoare pe hartă</Label>
+            <Select onValueChange={(value) => setNewField({...newField, color: value})}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selectează culoarea" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="#22c55e">Verde</SelectItem>
+                <SelectItem value="#3b82f6">Albastru</SelectItem>
+                <SelectItem value="#f59e0b">Portocaliu</SelectItem>
+                <SelectItem value="#ef4444">Roșu</SelectItem>
+                <SelectItem value="#8b5cf6">Violet</SelectItem>
+                <SelectItem value="#ec4899">Roz</SelectItem>
+                <SelectItem value="#06b6d4">Cyan</SelectItem>
+                <SelectItem value="#84cc16">Verde deschis</SelectItem>
+                <SelectItem value="#f97316">Portocaliu închis</SelectItem>
+                <SelectItem value="#6366f1">Indigo</SelectItem>
+                <SelectItem value="#a855f7">Mov</SelectItem>
+                <SelectItem value="#10b981">Emerald</SelectItem>
+                <SelectItem value="#f59e0b">Galben</SelectItem>
+                <SelectItem value="#64748b">Gri</SelectItem>
+                <SelectItem value="#7c2d12">Maro</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="col-span-2">
             <Label htmlFor="inputs">Inputuri folosite</Label>
@@ -259,8 +299,11 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
             return (
               <div key={field.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-3">
-                  <div className="bg-green-100 p-2 rounded-lg">
-                    <MapPin className="h-4 w-4 text-green-600" />
+                  <div 
+                    className="p-2 rounded-lg border-2 border-white shadow"
+                    style={{ backgroundColor: field.color || '#22c55e' }}
+                  >
+                    <MapPin className="h-4 w-4 text-white" />
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">{field.name}</p>
@@ -369,8 +412,8 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
                   >
                     Detalii
                   </Button>
-                  <Dialog open={isDeleting === field.id} onOpenChange={(open) => setIsDeleting(open ? field.id : null)}>
-                    <DialogTrigger asChild>
+                  <AlertDialog open={isDeleting === field.id} onOpenChange={(open) => setIsDeleting(open ? field.id : null)}>
+                    <AlertDialogTrigger asChild>
                       <Button 
                         size="sm" 
                         variant="outline"
@@ -378,29 +421,28 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Confirmare ștergere</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <p>Ești sigur că vrei să ștergi terenul <strong>"{field.name}"</strong>?</p>
-                        <p className="text-sm text-gray-600">Această acțiune nu poate fi anulată.</p>
-                        <div className="flex space-x-2">
-                          <Button onClick={() => setIsDeleting(null)} variant="outline" className="flex-1">
-                            Anulează
-                          </Button>
-                          <Button 
-                            onClick={() => handleDeleteField(field.id, field.name)} 
-                            variant="destructive" 
-                            className="flex-1"
-                          >
-                            Șterge
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmare ștergere</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Ești sigur că vrei să ștergi terenul <strong>"{field.name}"</strong>?
+                          Această acțiune nu poate fi anulată.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setIsDeleting(null)}>
+                          Anulează
+                        </AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => handleDeleteField(field.id, field.name)}
+                          className="bg-red-600 hover:bg-red-700"
+                        >
+                          Șterge
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </CardContent>
             </Card>
