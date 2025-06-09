@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,10 +15,17 @@ import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import { format, isToday, parseISO, isSameDay } from 'date-fns';
 import { ro } from 'date-fns/locale';
-
 const Planning = () => {
-  const { fields, tasks, addTask, notifications, markNotificationAsRead } = useAppContext();
-  const { toast } = useToast();
+  const {
+    fields,
+    tasks,
+    addTask,
+    notifications,
+    markNotificationAsRead
+  } = useAppContext();
+  const {
+    toast
+  } = useToast();
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [newTask, setNewTask] = useState({
@@ -44,10 +50,7 @@ const Planning = () => {
 
       // Adaugă notificări pentru sarcinile de astăzi
       todayTasks.forEach(task => {
-        const notificationExists = notifications.some(
-          n => n.type === 'task' && n.message.includes(task.title) && n.date === today
-        );
-
+        const notificationExists = notifications.some(n => n.type === 'task' && n.message.includes(task.title) && n.date === today);
         if (!notificationExists) {
           const newNotification = {
             id: Date.now() + Math.random(),
@@ -58,33 +61,28 @@ const Planning = () => {
             isRead: false,
             priority: task.priority
           };
-          
+
           // Ar trebui să existe o funcție addNotification în context
           console.log('Notificare generată:', newNotification);
         }
       });
     };
-
     updateDailyNotifications();
-    
+
     // Actualizare la fiecare schimbare de zi (la miezul nopții)
     const now = new Date();
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
-    
     const timeUntilMidnight = tomorrow.getTime() - now.getTime();
-    
     const timeoutId = setTimeout(() => {
       updateDailyNotifications();
       // Apoi actualizare zilnică
       const intervalId = setInterval(updateDailyNotifications, 24 * 60 * 60 * 1000);
       return () => clearInterval(intervalId);
     }, timeUntilMidnight);
-
     return () => clearTimeout(timeoutId);
   }, [tasks, notifications]);
-
   const handleAddTask = () => {
     if (!newTask.title || !newTask.field || !newTask.dueDate) {
       toast({
@@ -94,7 +92,6 @@ const Planning = () => {
       });
       return;
     }
-
     addTask({
       title: newTask.title,
       description: newTask.description,
@@ -110,12 +107,10 @@ const Planning = () => {
       duration: newTask.duration ? parseInt(newTask.duration) : undefined,
       category: newTask.category
     });
-
     toast({
       title: "Succes",
-      description: `Sarcina "${newTask.title}" a fost adăugată cu succes.`,
+      description: `Sarcina "${newTask.title}" a fost adăugată cu succes.`
     });
-
     setNewTask({
       title: '',
       description: '',
@@ -128,7 +123,6 @@ const Planning = () => {
     });
     setIsAddingTask(false);
   };
-
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
@@ -141,7 +135,6 @@ const Planning = () => {
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -177,13 +170,10 @@ const Planning = () => {
       return taskDate === dateStr;
     });
   };
-
   const pendingTasks = tasks.filter(task => task.status === 'pending');
   const inProgressTasks = tasks.filter(task => task.status === 'in-progress');
   const completedTasks = tasks.filter(task => task.status === 'completed');
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+  return <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
@@ -218,51 +208,49 @@ const Planning = () => {
                     <div className="space-y-4">
                       <div>
                         <Label htmlFor="title">Titlu sarcină *</Label>
-                        <Input
-                          id="title"
-                          value={newTask.title}
-                          onChange={(e) => setNewTask({...newTask, title: e.target.value})}
-                          placeholder="ex: Fertilizare NPK"
-                        />
+                        <Input id="title" value={newTask.title} onChange={e => setNewTask({
+                        ...newTask,
+                        title: e.target.value
+                      })} placeholder="ex: Fertilizare NPK" />
                       </div>
                       <div>
                         <Label htmlFor="field">Teren *</Label>
-                        <Select onValueChange={(value) => setNewTask({...newTask, field: value})}>
+                        <Select onValueChange={value => setNewTask({
+                        ...newTask,
+                        field: value
+                      })}>
                           <SelectTrigger>
                             <SelectValue placeholder="Selectează terenul" />
                           </SelectTrigger>
                           <SelectContent>
-                            {fields.map((field) => (
-                              <SelectItem key={field.id} value={field.name}>
+                            {fields.map(field => <SelectItem key={field.id} value={field.name}>
                                 {field.name} ({field.parcelCode})
-                              </SelectItem>
-                            ))}
+                              </SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <Label htmlFor="dueDate">Data *</Label>
-                          <Input
-                            id="dueDate"
-                            type="date"
-                            value={newTask.dueDate}
-                            onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})}
-                          />
+                          <Input id="dueDate" type="date" value={newTask.dueDate} onChange={e => setNewTask({
+                          ...newTask,
+                          dueDate: e.target.value
+                        })} />
                         </div>
                         <div>
                           <Label htmlFor="dueTime">Ora</Label>
-                          <Input
-                            id="dueTime"
-                            type="time"
-                            value={newTask.dueTime}
-                            onChange={(e) => setNewTask({...newTask, dueTime: e.target.value})}
-                          />
+                          <Input id="dueTime" type="time" value={newTask.dueTime} onChange={e => setNewTask({
+                          ...newTask,
+                          dueTime: e.target.value
+                        })} />
                         </div>
                       </div>
                       <div>
                         <Label htmlFor="priority">Prioritate</Label>
-                        <Select onValueChange={(value) => setNewTask({...newTask, priority: value})}>
+                        <Select onValueChange={value => setNewTask({
+                        ...newTask,
+                        priority: value
+                      })}>
                           <SelectTrigger>
                             <SelectValue placeholder="Selectează prioritatea" />
                           </SelectTrigger>
@@ -275,22 +263,17 @@ const Planning = () => {
                       </div>
                       <div>
                         <Label htmlFor="duration">Durata estimată (ore)</Label>
-                        <Input
-                          id="duration"
-                          type="number"
-                          value={newTask.duration}
-                          onChange={(e) => setNewTask({...newTask, duration: e.target.value})}
-                          placeholder="ex: 3"
-                        />
+                        <Input id="duration" type="number" value={newTask.duration} onChange={e => setNewTask({
+                        ...newTask,
+                        duration: e.target.value
+                      })} placeholder="ex: 3" />
                       </div>
                       <div>
                         <Label htmlFor="description">Descriere</Label>
-                        <Textarea
-                          id="description"
-                          value={newTask.description}
-                          onChange={(e) => setNewTask({...newTask, description: e.target.value})}
-                          placeholder="Detalii suplimentare despre sarcină..."
-                        />
+                        <Textarea id="description" value={newTask.description} onChange={e => setNewTask({
+                        ...newTask,
+                        description: e.target.value
+                      })} placeholder="Detalii suplimentare despre sarcină..." />
                       </div>
                       <div className="flex space-x-2">
                         <Button onClick={() => setIsAddingTask(false)} variant="outline" className="flex-1">
@@ -307,36 +290,26 @@ const Planning = () => {
               <CardContent>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div>
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => date && setSelectedDate(date)}
-                      locale={ro}
-                      className="rounded-lg border p-3 pointer-events-auto"
-                      modifiers={{
-                        hasTask: (date) => hasTasksOnDate(date)
-                      }}
-                      modifiersStyles={{
-                        hasTask: {
-                          backgroundColor: '#22c55e',
-                          color: 'white',
-                          fontWeight: 'bold'
-                        }
-                      }}
-                    />
+                    <Calendar mode="single" selected={selectedDate} onSelect={date => date && setSelectedDate(date)} locale={ro} className="rounded-lg border p-3 pointer-events-auto" modifiers={{
+                    hasTask: date => hasTasksOnDate(date)
+                  }} modifiersStyles={{
+                    hasTask: {
+                      backgroundColor: '#22c55e',
+                      color: 'white',
+                      fontWeight: 'bold'
+                    }
+                  }} />
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-4">
-                      Sarcini pentru {format(selectedDate, 'dd MMMM yyyy', { locale: ro })}
+                      Sarcini pentru {format(selectedDate, 'dd MMMM yyyy', {
+                      locale: ro
+                    })}
                     </h3>
                     <div className="space-y-3 max-h-96 overflow-y-auto">
-                      {selectedDateTasks.length === 0 ? (
-                        <p className="text-gray-500 text-center py-8">
+                      {selectedDateTasks.length === 0 ? <p className="text-gray-500 text-center py-8">
                           Nu există sarcini programate pentru această zi
-                        </p>
-                      ) : (
-                        selectedDateTasks.map((task) => (
-                          <div key={task.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+                        </p> : selectedDateTasks.map(task => <div key={task.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
                             <div className="flex justify-between items-start mb-2">
                               <h4 className="font-medium text-gray-900 text-sm">{task.title}</h4>
                               <Badge className={getPriorityColor(task.priority)}>
@@ -353,16 +326,11 @@ const Planning = () => {
                             </div>
                             <div className="flex items-center space-x-2">
                               <Badge className={getStatusColor(task.status)}>
-                                {task.status === 'pending' ? 'În așteptare' : 
-                                 task.status === 'in-progress' ? 'În progres' : 'Completat'}
+                                {task.status === 'pending' ? 'În așteptare' : task.status === 'in-progress' ? 'În progres' : 'Completat'}
                               </Badge>
                             </div>
-                            {task.description && (
-                              <p className="text-xs text-gray-600 mt-2">{task.description}</p>
-                            )}
-                          </div>
-                        ))
-                      )}
+                            {task.description && <p className="text-xs text-gray-600 mt-2">{task.description}</p>}
+                          </div>)}
                     </div>
                   </div>
                 </div>
@@ -379,14 +347,10 @@ const Planning = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {todayTasks.length === 0 ? (
-                  <div className="text-center py-8">
+                {todayTasks.length === 0 ? <div className="text-center py-8">
                     <CalendarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-500">Nu aveți sarcini programate pentru astăzi</p>
-                  </div>
-                ) : (
-                  todayTasks.map((task) => (
-                    <div key={task.id} className="border border-green-200 rounded-lg p-4 hover:shadow-sm transition-shadow bg-green-50/50">
+                  </div> : todayTasks.map(task => <div key={task.id} className="border border-green-200 rounded-lg p-4 hover:shadow-sm transition-shadow bg-green-50/50">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-medium text-gray-900">{task.title}</h4>
                         <Badge className={getPriorityColor(task.priority)}>
@@ -399,25 +363,18 @@ const Planning = () => {
                       </div>
                       <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
                         <Clock className="h-4 w-4" />
-                        <span>{(task.dueTime || task.time) ? `${task.dueTime || task.time}` : 'Oră neprecizată'}</span>
+                        <span>{task.dueTime || task.time ? `${task.dueTime || task.time}` : 'Oră neprecizată'}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <Badge className={getStatusColor(task.status)}>
-                          {task.status === 'pending' ? 'În așteptare' : 
-                           task.status === 'in-progress' ? 'În progres' : 'Completat'}
+                          {task.status === 'pending' ? 'În așteptare' : task.status === 'in-progress' ? 'În progres' : 'Completat'}
                         </Badge>
-                        {task.estimatedDuration && (
-                          <span className="text-xs text-gray-500">Durată: {task.estimatedDuration}</span>
-                        )}
+                        {task.estimatedDuration && <span className="text-xs text-gray-500">Durată: {task.estimatedDuration}</span>}
                       </div>
-                      {task.description && (
-                        <p className="text-sm text-gray-600 mt-2 p-2 bg-white rounded border-l-4 border-green-200">
+                      {task.description && <p className="text-sm text-gray-600 mt-2 p-2 bg-white rounded border-l-4 border-green-200">
                           {task.description}
-                        </p>
-                      )}
-                    </div>
-                  ))
-                )}
+                        </p>}
+                    </div>)}
               </CardContent>
             </Card>
           </TabsContent>
@@ -433,8 +390,7 @@ const Planning = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {pendingTasks.map((task) => (
-                    <div key={task.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+                  {pendingTasks.map(task => <div key={task.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-medium text-gray-900 text-sm">{task.title}</h4>
                         <Badge className={getPriorityColor(task.priority)}>
@@ -449,11 +405,8 @@ const Planning = () => {
                         <CalendarIcon className="h-3 w-3" />
                         <span>{task.dueDate || task.date} {(task.dueTime || task.time) && `la ${task.dueTime || task.time}`}</span>
                       </div>
-                    </div>
-                  ))}
-                  {pendingTasks.length === 0 && (
-                    <p className="text-gray-500 text-center py-4">Nu există sarcini în așteptare</p>
-                  )}
+                    </div>)}
+                  {pendingTasks.length === 0 && <p className="text-gray-500 text-center py-4">Nu există sarcini în așteptare</p>}
                 </CardContent>
               </Card>
 
@@ -466,8 +419,7 @@ const Planning = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {inProgressTasks.map((task) => (
-                    <div key={task.id} className="border border-blue-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+                  {inProgressTasks.map(task => <div key={task.id} className="border border-blue-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-medium text-gray-900 text-sm">{task.title}</h4>
                         <Badge className={getPriorityColor(task.priority)}>
@@ -482,11 +434,8 @@ const Planning = () => {
                         <CalendarIcon className="h-3 w-3" />
                         <span>{task.dueDate || task.date} {(task.dueTime || task.time) && `la ${task.dueTime || task.time}`}</span>
                       </div>
-                    </div>
-                  ))}
-                  {inProgressTasks.length === 0 && (
-                    <p className="text-gray-500 text-center py-4">Nu există sarcini în progres</p>
-                  )}
+                    </div>)}
+                  {inProgressTasks.length === 0 && <p className="text-gray-500 text-center py-4">Nu există sarcini în progres</p>}
                 </CardContent>
               </Card>
 
@@ -499,8 +448,7 @@ const Planning = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {completedTasks.map((task) => (
-                    <div key={task.id} className="border border-green-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+                  {completedTasks.map(task => <div key={task.id} className="border border-green-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-medium text-gray-900 text-sm">{task.title}</h4>
                         <Badge className="bg-green-100 text-green-800 border-green-200">
@@ -515,98 +463,16 @@ const Planning = () => {
                         <CalendarIcon className="h-3 w-3" />
                         <span>{task.dueDate || task.date} {(task.dueTime || task.time) && `la ${task.dueTime || task.time}`}</span>
                       </div>
-                    </div>
-                  ))}
-                  {completedTasks.length === 0 && (
-                    <p className="text-gray-500 text-center py-4">Nu există sarcini completate</p>
-                  )}
+                    </div>)}
+                  {completedTasks.length === 0 && <p className="text-gray-500 text-center py-4">Nu există sarcini completate</p>}
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <Card className="bg-white/80 backdrop-blur-sm border-green-200">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-green-600 font-medium">Total Sarcini</p>
-                      <p className="text-3xl font-bold text-green-800">{tasks.length}</p>
-                    </div>
-                    <Calendar className="h-8 w-8 text-green-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white/80 backdrop-blur-sm border-amber-200">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-amber-600 font-medium">În așteptare</p>
-                      <p className="text-3xl font-bold text-amber-800">{pendingTasks.length}</p>
-                    </div>
-                    <Clock className="h-8 w-8 text-amber-500" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white/80 backdrop-blur-sm border-green-200">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-green-600 font-medium">Completate</p>
-                      <p className="text-3xl font-bold text-green-800">{completedTasks.length}</p>
-                    </div>
-                    <Calendar className="h-8 w-8 text-green-500" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card className="bg-white border-green-200">
-              <CardHeader>
-                <CardTitle className="text-green-800">Activități pe terenuri</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {fields.map((field) => {
-                    const fieldTasks = tasks.filter(task => task.field === field.name);
-                    const pendingCount = fieldTasks.filter(task => task.status === 'pending').length;
-                    const completedCount = fieldTasks.filter(task => task.status === 'completed').length;
-                    
-                    return (
-                      <div key={field.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="bg-green-100 p-2 rounded-lg">
-                            <MapPin className="h-4 w-4 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{field.name}</p>
-                            <p className="text-sm text-gray-600">{field.crop} • {field.size} ha</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-4 text-sm">
-                          <div className="text-center">
-                            <p className="font-medium text-amber-600">{pendingCount}</p>
-                            <p className="text-xs text-gray-500">Pendente</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="font-medium text-green-600">{completedCount}</p>
-                            <p className="text-xs text-gray-500">Completate</p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          
         </Tabs>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Planning;
