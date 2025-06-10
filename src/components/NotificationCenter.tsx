@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -8,9 +7,38 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, AlertTriangle, CheckCircle, Brain, TrendingDown } from 'lucide-react';
 
 const NotificationCenter = () => {
-  const { notifications, markNotificationAsRead } = useAppContext();
+  const { notifications, markNotificationAsRead, tasks, addNotification } = useAppContext();
   const navigate = useNavigate();
   
+  // Add today's tasks as notifications
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const todayTasks = tasks.filter(task => {
+      const taskDate = task.dueDate || task.date;
+      return taskDate === today && task.status === 'pending';
+    });
+
+    // Add notifications for today's tasks that don't already exist
+    todayTasks.forEach(task => {
+      const notificationExists = notifications.some(n => 
+        n.type === 'task' && 
+        n.message.includes(task.title) && 
+        n.date === today
+      );
+      
+      if (!notificationExists) {
+        addNotification({
+          type: 'task',
+          title: 'Sarcină programată astăzi',
+          message: `"${task.title}" este programată pentru astăzi pe ${task.field}`,
+          date: today,
+          isRead: false,
+          priority: task.priority
+        });
+      }
+    });
+  }, [tasks, notifications, addNotification]);
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const getNotificationIcon = (type: string) => {
