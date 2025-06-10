@@ -11,9 +11,11 @@ import { MapPin, Sprout, Calendar, AlertTriangle, Plus, Trash2 } from 'lucide-re
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
+
 interface FieldsOverviewProps {
   detailed?: boolean;
 }
+
 const FieldsOverview = ({
   detailed = false
 }: FieldsOverviewProps) => {
@@ -43,6 +45,7 @@ const FieldsOverview = ({
     inputs: '',
     color: '#22c55e'
   });
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'excellent':
@@ -55,32 +58,48 @@ const FieldsOverview = ({
         return;
     }
   };
-  const getTaskStats = (fieldName: string) => {
-    const fieldTasks = tasks.filter(task => task.field === fieldName && task.status === 'pending');
+
+  const getTodayTaskStats = (fieldName: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    const fieldTasks = tasks.filter(task => 
+      task.field === fieldName && 
+      task.date === today && 
+      task.status === 'pending'
+    );
+    
     const highPriority = fieldTasks.filter(task => task.priority === 'high').length;
     const mediumPriority = fieldTasks.filter(task => task.priority === 'medium').length;
     const lowPriority = fieldTasks.filter(task => task.priority === 'low').length;
+    
+    const badges = [];
+    
     if (highPriority > 0) {
-      return {
+      badges.push({
         count: highPriority,
         color: 'bg-red-500',
         textColor: 'text-white'
-      };
-    } else if (mediumPriority > 0) {
-      return {
+      });
+    }
+    
+    if (mediumPriority > 0) {
+      badges.push({
         count: mediumPriority,
         color: 'bg-amber-500',
         textColor: 'text-white'
-      };
-    } else if (lowPriority > 0) {
-      return {
+      });
+    }
+    
+    if (lowPriority > 0) {
+      badges.push({
         count: lowPriority,
         color: 'bg-green-500',
         textColor: 'text-white'
-      };
+      });
     }
-    return null;
+    
+    return badges;
   };
+
   const handleAddField = () => {
     if (!newField.name || !newField.parcelCode || !newField.size || !newField.crop) {
       toast({
@@ -130,6 +149,7 @@ const FieldsOverview = ({
     });
     setIsAddingField(false);
   };
+
   const handleDeleteField = (fieldId: number, fieldName: string) => {
     deleteField(fieldId);
     toast({
@@ -138,6 +158,7 @@ const FieldsOverview = ({
     });
     setIsDeleting(null);
   };
+
   const addFieldDialog = <Dialog open={isAddingField} onOpenChange={setIsAddingField}>
       <DialogTrigger asChild>
         <Button size="sm" className="bg-green-600 hover:bg-green-700">
@@ -279,6 +300,7 @@ const FieldsOverview = ({
         </div>
       </DialogContent>
     </Dialog>;
+
   if (!detailed) {
     return <Card className="bg-white/80 backdrop-blur-sm border-green-200">
         <CardHeader className="flex flex-row items-center justify-between">
@@ -287,7 +309,7 @@ const FieldsOverview = ({
         </CardHeader>
         <CardContent className="space-y-4">
           {fields.map(field => {
-          const taskStats = getTaskStats(field.name);
+          const taskStats = getTodayTaskStats(field.name);
           return <div key={field.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 rounded-lg border-2 border-white shadow" style={{
@@ -301,9 +323,11 @@ const FieldsOverview = ({
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  {taskStats && <div className={`${taskStats.color} ${taskStats.textColor} rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium`}>
-                      {taskStats.count}
-                    </div>}
+                  {taskStats.map((stat, index) => (
+                    <div key={index} className={`${stat.color} ${stat.textColor} rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium`}>
+                      {stat.count}
+                    </div>
+                  ))}
                   {getStatusBadge(field.status)}
                   <Button size="sm" variant="outline" onClick={() => navigate(`/field/${field.id}`)} className="text-xs">
                     Detalii
@@ -338,6 +362,7 @@ const FieldsOverview = ({
         </CardContent>
       </Card>;
   }
+
   return <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-green-800">Gestionarea Terenurilor</h2>
@@ -346,7 +371,7 @@ const FieldsOverview = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {fields.map(field => {
-        const taskStats = getTaskStats(field.name);
+        const taskStats = getTodayTaskStats(field.name);
         return <Card key={field.id} className="bg-white border-green-200 hover:shadow-lg transition-all duration-200">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -355,9 +380,11 @@ const FieldsOverview = ({
                     <p className="text-sm text-green-600 font-medium">{field.parcelCode}</p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {taskStats && <div className={`${taskStats.color} ${taskStats.textColor} rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium`}>
-                        {taskStats.count}
-                      </div>}
+                    {taskStats.map((stat, index) => (
+                      <div key={index} className={`${stat.color} ${stat.textColor} rounded-full w-6 h-6 flex items-center justify-center text-xs font-medium`}>
+                        {stat.count}
+                      </div>
+                    ))}
                     {getStatusBadge(field.status)}
                   </div>
                 </div>
@@ -426,4 +453,5 @@ const FieldsOverview = ({
       </div>
     </div>;
 };
+
 export default FieldsOverview;
