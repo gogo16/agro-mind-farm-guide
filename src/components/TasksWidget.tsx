@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,13 +10,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CheckCircle, Clock, AlertTriangle, Plus, Bot, Check } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { CheckCircle, Clock, AlertTriangle, Plus, Bot, Check, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 
 const TasksWidget = () => {
   const { toast } = useToast();
-  const { tasks, fields, addTask, updateTask } = useAppContext();
+  const { tasks, fields, addTask, updateTask, deleteTask } = useAppContext();
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [lastTaskCount, setLastTaskCount] = useState(tasks.length);
   const [newTask, setNewTask] = useState({
@@ -108,7 +110,19 @@ const TasksWidget = () => {
     });
   };
 
-  const pendingTasks = tasks.filter(task => task.status === 'pending');
+  const handleDeleteTask = (taskId: number, taskTitle: string) => {
+    deleteTask(taskId);
+    toast({
+      title: "Sarcină ștearsă",
+      description: `"${taskTitle}" a fost ștearsă cu succes.`,
+    });
+  };
+
+  // Filter tasks for today only
+  const today = new Date().toISOString().split('T')[0];
+  const todayPendingTasks = tasks.filter(task => 
+    task.status === 'pending' && task.date === today
+  );
   const completedTasks = tasks.filter(task => task.status === 'completed');
 
   const renderTaskTooltip = (task: any) => (
@@ -228,52 +242,67 @@ const TasksWidget = () => {
         <CardContent>
           <Tabs defaultValue="pending" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="pending">De astăzi ({pendingTasks.length})</TabsTrigger>
+              <TabsTrigger value="pending">De astăzi ({todayPendingTasks.length})</TabsTrigger>
               <TabsTrigger value="completed">Completate ({completedTasks.length})</TabsTrigger>
             </TabsList>
             
             <TabsContent value="pending" className="space-y-3 mt-4">
-              {pendingTasks.length === 0 ? (
+              {todayPendingTasks.length === 0 ? (
                 <p className="text-gray-500 text-center py-4">Nu ai sarcini programate pentru astăzi</p>
               ) : (
-                pendingTasks.slice(0, 3).map((task) => (
-                  <Tooltip key={task.id}>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
-                        <div className="flex items-center space-x-3">
-                          {task.aiSuggested && (
-                            <div className="bg-blue-100 p-1 rounded">
-                              <Bot className="h-3 w-3 text-blue-600" />
+                <ScrollArea className="h-64">
+                  <div className="space-y-3 pr-4">
+                    {todayPendingTasks.map((task) => (
+                      <Tooltip key={task.id}>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+                            <div className="flex items-center space-x-3">
+                              {task.aiSuggested && (
+                                <div className="bg-blue-100 p-1 rounded">
+                                  <Bot className="h-3 w-3 text-blue-600" />
+                                </div>
+                              )}
+                              <div>
+                                <p className="font-medium text-gray-900">{task.title}</p>
+                                <p className="text-sm text-gray-600">{task.field} • {task.time}</p>
+                              </div>
                             </div>
-                          )}
-                          <div>
-                            <p className="font-medium text-gray-900">{task.title}</p>
-                            <p className="text-sm text-gray-600">{task.field} • {task.time}</p>
+                            <div className="flex items-center space-x-2">
+                              <Badge className={getPriorityColor(task.priority)}>
+                                {getPriorityIcon(task.priority)}
+                                <span className="ml-1 capitalize">{task.priority === 'high' ? 'Înaltă' : task.priority === 'medium' ? 'Medie' : 'Scăzută'}</span>
+                              </Badge>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCompleteTask(task.id);
+                                }}
+                              >
+                                Finalizează
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteTask(task.id, task.title);
+                                }}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge className={getPriorityColor(task.priority)}>
-                            {getPriorityIcon(task.priority)}
-                            <span className="ml-1 capitalize">{task.priority === 'high' ? 'Înaltă' : task.priority === 'medium' ? 'Medie' : 'Scăzută'}</span>
-                          </Badge>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCompleteTask(task.id);
-                            }}
-                          >
-                            Finalizează
-                          </Button>
-                        </div>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="left" className="max-w-xs">
-                      {renderTaskTooltip(task)}
-                    </TooltipContent>
-                  </Tooltip>
-                ))
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="max-w-xs">
+                          {renderTaskTooltip(task)}
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                </ScrollArea>
               )}
             </TabsContent>
 
@@ -281,29 +310,46 @@ const TasksWidget = () => {
               {completedTasks.length === 0 ? (
                 <p className="text-gray-500 text-center py-4">Nu ai sarcini completate</p>
               ) : (
-                completedTasks.slice(0, 5).map((task) => (
-                  <Tooltip key={task.id}>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100 transition-colors">
-                        <div className="flex items-center space-x-3">
-                          <div className="bg-green-100 p-1 rounded">
-                            <Check className="h-3 w-3 text-green-600" />
+                <ScrollArea className="h-64">
+                  <div className="space-y-3 pr-4">
+                    {completedTasks.map((task) => (
+                      <Tooltip key={task.id}>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100 transition-colors">
+                            <div className="flex items-center space-x-3">
+                              <div className="bg-green-100 p-1 rounded">
+                                <Check className="h-3 w-3 text-green-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900">{task.title}</p>
+                                <p className="text-sm text-gray-600">{task.field} • {task.date}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Badge className="bg-green-100 text-green-800">
+                                Completată
+                              </Badge>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteTask(task.id, task.title);
+                                }}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{task.title}</p>
-                            <p className="text-sm text-gray-600">{task.field} • {task.date}</p>
-                          </div>
-                        </div>
-                        <Badge className="bg-green-100 text-green-800">
-                          Completată
-                        </Badge>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="left" className="max-w-xs">
-                      {renderTaskTooltip(task)}
-                    </TooltipContent>
-                  </Tooltip>
-                ))
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="max-w-xs">
+                          {renderTaskTooltip(task)}
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
+                </ScrollArea>
               )}
             </TabsContent>
           </Tabs>
