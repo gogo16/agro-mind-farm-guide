@@ -48,7 +48,7 @@ const FieldsOverview = ({
       case 'excellent':
         return <Badge className="bg-green-100 text-green-800 border-green-200">Excelent</Badge>;
       case 'healthy':
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Sănătos</Badge>;
+        return;
       case 'attention':
         return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Atenție</Badge>;
       default:
