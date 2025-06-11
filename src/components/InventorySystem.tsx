@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,10 +11,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tractor, Sprout, AlertTriangle, Plus, Edit, Brain, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
-
 const InventorySystem = () => {
-  const { toast } = useToast();
-  const { inventory, addInventoryItem, updateInventoryItem, deleteInventoryItem, addTransaction } = useAppContext();
+  const {
+    toast
+  } = useToast();
+  const {
+    inventory,
+    addInventoryItem,
+    updateInventoryItem,
+    deleteInventoryItem,
+    addTransaction
+  } = useAppContext();
   const [activeTab, setActiveTab] = useState('equipment');
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -30,30 +36,23 @@ const InventorySystem = () => {
     price: '',
     transactionType: ''
   });
-
   const equipmentItems = inventory.filter(item => item.type === 'equipment');
   const chemicalItems = inventory.filter(item => item.type === 'chemical');
   const cropItems = inventory.filter(item => item.type === 'crop');
   const materialItems = inventory.filter(item => item.type === 'material');
-
-  const aiSuggestions = [
-    {
-      type: 'warning',
-      message: 'NPK 16-16-16 este la nivel scăzut. Recomandăm reaprovizionarea pentru sezonul următor.',
-      action: 'Comandă 1000kg'
-    },
-    {
-      type: 'info',
-      message: 'Tractorul Fendt nu a fost utilizat de 2 săptămâni. Este momentul ideal pentru revizia programată.',
-      action: 'Programează revizie'
-    },
-    {
-      type: 'suggestion',
-      message: 'Pe baza suprafeței cu grâu, veți avea nevoie de ~75L glyphosate luna viitoare.',
-      action: 'Pregătește stoc'
-    }
-  ];
-
+  const aiSuggestions = [{
+    type: 'warning',
+    message: 'NPK 16-16-16 este la nivel scăzut. Recomandăm reaprovizionarea pentru sezonul următor.',
+    action: 'Comandă 1000kg'
+  }, {
+    type: 'info',
+    message: 'Tractorul Fendt nu a fost utilizat de 2 săptămâni. Este momentul ideal pentru revizia programată.',
+    action: 'Programează revizie'
+  }, {
+    type: 'suggestion',
+    message: 'Pe baza suprafeței cu grâu, veți avea nevoie de ~75L glyphosate luna viitoare.',
+    action: 'Pregătește stoc'
+  }];
   const getStockBadge = (level: string) => {
     switch (level) {
       case 'low':
@@ -66,7 +65,6 @@ const InventorySystem = () => {
         return <Badge variant="secondary">Necunoscut</Badge>;
     }
   };
-
   const handleAddItem = () => {
     if (!newItem.name || !newItem.type) {
       toast({
@@ -76,7 +74,6 @@ const InventorySystem = () => {
       });
       return;
     }
-
     const itemToAdd = {
       name: newItem.name,
       type: newItem.type,
@@ -87,7 +84,6 @@ const InventorySystem = () => {
       purpose: newItem.purpose,
       stockLevel: 'normal' as const
     };
-
     addInventoryItem(itemToAdd);
 
     // If item has price, add transaction
@@ -97,27 +93,33 @@ const InventorySystem = () => {
         type: transactionType as 'income' | 'expense',
         amount: parseFloat(newItem.price),
         description: `${transactionType === 'income' ? 'Vânzare' : 'Achiziție'} ${newItem.name}`,
-        category: newItem.type === 'equipment' ? 'Utilaje' : 
-                 newItem.type === 'chemical' ? 'Chimicale' : 
-                 newItem.type === 'crop' ? 'Vânzări' : 'Materiale',
+        category: newItem.type === 'equipment' ? 'Utilaje' : newItem.type === 'chemical' ? 'Chimicale' : newItem.type === 'crop' ? 'Vânzări' : 'Materiale',
         field: 'General',
         date: new Date().toISOString().split('T')[0]
       });
     }
-
     toast({
       title: "Element adăugat",
-      description: "Elementul a fost adăugat cu succes în inventar.",
+      description: "Elementul a fost adăugat cu succes în inventar."
     });
-
-    setNewItem({ name: '', type: '', quantity: '', condition: '', location: '', expiration: '', purpose: '', price: '', transactionType: '' });
+    setNewItem({
+      name: '',
+      type: '',
+      quantity: '',
+      condition: '',
+      location: '',
+      expiration: '',
+      purpose: '',
+      price: '',
+      transactionType: ''
+    });
     setIsAddingItem(false);
   };
-
   const handleEditItem = (item: any) => {
-    setEditingItem({ ...item });
+    setEditingItem({
+      ...item
+    });
   };
-
   const handleUpdateItem = () => {
     if (!editingItem.name || !editingItem.type) {
       toast({
@@ -127,40 +129,31 @@ const InventorySystem = () => {
       });
       return;
     }
-
     updateInventoryItem(editingItem.id, editingItem);
-    
     toast({
       title: "Element actualizat",
-      description: "Elementul a fost actualizat cu succes.",
+      description: "Elementul a fost actualizat cu succes."
     });
-
     setEditingItem(null);
   };
-
   const handleDeleteItem = (id: number) => {
     deleteInventoryItem(id);
     toast({
       title: "Element șters",
-      description: "Elementul a fost șters din inventar.",
+      description: "Elementul a fost șters din inventar."
     });
   };
-
   const renderInventoryItems = (items: any[], type: string) => {
     if (items.length === 0) {
-      return (
-        <div className="text-center py-8 text-gray-500">
+      return <div className="text-center py-8 text-gray-500">
           <p>Nu există elemente în această categorie.</p>
           <Button className="mt-4 bg-green-600 hover:bg-green-700" onClick={() => setIsAddingItem(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Adaugă primul element
           </Button>
-        </div>
-      );
+        </div>;
     }
-
-    return items.map((item) => (
-      <div key={item.id} className="border border-gray-200 rounded-lg p-4">
+    return items.map(item => <div key={item.id} className="border border-gray-200 rounded-lg p-4">
         <div className="flex items-center justify-between mb-2">
           <h4 className="font-semibold text-gray-900">{item.name}</h4>
           <div className="flex items-center space-x-2">
@@ -206,12 +199,9 @@ const InventorySystem = () => {
             {item.nextMaintenance && <p><strong>Următoarea revizie:</strong> {item.nextMaintenance}</p>}
           </div>
         </div>
-      </div>
-    ));
+      </div>);
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* AI Suggestions Card */}
       <Card className="bg-gradient-to-r from-purple-500 to-blue-600 text-white border-0">
         <CardHeader>
@@ -221,14 +211,10 @@ const InventorySystem = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {aiSuggestions.map((suggestion, index) => (
-            <div key={index} className="bg-white/10 rounded-lg p-3">
+          {aiSuggestions.map((suggestion, index) => <div key={index} className="bg-white/10 rounded-lg p-3">
               <p className="text-sm mb-2">{suggestion.message}</p>
-              <Button size="sm" className="bg-white text-purple-600 hover:bg-gray-100">
-                {suggestion.action}
-              </Button>
-            </div>
-          ))}
+              
+            </div>)}
         </CardContent>
       </Card>
 
@@ -250,7 +236,10 @@ const InventorySystem = () => {
               <div className="space-y-4">
                 <div>
                   <Label>Categorie *</Label>
-                  <Select onValueChange={(value) => setNewItem({...newItem, type: value})}>
+                  <Select onValueChange={value => setNewItem({
+                  ...newItem,
+                  type: value
+                })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selectează categoria" />
                     </SelectTrigger>
@@ -264,43 +253,41 @@ const InventorySystem = () => {
                 </div>
                 <div>
                   <Label>Nume element *</Label>
-                  <Input 
-                    placeholder="ex: Tractor John Deere" 
-                    value={newItem.name}
-                    onChange={(e) => setNewItem({...newItem, name: e.target.value})}
-                  />
+                  <Input placeholder="ex: Tractor John Deere" value={newItem.name} onChange={e => setNewItem({
+                  ...newItem,
+                  name: e.target.value
+                })} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Cantitate/Status</Label>
-                    <Input 
-                      placeholder="ex: 500kg, Bună stare" 
-                      value={newItem.quantity}
-                      onChange={(e) => setNewItem({...newItem, quantity: e.target.value})}
-                    />
+                    <Input placeholder="ex: 500kg, Bună stare" value={newItem.quantity} onChange={e => setNewItem({
+                    ...newItem,
+                    quantity: e.target.value
+                  })} />
                   </div>
                   <div>
                     <Label>Locația</Label>
-                    <Input 
-                      placeholder="ex: Hangar Principal" 
-                      value={newItem.location}
-                      onChange={(e) => setNewItem({...newItem, location: e.target.value})}
-                    />
+                    <Input placeholder="ex: Hangar Principal" value={newItem.location} onChange={e => setNewItem({
+                    ...newItem,
+                    location: e.target.value
+                  })} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Preț (RON)</Label>
-                    <Input 
-                      type="number" 
-                      placeholder="ex: 1500" 
-                      value={newItem.price}
-                      onChange={(e) => setNewItem({...newItem, price: e.target.value})}
-                    />
+                    <Input type="number" placeholder="ex: 1500" value={newItem.price} onChange={e => setNewItem({
+                    ...newItem,
+                    price: e.target.value
+                  })} />
                   </div>
                   <div>
                     <Label>Tip tranzacție</Label>
-                    <Select onValueChange={(value) => setNewItem({...newItem, transactionType: value})}>
+                    <Select onValueChange={value => setNewItem({
+                    ...newItem,
+                    transactionType: value
+                  })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selectează tipul" />
                       </SelectTrigger>
@@ -352,8 +339,7 @@ const InventorySystem = () => {
       </Card>
 
       {/* Edit Item Dialog */}
-      {editingItem && (
-        <Dialog open={true} onOpenChange={() => setEditingItem(null)}>
+      {editingItem && <Dialog open={true} onOpenChange={() => setEditingItem(null)}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Editează element inventar</DialogTitle>
@@ -361,25 +347,25 @@ const InventorySystem = () => {
             <div className="space-y-4">
               <div>
                 <Label>Nume element</Label>
-                <Input 
-                  value={editingItem.name}
-                  onChange={(e) => setEditingItem({...editingItem, name: e.target.value})}
-                />
+                <Input value={editingItem.name} onChange={e => setEditingItem({
+              ...editingItem,
+              name: e.target.value
+            })} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Cantitate/Status</Label>
-                  <Input 
-                    value={editingItem.quantity || ''}
-                    onChange={(e) => setEditingItem({...editingItem, quantity: e.target.value})}
-                  />
+                  <Input value={editingItem.quantity || ''} onChange={e => setEditingItem({
+                ...editingItem,
+                quantity: e.target.value
+              })} />
                 </div>
                 <div>
                   <Label>Locația</Label>
-                  <Input 
-                    value={editingItem.location || ''}
-                    onChange={(e) => setEditingItem({...editingItem, location: e.target.value})}
-                  />
+                  <Input value={editingItem.location || ''} onChange={e => setEditingItem({
+                ...editingItem,
+                location: e.target.value
+              })} />
                 </div>
               </div>
               <div className="flex space-x-2">
@@ -392,10 +378,7 @@ const InventorySystem = () => {
               </div>
             </div>
           </DialogContent>
-        </Dialog>
-      )}
-    </div>
-  );
+        </Dialog>}
+    </div>;
 };
-
 export default InventorySystem;
