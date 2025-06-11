@@ -108,9 +108,11 @@ const InteractiveMap = ({ mapType, onFieldSelect }: InteractiveMapProps) => {
       `
     });
 
-    polygon.addListener('mouseover', (event: any) => {
-      infoWindow.setPosition(event.latLng);
-      infoWindow.open(map);
+    polygon.addListener('mouseover', (event: google.maps.PolyMouseEvent) => {
+      if (event.latLng) {
+        infoWindow.setPosition(event.latLng);
+        infoWindow.open(map);
+      }
     });
 
     polygon.addListener('mouseout', () => {
