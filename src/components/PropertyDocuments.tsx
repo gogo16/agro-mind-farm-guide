@@ -308,7 +308,8 @@ const PropertyDocuments = () => {
               key={doc.id} 
               className={`border-green-200 hover:shadow-lg transition-shadow ${fieldColor}`}
               style={{
-                borderLeft: expirationStatus ? `4px solid ${expirationStatus.type === 'expired' ? '#dc2626' : '#ea580c'}` : undefined
+                borderLeft: expirationStatus ? `4px solid ${expirationStatus.type === 'expired' ? '#dc2626' : '#ea580c'}` : undefined,
+                backgroundColor: fieldColor !== 'bg-gray-50' ? fieldColor : undefined
               }}
             >
               <CardHeader className="pb-3">
