@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -67,12 +66,20 @@ const PropertyDocuments = () => {
     return null;
   };
 
-  // Funcție pentru obținerea culorii terenului
+  // Funcție pentru obținerea culorii terenului cu transparență
   const getFieldColor = (parcelId?: number) => {
-    if (!parcelId) return 'bg-gray-50'; // Culoare pentru documente generale
+    if (!parcelId) return 'rgba(0, 0, 0, 0)'; // Transparent pentru documente generale
     
     const field = fields.find(f => f.id === parcelId);
-    return field?.color || 'bg-gray-50';
+    if (!field?.color) return 'rgba(0, 0, 0, 0)';
+    
+    // Convertim culoarea hex la rgba cu 60% transparență
+    const hex = field.color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    return `rgba(${r}, ${g}, ${b}, 0.6)`;
   };
 
   const handleAddDocument = () => {
@@ -306,10 +313,10 @@ const PropertyDocuments = () => {
           return (
             <Card 
               key={doc.id} 
-              className={`border-green-200 hover:shadow-lg transition-shadow ${fieldColor}`}
+              className="border-green-200 hover:shadow-lg transition-shadow"
               style={{
                 borderLeft: expirationStatus ? `4px solid ${expirationStatus.type === 'expired' ? '#dc2626' : '#ea580c'}` : undefined,
-                backgroundColor: fieldColor !== 'bg-gray-50' ? fieldColor : undefined
+                backgroundColor: fieldColor
               }}
             >
               <CardHeader className="pb-3">
@@ -416,3 +423,5 @@ const PropertyDocuments = () => {
 };
 
 export default PropertyDocuments;
+
+}
