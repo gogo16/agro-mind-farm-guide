@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Sprout, Calendar, MapPin, Trash2 } from 'lucide-react';
+import { Sprout, Calendar, MapPin, Trash2, Sun, CloudRain, Cloud } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
@@ -30,6 +30,19 @@ const FieldCard = ({ field }: FieldCardProps) => {
         return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Atenție</Badge>;
       default:
         return null;
+    }
+  };
+
+  const getWeatherIcon = (condition: string) => {
+    switch (condition) {
+      case 'sunny':
+        return <Sun className="h-4 w-4 text-yellow-500" />;
+      case 'rainy':
+        return <CloudRain className="h-4 w-4 text-blue-500" />;
+      case 'cloudy':
+        return <Cloud className="h-4 w-4 text-gray-500" />;
+      default:
+        return <Sun className="h-4 w-4 text-yellow-500" />;
     }
   };
 
@@ -75,6 +88,26 @@ const FieldCard = ({ field }: FieldCardProps) => {
               <span className="text-sm">{field.coordinates.lat}, {field.coordinates.lng}</span>
             </div>
           )}
+        </div>
+
+        {/* Weather Information Section */}
+        <div className="border-t pt-3">
+          <p className="text-xs text-gray-500 mb-2">Condiții meteo:</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              {getWeatherIcon(field.weather?.condition || 'sunny')}
+              <span className="text-sm font-medium">
+                {field.weather?.temperature || '22'}°C
+              </span>
+            </div>
+            <div className="text-xs text-gray-600">
+              <div>Umiditate: {field.weather?.humidity || '65'}%</div>
+              <div>Vânt: {field.weather?.windSpeed || '12'} km/h</div>
+            </div>
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            Actualizat: {field.weather?.lastUpdated || 'acum 30 min'}
+          </div>
         </div>
 
         {field.costs && (

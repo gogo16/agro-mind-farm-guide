@@ -1,5 +1,23 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
+interface WeatherData {
+  temperature: number;
+  condition: 'sunny' | 'rainy' | 'cloudy' | 'partly-cloudy' | 'stormy';
+  humidity: number;
+  windSpeed: number;
+  windDirection?: string;
+  pressure?: number;
+  uvIndex?: number;
+  visibility?: number;
+  lastUpdated: string;
+  forecast?: {
+    date: string;
+    temperature: { min: number; max: number };
+    condition: string;
+    precipitation: number;
+  }[];
+}
+
 interface Field {
   id: number;
   name: string;
@@ -16,6 +34,7 @@ interface Field {
   inputs?: string;
   roi?: number;
   color?: string; // Added color property
+  weather?: WeatherData; // Added weather property
 }
 
 interface WorkHistory {
@@ -172,6 +191,8 @@ interface AppContextType {
   generateAPIADocument: (type: string, data: any) => any;
   fetchSatelliteData: (parcelId: number) => void;
   addNotification: (notification: Omit<Notification, 'id'>) => void;
+  updateFieldWeather: (fieldId: number, weatherData: WeatherData) => void; // New method for weather updates
+  fetchWeatherData: (fieldId: number) => Promise<void>; // New method for fetching weather
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -209,7 +230,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       costs: 2500,
       inputs: 'NPK 16:16:16, Herbicid',
       roi: 15.2,
-      color: '#22c55e'
+      color: '#22c55e',
+      weather: {
+        temperature: 18,
+        condition: 'cloudy',
+        humidity: 68,
+        windSpeed: 15,
+        windDirection: 'NV',
+        pressure: 1015,
+        uvIndex: 4,
+        visibility: 10,
+        lastUpdated: 'acum 25 min'
+      }
     },
     { 
       id: 2, 
@@ -226,7 +258,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       costs: 3200,
       inputs: 'Semințe hibrid, Îngrășământ starter',
       roi: 18.7,
-      color: '#3b82f6'
+      color: '#3b82f6',
+      weather: {
+        temperature: 24,
+        condition: 'sunny',
+        humidity: 45,
+        windSpeed: 8,
+        windDirection: 'S',
+        pressure: 1018,
+        uvIndex: 7,
+        visibility: 15,
+        lastUpdated: 'acum 15 min'
+      }
     },
     { 
       id: 3, 
@@ -243,7 +286,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       costs: 1800,
       inputs: 'Fungicide, Insecticide',
       roi: 22.1,
-      color: '#f59e0b'
+      color: '#f59e0b',
+      weather: {
+        temperature: 20,
+        condition: 'rainy',
+        humidity: 85,
+        windSpeed: 12,
+        windDirection: 'E',
+        pressure: 1010,
+        uvIndex: 2,
+        visibility: 8,
+        lastUpdated: 'acum 10 min'
+      }
     }
   ]);
 
@@ -441,6 +495,43 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteField = (id: number) => {
     setFields(prev => prev.filter(field => field.id !== id));
+  };
+
+  // New weather-related functions
+  const updateFieldWeather = (fieldId: number, weatherData: WeatherData) => {
+    setFields(prev => prev.map(field => 
+      field.id === fieldId ? { ...field, weather: weatherData } : field
+    ));
+  };
+
+  const fetchWeatherData = async (fieldId: number) => {
+    // This function will be called by the weather API integration
+    // For now, it's a placeholder that simulates fetching weather data
+    const field = fields.find(f => f.id === fieldId);
+    if (!field || !field.coordinates) return;
+
+    try {
+      // Future implementation will call weather API here
+      // Example: const response = await fetch(`/api/weather?lat=${field.coordinates.lat}&lng=${field.coordinates.lng}`);
+      
+      // Simulate API call for now
+      console.log(`Fetching weather for field ${fieldId} at coordinates ${field.coordinates.lat}, ${field.coordinates.lng}`);
+      
+      // Add notification about weather update
+      const newNotification: Notification = {
+        id: Date.now(),
+        type: 'weather',
+        title: 'Date meteo actualizate',
+        message: `Informațiile meteo pentru ${field.name} au fost actualizate`,
+        date: new Date().toISOString().split('T')[0],
+        isRead: false,
+        priority: 'low'
+      };
+      setNotifications(prev => [newNotification, ...prev]);
+      
+    } catch (error) {
+      console.error('Error fetching weather data:', error);
+    }
   };
 
   const addTask = (task: Omit<Task, 'id'>) => {
@@ -689,9 +780,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       generateReport,
       generateAPIADocument,
       fetchSatelliteData,
-      addNotification
+      addNotification,
+      updateFieldWeather,
+      fetchWeatherData
     }}>
       {children}
     </AppContext.Provider>
   );
 };
+
+export default AppProvider;

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { MapPin, Trash2 } from 'lucide-react';
+import { MapPin, Trash2, Sun, CloudRain, Cloud } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
@@ -32,6 +32,19 @@ const FieldListItem = ({ field }: FieldListItemProps) => {
     }
   };
 
+  const getWeatherIcon = (condition: string) => {
+    switch (condition) {
+      case 'sunny':
+        return <Sun className="h-4 w-4 text-yellow-500" />;
+      case 'rainy':
+        return <CloudRain className="h-4 w-4 text-blue-500" />;
+      case 'cloudy':
+        return <Cloud className="h-4 w-4 text-gray-500" />;
+      default:
+        return <Sun className="h-4 w-4 text-yellow-500" />;
+    }
+  };
+
   const handleDeleteField = (fieldId: number, fieldName: string) => {
     deleteField(fieldId);
     toast({
@@ -49,9 +62,25 @@ const FieldListItem = ({ field }: FieldListItemProps) => {
         }}>
           <MapPin className="h-4 w-4 text-white" />
         </div>
-        <div>
+        <div className="flex-1">
           <p className="font-medium text-gray-900">{field.name}</p>
           <p className="text-sm text-gray-600">{field.crop} • {field.size} ha • {field.parcelCode}</p>
+          
+          {/* Weather Information */}
+          <div className="flex items-center space-x-3 mt-1">
+            <div className="flex items-center space-x-1">
+              {getWeatherIcon(field.weather?.condition || 'sunny')}
+              <span className="text-xs text-gray-600">
+                {field.weather?.temperature || '22'}°C
+              </span>
+            </div>
+            <div className="text-xs text-gray-500">
+              Umiditate: {field.weather?.humidity || '65'}%
+            </div>
+            <div className="text-xs text-gray-500">
+              Vânt: {field.weather?.windSpeed || '12'} km/h
+            </div>
+          </div>
         </div>
       </div>
       <div className="flex items-center space-x-2">
