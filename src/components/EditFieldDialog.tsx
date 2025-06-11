@@ -130,7 +130,6 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
       parcelCode: editedField.parcelCode,
       size: parseFloat(editedField.size),
       crop: editedField.crop,
-      variety: editedField.variety,
       coordinates: coordValidation.coordinates,
       coordinatesType: coordValidation.type || 'point',
       plantingDate: editedField.plantingDate,
