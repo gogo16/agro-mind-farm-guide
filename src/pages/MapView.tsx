@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -24,9 +25,15 @@ const MapView = () => {
   const [newField, setNewField] = useState({
     name: '',
     parcelCode: '',
-    area: '',
+    size: '',
     crop: '',
+    variety: '',
     coords: '',
+    plantingDate: '',
+    harvestDate: '',
+    workType: '',
+    costs: '',
+    inputs: '',
     color: '#22c55e'
   });
 
@@ -35,7 +42,7 @@ const MapView = () => {
   const isValidAPIKey = GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY.length > 0 && !GOOGLE_MAPS_API_KEY.includes("YOUR_GOOGLE_MAPS_API_KEY");
 
   const handleAddField = () => {
-    if (!newField.name || !newField.parcelCode || !newField.area || !newField.crop) {
+    if (!newField.name || !newField.parcelCode || !newField.size || !newField.crop) {
       toast({
         title: "Eroare",
         description: "Te rugăm să completezi toate câmpurile obligatorii.",
@@ -55,25 +62,39 @@ const MapView = () => {
     addField({
       name: newField.name,
       parcelCode: newField.parcelCode,
-      size: parseFloat(newField.area),
+      size: parseFloat(newField.size),
       crop: newField.crop,
       status: 'healthy',
-      coordinates
+      location: newField.name,
+      coordinates,
+      plantingDate: newField.plantingDate,
+      harvestDate: newField.harvestDate,
+      workType: newField.workType,
+      costs: newField.costs ? parseFloat(newField.costs) : undefined,
+      inputs: newField.inputs,
+      roi: 0,
+      color: newField.color
     });
 
     setNewField({
       name: '',
       parcelCode: '',
-      area: '',
+      size: '',
       crop: '',
+      variety: '',
       coords: '',
+      plantingDate: '',
+      harvestDate: '',
+      workType: '',
+      costs: '',
+      inputs: '',
       color: '#22c55e'
     });
     setIsAddingField(false);
 
     toast({
       title: "Succes",
-      description: `Parcela "${newField.name}" (${newField.parcelCode}) a fost adăugată pe hartă.`
+      description: `Terenul "${newField.name}" (${newField.parcelCode}) a fost adăugat cu succes.`
     });
   };
 
@@ -153,16 +174,16 @@ const MapView = () => {
                     <DialogTrigger asChild>
                       <Button className="w-full bg-green-600 hover:bg-green-700">
                         <Plus className="h-4 w-4 mr-2" />
-                        Adaugă parcelă nouă
+                        Adaugă teren nou
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                       <DialogHeader>
-                        <DialogTitle>Adaugă parcelă nouă pe hartă</DialogTitle>
+                        <DialogTitle>Adaugă teren nou</DialogTitle>
                       </DialogHeader>
-                      <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="name">Nume parcelă *</Label>
+                          <Label htmlFor="name">Nume teren *</Label>
                           <Input
                             id="name"
                             value={newField.name}
@@ -180,12 +201,13 @@ const MapView = () => {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="area">Suprafață *</Label>
+                          <Label htmlFor="size">Suprafață (ha) *</Label>
                           <Input
-                            id="area"
-                            value={newField.area}
-                            onChange={(e) => setNewField({ ...newField, area: e.target.value })}
-                            placeholder="ex: 10.5 ha"
+                            id="size"
+                            type="number"
+                            value={newField.size}
+                            onChange={(e) => setNewField({ ...newField, size: e.target.value })}
+                            placeholder="ex: 10.5"
                           />
                         </div>
                         <div>
@@ -228,12 +250,21 @@ const MapView = () => {
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="coords">Coordonate GPS</Label>
+                          <Label htmlFor="plantingDate">Data însămânțare</Label>
                           <Input
-                            id="coords"
-                            value={newField.coords}
-                            onChange={(e) => setNewField({ ...newField, coords: e.target.value })}
-                            placeholder="ex: 45.7489, 21.2087"
+                            id="plantingDate"
+                            type="date"
+                            value={newField.plantingDate}
+                            onChange={(e) => setNewField({ ...newField, plantingDate: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="harvestDate">Data recoltare</Label>
+                          <Input
+                            id="harvestDate"
+                            type="date"
+                            value={newField.harvestDate}
+                            onChange={(e) => setNewField({ ...newField, harvestDate: e.target.value })}
                           />
                         </div>
                         <div>
@@ -261,21 +292,39 @@ const MapView = () => {
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="flex space-x-2">
-                          <Button
-                            onClick={() => setIsAddingField(false)}
-                            variant="outline"
-                            className="flex-1"
-                          >
-                            Anulează
-                          </Button>
-                          <Button
-                            onClick={handleAddField}
-                            className="flex-1 bg-green-600 hover:bg-green-700"
-                          >
-                            Adaugă pe hartă
-                          </Button>
+                        <div className="col-span-2">
+                          <Label htmlFor="inputs">Istoric îngrășăminte/chimicale</Label>
+                          <Input
+                            id="inputs"
+                            value={newField.inputs}
+                            onChange={(e) => setNewField({ ...newField, inputs: e.target.value })}
+                            placeholder="ex: NPK 16:16:16, Herbicid"
+                          />
                         </div>
+                        <div className="col-span-2">
+                          <Label htmlFor="coords">Coordonate GPS</Label>
+                          <Input
+                            id="coords"
+                            value={newField.coords}
+                            onChange={(e) => setNewField({ ...newField, coords: e.target.value })}
+                            placeholder="ex: 45.7489, 21.2087"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex space-x-2 mt-4">
+                        <Button
+                          onClick={() => setIsAddingField(false)}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          Anulează
+                        </Button>
+                        <Button
+                          onClick={handleAddField}
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                        >
+                          Adaugă teren
+                        </Button>
                       </div>
                     </DialogContent>
                   </Dialog>
