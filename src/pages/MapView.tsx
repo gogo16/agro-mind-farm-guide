@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import SatelliteMonitoring from '@/components/SatelliteMonitoring';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,7 +32,7 @@ const MapView = () => {
 
   // Google Maps API key - replace with your actual key
   const GOOGLE_MAPS_API_KEY = "AIzaSyDloS4Jj3CMvgpmdrWUECSOKs12A8wX1io";
-  const isValidAPIKey = GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY !== "YOUR_GOOGLE_MAPS_API_KEY";
+  const isValidAPIKey = GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY.length > 0 && !GOOGLE_MAPS_API_KEY.includes("YOUR_GOOGLE_MAPS_API_KEY");
 
   const handleAddField = () => {
     if (!newField.name || !newField.parcelCode || !newField.area || !newField.crop) {
@@ -84,7 +84,7 @@ const MapView = () => {
   const handleCenterOnMap = (field) => {
     if (field.coordinates) {
       // For Google Maps iframe, we'll update the src to center on the field
-      const mapElement = document.querySelector('#google-maps-iframe');
+      const mapElement = document.querySelector('#google-maps-iframe') as HTMLIFrameElement;
       if (mapElement) {
         const newSrc = `https://www.google.com/maps/embed/v1/view?key=${GOOGLE_MAPS_API_KEY}&center=${field.coordinates.lat},${field.coordinates.lng}&zoom=16&maptype=${mapType}`;
         mapElement.src = newSrc;
