@@ -13,10 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MapPin, Satellite, Layers, Plus, Sprout } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
-
 const MapView = () => {
-  const { toast } = useToast();
-  const { fields, addField } = useAppContext();
+  const {
+    toast
+  } = useToast();
+  const {
+    fields,
+    addField
+  } = useAppContext();
   const navigate = useNavigate();
   const [mapType, setMapType] = useState('roadmap');
   const [showFieldInfo, setShowFieldInfo] = useState(false);
@@ -36,7 +40,6 @@ const MapView = () => {
     inputs: '',
     color: '#22c55e'
   });
-
   const handleAddField = () => {
     if (!newField.name || !newField.parcelCode || !newField.size || !newField.crop) {
       toast({
@@ -46,7 +49,6 @@ const MapView = () => {
       });
       return;
     }
-
     const coordinates = newField.coords ? {
       lat: parseFloat(newField.coords.split(',')[0]),
       lng: parseFloat(newField.coords.split(',')[1])
@@ -54,7 +56,6 @@ const MapView = () => {
       lat: 45.75,
       lng: 21.21
     };
-
     addField({
       name: newField.name,
       parcelCode: newField.parcelCode,
@@ -71,7 +72,6 @@ const MapView = () => {
       roi: 0,
       color: newField.color
     });
-
     setNewField({
       name: '',
       parcelCode: '',
@@ -87,27 +87,23 @@ const MapView = () => {
       color: '#22c55e'
     });
     setIsAddingField(false);
-
     toast({
       title: "Succes",
       description: `Terenul "${newField.name}" (${newField.parcelCode}) a fost adăugat cu succes.`
     });
   };
-
-  const handleViewFieldDetails = (field) => {
+  const handleViewFieldDetails = field => {
     navigate(`/field/${field.id}`);
   };
-
-  const handleCenterOnMap = (field) => {
+  const handleCenterOnMap = field => {
     if (field.coordinates) {
       // Folosește funcția globală expusă de InteractiveMap
       if ((window as any).centerMapOnField) {
         (window as any).centerMapOnField(field);
       }
-      
       toast({
         title: "Hartă centrată",
-        description: `Harta a fost centrată pe ${field.name}`,
+        description: `Harta a fost centrată pe ${field.name}`
       });
     } else {
       toast({
@@ -117,14 +113,11 @@ const MapView = () => {
       });
     }
   };
-
-  const handleFieldSelect = (field) => {
+  const handleFieldSelect = field => {
     setSelectedField(field);
     setShowFieldInfo(true);
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+  return <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
@@ -147,42 +140,16 @@ const MapView = () => {
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-2 block">Tip vedere</label>
                   <div className="grid grid-cols-1 gap-2">
-                    <Button
-                      variant={mapType === 'roadmap' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setMapType('roadmap')}
-                      className="justify-start"
-                    >
+                    <Button variant={mapType === 'roadmap' ? 'default' : 'outline'} size="sm" onClick={() => setMapType('roadmap')} className="justify-start">
                       <MapPin className="h-4 w-4 mr-2" />
                       Hartă normală
                     </Button>
-                    <Button
-                      variant={mapType === 'satellite' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setMapType('satellite')}
-                      className="justify-start"
-                    >
+                    <Button variant={mapType === 'satellite' ? 'default' : 'outline'} size="sm" onClick={() => setMapType('satellite')} className="justify-start">
                       <Satellite className="h-4 w-4 mr-2" />
                       Satelit
                     </Button>
-                    <Button
-                      variant={mapType === 'hybrid' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setMapType('hybrid')}
-                      className="justify-start"
-                    >
-                      <Layers className="h-4 w-4 mr-2" />
-                      Hibrid
-                    </Button>
-                    <Button
-                      variant={mapType === 'terrain' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setMapType('terrain')}
-                      className="justify-start"
-                    >
-                      <MapPin className="h-4 w-4 mr-2" />
-                      Teren
-                    </Button>
+                    
+                    
                   </div>
                 </div>
 
@@ -201,35 +168,31 @@ const MapView = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="name">Nume teren *</Label>
-                          <Input
-                            id="name"
-                            value={newField.name}
-                            onChange={(e) => setNewField({ ...newField, name: e.target.value })}
-                            placeholder="ex: Parcela Vest"
-                          />
+                          <Input id="name" value={newField.name} onChange={e => setNewField({
+                          ...newField,
+                          name: e.target.value
+                        })} placeholder="ex: Parcela Vest" />
                         </div>
                         <div>
                           <Label htmlFor="parcelCode">Cod parcelă *</Label>
-                          <Input
-                            id="parcelCode"
-                            value={newField.parcelCode}
-                            onChange={(e) => setNewField({ ...newField, parcelCode: e.target.value })}
-                            placeholder="ex: PV-001"
-                          />
+                          <Input id="parcelCode" value={newField.parcelCode} onChange={e => setNewField({
+                          ...newField,
+                          parcelCode: e.target.value
+                        })} placeholder="ex: PV-001" />
                         </div>
                         <div>
                           <Label htmlFor="size">Suprafață (ha) *</Label>
-                          <Input
-                            id="size"
-                            type="number"
-                            value={newField.size}
-                            onChange={(e) => setNewField({ ...newField, size: e.target.value })}
-                            placeholder="ex: 10.5"
-                          />
+                          <Input id="size" type="number" value={newField.size} onChange={e => setNewField({
+                          ...newField,
+                          size: e.target.value
+                        })} placeholder="ex: 10.5" />
                         </div>
                         <div>
                           <Label htmlFor="crop">Cultură *</Label>
-                          <Select onValueChange={(value) => setNewField({ ...newField, crop: value })}>
+                          <Select onValueChange={value => setNewField({
+                          ...newField,
+                          crop: value
+                        })}>
                             <SelectTrigger>
                               <SelectValue placeholder="Selectează cultura" />
                             </SelectTrigger>
@@ -268,25 +231,24 @@ const MapView = () => {
                         </div>
                         <div>
                           <Label htmlFor="plantingDate">Data însămânțare</Label>
-                          <Input
-                            id="plantingDate"
-                            type="date"
-                            value={newField.plantingDate}
-                            onChange={(e) => setNewField({ ...newField, plantingDate: e.target.value })}
-                          />
+                          <Input id="plantingDate" type="date" value={newField.plantingDate} onChange={e => setNewField({
+                          ...newField,
+                          plantingDate: e.target.value
+                        })} />
                         </div>
                         <div>
                           <Label htmlFor="harvestDate">Data recoltare</Label>
-                          <Input
-                            id="harvestDate"
-                            type="date"
-                            value={newField.harvestDate}
-                            onChange={(e) => setNewField({ ...newField, harvestDate: e.target.value })}
-                          />
+                          <Input id="harvestDate" type="date" value={newField.harvestDate} onChange={e => setNewField({
+                          ...newField,
+                          harvestDate: e.target.value
+                        })} />
                         </div>
                         <div>
                           <Label htmlFor="color">Culoare pe hartă</Label>
-                          <Select onValueChange={(value) => setNewField({ ...newField, color: value })}>
+                          <Select onValueChange={value => setNewField({
+                          ...newField,
+                          color: value
+                        })}>
                             <SelectTrigger>
                               <SelectValue placeholder="Selectează culoarea" />
                             </SelectTrigger>
@@ -311,35 +273,24 @@ const MapView = () => {
                         </div>
                         <div className="col-span-2">
                           <Label htmlFor="inputs">Istoric îngrășăminte/chimicale</Label>
-                          <Input
-                            id="inputs"
-                            value={newField.inputs}
-                            onChange={(e) => setNewField({ ...newField, inputs: e.target.value })}
-                            placeholder="ex: NPK 16:16:16, Herbicid"
-                          />
+                          <Input id="inputs" value={newField.inputs} onChange={e => setNewField({
+                          ...newField,
+                          inputs: e.target.value
+                        })} placeholder="ex: NPK 16:16:16, Herbicid" />
                         </div>
                         <div className="col-span-2">
                           <Label htmlFor="coords">Coordonate GPS</Label>
-                          <Input
-                            id="coords"
-                            value={newField.coords}
-                            onChange={(e) => setNewField({ ...newField, coords: e.target.value })}
-                            placeholder="ex: 45.7489, 21.2087"
-                          />
+                          <Input id="coords" value={newField.coords} onChange={e => setNewField({
+                          ...newField,
+                          coords: e.target.value
+                        })} placeholder="ex: 45.7489, 21.2087" />
                         </div>
                       </div>
                       <div className="flex space-x-2 mt-4">
-                        <Button
-                          onClick={() => setIsAddingField(false)}
-                          variant="outline"
-                          className="flex-1"
-                        >
+                        <Button onClick={() => setIsAddingField(false)} variant="outline" className="flex-1">
                           Anulează
                         </Button>
-                        <Button
-                          onClick={handleAddField}
-                          className="flex-1 bg-green-600 hover:bg-green-700"
-                        >
+                        <Button onClick={handleAddField} className="flex-1 bg-green-600 hover:bg-green-700">
                           Adaugă teren
                         </Button>
                       </div>
@@ -355,25 +306,18 @@ const MapView = () => {
                 <CardTitle className="text-green-800">Parcelele tale</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {fields.map((field) => (
-                  <div
-                    key={field.id}
-                    className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer"
-                    onClick={() => {
-                      setSelectedField(field);
-                      setShowFieldInfo(true);
-                    }}
-                  >
-                    <div
-                      className="w-4 h-4 rounded-full border-2 border-white shadow"
-                      style={{ backgroundColor: field.color || '#22c55e' }}
-                    ></div>
+                {fields.map(field => <div key={field.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => {
+                setSelectedField(field);
+                setShowFieldInfo(true);
+              }}>
+                    <div className="w-4 h-4 rounded-full border-2 border-white shadow" style={{
+                  backgroundColor: field.color || '#22c55e'
+                }}></div>
                     <div className="flex-1">
                       <p className="font-medium text-sm">{field.name}</p>
                       <p className="text-xs text-gray-600">{field.crop} • {field.size} ha • {field.parcelCode}</p>
                     </div>
-                  </div>
-                ))}
+                  </div>)}
               </CardContent>
             </Card>
           </div>
@@ -383,14 +327,10 @@ const MapView = () => {
             <Card className="bg-white border-green-200 h-[600px]">
               <CardContent className="p-0 h-full">
                 <div className="relative w-full h-full rounded-lg overflow-hidden">
-                  <InteractiveMap 
-                    mapType={mapType} 
-                    onFieldSelect={handleFieldSelect}
-                  />
+                  <InteractiveMap mapType={mapType} onFieldSelect={handleFieldSelect} />
 
                   {/* Field Info Modal */}
-                  {showFieldInfo && selectedField && (
-                    <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 w-64 border z-20">
+                  {showFieldInfo && selectedField && <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 w-64 border z-20">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-semibold text-green-800">{selectedField.name}</h4>
                         <Button variant="ghost" size="sm" onClick={() => setShowFieldInfo(false)}>
@@ -401,29 +341,17 @@ const MapView = () => {
                         <p><strong>Cod parcelă:</strong> {selectedField.parcelCode}</p>
                         <p><strong>Cultură:</strong> {selectedField.crop}</p>
                         <p><strong>Suprafață:</strong> {selectedField.size} ha</p>
-                        {selectedField.coordinates && (
-                          <p><strong>Coordonate:</strong> {selectedField.coordinates.lat}, {selectedField.coordinates.lng}</p>
-                        )}
+                        {selectedField.coordinates && <p><strong>Coordonate:</strong> {selectedField.coordinates.lat}, {selectedField.coordinates.lng}</p>}
                       </div>
                       <div className="mt-4 space-y-2">
-                        <Button 
-                          size="sm" 
-                          className="w-full bg-green-600 hover:bg-green-700"
-                          onClick={() => handleViewFieldDetails(selectedField)}
-                        >
+                        <Button size="sm" className="w-full bg-green-600 hover:bg-green-700" onClick={() => handleViewFieldDetails(selectedField)}>
                           Vezi detalii complete
                         </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          className="w-full"
-                          onClick={() => handleCenterOnMap(selectedField)}
-                        >
+                        <Button size="sm" variant="outline" className="w-full" onClick={() => handleCenterOnMap(selectedField)}>
                           Centrează pe hartă
                         </Button>
                       </div>
-                    </div>
-                  )}
+                    </div>}
                 </div>
               </CardContent>
             </Card>
@@ -435,8 +363,6 @@ const MapView = () => {
           <SatelliteMonitoring />
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default MapView;
