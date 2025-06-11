@@ -16,6 +16,7 @@ import { useAppContext } from '@/contexts/AppContext';
 const MapView = () => {
   const { toast } = useToast();
   const { fields, addField } = useAppContext();
+  const navigate = useNavigate();
   const [mapType, setMapType] = useState('roadmap');
   const [showFieldInfo, setShowFieldInfo] = useState(false);
   const [selectedField, setSelectedField] = useState(null);
@@ -31,7 +32,7 @@ const MapView = () => {
 
   // Google Maps API key - replace with your actual key
   const GOOGLE_MAPS_API_KEY = "AIzaSyDloS4Jj3CMvgpmdrWUECSOKs12A8wX1io";
-  const isValidAPIKey = GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY.startsWith('AIza');
+  const isValidAPIKey = GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY !== "YOUR_GOOGLE_MAPS_API_KEY";
 
   const handleAddField = () => {
     if (!newField.name || !newField.parcelCode || !newField.area || !newField.crop) {
@@ -74,6 +75,32 @@ const MapView = () => {
       title: "Succes",
       description: `Parcela "${newField.name}" (${newField.parcelCode}) a fost adăugată pe hartă.`
     });
+  };
+
+  const handleViewFieldDetails = (field) => {
+    navigate(`/field/${field.id}`);
+  };
+
+  const handleCenterOnMap = (field) => {
+    if (field.coordinates) {
+      // For Google Maps iframe, we'll update the src to center on the field
+      const mapElement = document.querySelector('#google-maps-iframe');
+      if (mapElement) {
+        const newSrc = `https://www.google.com/maps/embed/v1/view?key=${GOOGLE_MAPS_API_KEY}&center=${field.coordinates.lat},${field.coordinates.lng}&zoom=16&maptype=${mapType}`;
+        mapElement.src = newSrc;
+      }
+      
+      toast({
+        title: "Hartă centrată",
+        description: `Harta a fost centrată pe ${field.name}`,
+      });
+    } else {
+      toast({
+        title: "Coordonate lipsă",
+        description: `Nu sunt disponibile coordonate pentru ${field.name}`,
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -293,6 +320,7 @@ const MapView = () => {
                   {/* Google Maps Integration */}
                   {isValidAPIKey ? (
                     <iframe
+                      id="google-maps-iframe"
                       width="100%"
                       height="100%"
                       style={{ border: 0 }}
@@ -353,10 +381,19 @@ const MapView = () => {
                         )}
                       </div>
                       <div className="mt-4 space-y-2">
-                        <Button size="sm" className="w-full bg-green-600 hover:bg-green-700">
+                        <Button 
+                          size="sm" 
+                          className="w-full bg-green-600 hover:bg-green-700"
+                          onClick={() => handleViewFieldDetails(selectedField)}
+                        >
                           Vezi detalii complete
                         </Button>
-                        <Button size="sm" variant="outline" className="w-full">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="w-full"
+                          onClick={() => handleCenterOnMap(selectedField)}
+                        >
                           Centrează pe hartă
                         </Button>
                       </div>
