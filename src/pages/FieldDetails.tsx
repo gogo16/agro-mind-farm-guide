@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -11,32 +12,37 @@ import EditFieldDialog from '@/components/EditFieldDialog';
 import AddPhotoDialog from '@/components/AddPhotoDialog';
 import SoilSection from '@/components/SoilSection';
 import { useAppContext } from '@/contexts/AppContext';
+
 const FieldDetails = () => {
-  const {
-    id
-  } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const {
-    fields,
-    tasks
-  } = useAppContext();
+  const { fields, tasks } = useAppContext();
   const [isEditingField, setIsEditingField] = useState(false);
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
+
   const fieldId = id ? parseInt(id, 10) : null;
   const field = fieldId ? fields.find(f => f.id === fieldId) : null;
 
   // Get completed tasks for this field
-  const completedActivities = tasks.filter(task => task.field === field?.name && task.status === 'completed').map(task => ({
+  const completedActivities = tasks.filter(task => 
+    task.field === field?.name && task.status === 'completed'
+  ).map(task => ({
     id: task.id,
     date: task.dueDate || new Date().toISOString().split('T')[0],
     activity: task.title,
     details: task.description || 'Activitate completată',
-    cost: 0,
-    // Tasks don't have costs by default
+    cost: 0, // Tasks don't have costs by default
     weather: 'N/A'
   }));
+
+  // Get the last completed task for work type
+  const lastCompletedTask = tasks
+    .filter(task => task.field === field?.name && task.status === 'completed')
+    .sort((a, b) => new Date(b.dueDate || b.date).getTime() - new Date(a.dueDate || a.date).getTime())[0];
+
   if (!field) {
-    return <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
         <Navigation />
         <div className="container mx-auto px-4 py-6">
           <div className="text-center">
@@ -46,9 +52,12 @@ const FieldDetails = () => {
             </Button>
           </div>
         </div>
-      </div>;
+      </div>
+    );
   }
-  return <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
@@ -65,14 +74,28 @@ const FieldDetails = () => {
             </div>
           </div>
           <div className="flex space-x-2">
-            <AddPhotoDialog fieldId={field.id} isOpen={isAddingPhoto} onOpenChange={setIsAddingPhoto} trigger={<Button variant="outline">
+            <AddPhotoDialog 
+              fieldId={field.id} 
+              isOpen={isAddingPhoto} 
+              onOpenChange={setIsAddingPhoto} 
+              trigger={
+                <Button variant="outline">
                   <Camera className="h-4 w-4 mr-2" />
                   Adaugă poză
-                </Button>} />
-            <EditFieldDialog field={field} isOpen={isEditingField} onOpenChange={setIsEditingField} trigger={<Button className="bg-green-600 hover:bg-green-700">
+                </Button>
+              } 
+            />
+            <EditFieldDialog 
+              field={field} 
+              isOpen={isEditingField} 
+              onOpenChange={setIsEditingField} 
+              trigger={
+                <Button className="bg-green-600 hover:bg-green-700">
                   <Edit className="h-4 w-4 mr-2" />
                   Editează
-                </Button>} />
+                </Button>
+              } 
+            />
           </div>
         </div>
 
@@ -146,10 +169,10 @@ const FieldDetails = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Tip lucrare</p>
-                      <p className="font-medium">{field.workType || 'N/A'}</p>
+                      <p className="font-medium">{lastCompletedTask?.title || field.workType || 'N/A'}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Inputuri</p>
+                      <p className="text-sm text-gray-600">Istoric îngrășăminte/chimicale</p>
                       <p className="font-medium">{field.inputs || 'N/A'}</p>
                     </div>
                     <div>
@@ -232,6 +255,8 @@ const FieldDetails = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default FieldDetails;
