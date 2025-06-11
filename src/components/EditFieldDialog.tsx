@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -131,7 +130,6 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
       size: parseFloat(editedField.size),
       crop: editedField.crop,
       coordinates: coordValidation.coordinates,
-      coordinatesType: coordValidation.type || 'point',
       plantingDate: editedField.plantingDate,
       harvestDate: editedField.harvestDate,
       workType: editedField.workType,
