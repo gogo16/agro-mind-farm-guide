@@ -36,6 +36,9 @@ const Index = () => {
   const profit = totalIncome - totalExpenses;
   const efficiency = totalExpenses > 0 ? ((profit / totalExpenses) * 100) : 0;
   
+  // Calculează numărul de culturi plantate (terenuri care au o cultură introdusă)
+  const plantedCrops = fields.filter(field => field.crop && field.crop.trim() !== '').length;
+  
   useEffect(() => {
     const month = new Date().getMonth();
     let season = '';
@@ -205,7 +208,8 @@ const Index = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-green-600 font-medium">Culturi Plantate</p>
-                  <p className="text-3xl font-bold text-green-800">{fields.filter(f => f.status === 'Plantat').length}</p>
+                  <p className="text-3xl font-bold text-green-800">{plantedCrops}</p>
+                  <p className="text-xs text-green-500">terenuri cu cultură</p>
                 </div>
                 <Sprout className="h-8 w-8 text-amber-500" />
               </div>
@@ -345,3 +349,5 @@ const Index = () => {
 };
 
 export default Index;
+
+</edits_to_apply>
