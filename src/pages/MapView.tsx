@@ -33,7 +33,7 @@ const MapView = () => {
   });
 
   // For demonstration - replace with your actual Google Maps API key
-  const GOOGLE_MAPS_API_KEY = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+  const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY";
   const handleAddField = () => {
     if (!newField.name || !newField.parcelCode || !newField.area || !newField.crop) {
       toast({
