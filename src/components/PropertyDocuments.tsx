@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,31 @@ const PropertyDocuments = () => {
     'Asigurare agricolă',
     'Altul'
   ];
+
+  // Funcție pentru verificarea stării de expirare
+  const getExpirationStatus = (validUntil?: string) => {
+    if (!validUntil) return null;
+    
+    const today = new Date();
+    const expirationDate = new Date(validUntil);
+    const daysDifference = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysDifference < 0) {
+      return { type: 'expired', message: 'Expirat', color: 'bg-red-100 text-red-800 border-red-200' };
+    } else if (daysDifference <= 7) {
+      return { type: 'expiring', message: 'Expiră curând', color: 'bg-orange-100 text-orange-800 border-orange-200' };
+    }
+    
+    return null;
+  };
+
+  // Funcție pentru obținerea culorii terenului
+  const getFieldColor = (parcelId?: number) => {
+    if (!parcelId) return 'bg-gray-50'; // Culoare pentru documente generale
+    
+    const field = fields.find(f => f.id === parcelId);
+    return field?.color || 'bg-gray-50';
+  };
 
   const handleAddDocument = () => {
     if (!newDoc.type || !newDoc.name) {
@@ -273,83 +299,100 @@ const PropertyDocuments = () => {
 
       {/* Documents Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {propertyDocuments.map((doc) => (
-          <Card key={doc.id} className="bg-white border-green-200 hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-lg">{doc.name}</CardTitle>
-                  <p className="text-sm text-gray-600">{doc.type}</p>
-                  <p className="text-xs text-gray-500">{getFieldName(doc.parcelId)}</p>
+        {propertyDocuments.map((doc) => {
+          const expirationStatus = getExpirationStatus(doc.validUntil);
+          const fieldColor = getFieldColor(doc.parcelId);
+          
+          return (
+            <Card 
+              key={doc.id} 
+              className={`border-green-200 hover:shadow-lg transition-shadow ${fieldColor}`}
+              style={{
+                borderLeft: expirationStatus ? `4px solid ${expirationStatus.type === 'expired' ? '#dc2626' : '#ea580c'}` : undefined
+              }}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg">{doc.name}</CardTitle>
+                    <p className="text-sm text-gray-600">{doc.type}</p>
+                    <p className="text-xs text-gray-500">{getFieldName(doc.parcelId)}</p>
+                  </div>
+                  <div className="flex flex-col space-y-1">
+                    {getStatusBadge(doc.status)}
+                    {expirationStatus && (
+                      <Badge className={expirationStatus.color}>
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                        {expirationStatus.message}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-col space-y-1">
-                  {getStatusBadge(doc.status)}
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <FileText className="h-4 w-4" />
+                  <span>{doc.fileName}</span>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center space-x-2 text-sm text-gray-600">
-                <FileText className="h-4 w-4" />
-                <span>{doc.fileName}</span>
-              </div>
-              
-              {doc.issueDate && (
-                <div className="text-xs text-gray-500">
-                  Emis: {doc.issueDate}
-                </div>
-              )}
-              
-              {doc.validUntil && (
-                <div className="text-xs text-gray-500">
-                  Valabil până: {doc.validUntil}
-                </div>
-              )}
+                
+                {doc.issueDate && (
+                  <div className="text-xs text-gray-500">
+                    Emis: {doc.issueDate}
+                  </div>
+                )}
+                
+                {doc.validUntil && (
+                  <div className="text-xs text-gray-500">
+                    Valabil până: {doc.validUntil}
+                  </div>
+                )}
 
-              {doc.notes && (
-                <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{doc.notes}</p>
-              )}
+                {doc.notes && (
+                  <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{doc.notes}</p>
+                )}
 
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex space-x-1">
-                  <Button size="sm" variant="outline">
-                    <Eye className="h-3 w-3 mr-1" />
-                    Vezi
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Download className="h-3 w-3 mr-1" />
-                    Descarcă
-                  </Button>
+                <div className="flex items-center justify-between pt-2">
+                  <div className="flex space-x-1">
+                    <Button size="sm" variant="outline">
+                      <Eye className="h-3 w-3 mr-1" />
+                      Vezi
+                    </Button>
+                    <Button size="sm" variant="outline">
+                      <Download className="h-3 w-3 mr-1" />
+                      Descarcă
+                    </Button>
+                  </div>
+                  <div className="flex space-x-1">
+                    <Button size="sm" variant="outline" onClick={() => handleEditDocument(doc)}>
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Confirmare ștergere</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Ești sigur că vrei să ștergi documentul "{doc.name}"? Această acțiune nu poate fi anulată.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Anulează</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deletePropertyDocument(doc.id)} className="bg-red-600 hover:bg-red-700">
+                            Șterge
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
-                <div className="flex space-x-1">
-                  <Button size="sm" variant="outline" onClick={() => handleEditDocument(doc)}>
-                    <Edit className="h-3 w-3" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Confirmare ștergere</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Ești sigur că vrei să ștergi documentul "{doc.name}"? Această acțiune nu poate fi anulată.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Anulează</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => deletePropertyDocument(doc.id)} className="bg-red-600 hover:bg-red-700">
-                          Șterge
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {propertyDocuments.length === 0 && (
