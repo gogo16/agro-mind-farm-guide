@@ -29,8 +29,9 @@ const MapView = () => {
     color: '#22c55e'
   });
 
-  // For demonstration - replace with your actual Google Maps API key
+  // Google Maps API key - replace with your actual key
   const GOOGLE_MAPS_API_KEY = "AIzaSyDloS4Jj3CMvgpmdrWUECSOKs12A8wX1io";
+  const isValidAPIKey = GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY.startsWith('AIza');
 
   const handleAddField = () => {
     if (!newField.name || !newField.parcelCode || !newField.area || !newField.crop) {
@@ -290,7 +291,7 @@ const MapView = () => {
               <CardContent className="p-0 h-full">
                 <div className="relative w-full h-full rounded-lg overflow-hidden">
                   {/* Google Maps Integration */}
-                  {GOOGLE_MAPS_API_KEY !== "YOUR_GOOGLE_MAPS_API_KEY" ? (
+                  {isValidAPIKey ? (
                     <iframe
                       width="100%"
                       height="100%"
