@@ -33,7 +33,7 @@ const MapView = () => {
   });
 
   // For demonstration - replace with your actual Google Maps API key
-  const GOOGLE_MAPS_API_KEY = AIzaSyDloS4Jj3CMvgpmdrWUECSOKs12A8wX1io;
+  const GOOGLE_MAPS_API_KEY = AIzaSyDloS4Jj3CMvgpmdrWUECSOKs12A8wX1io
   const handleAddField = () => {
     if (!newField.name || !newField.parcelCode || !newField.area || !newField.crop) {
       toast({
