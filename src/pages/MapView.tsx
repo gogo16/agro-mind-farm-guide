@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import SatelliteMonitoring from '@/components/SatelliteMonitoring';
+import InteractiveMap from '@/components/InteractiveMap';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,10 +36,6 @@ const MapView = () => {
     inputs: '',
     color: '#22c55e'
   });
-
-  // Google Maps API key - replace with your actual key
-  const GOOGLE_MAPS_API_KEY = "AIzaSyDloS4Jj3CMvgpmdrWUECSOKs12A8wX1io";
-  const isValidAPIKey = GOOGLE_MAPS_API_KEY && GOOGLE_MAPS_API_KEY.length > 0 && !GOOGLE_MAPS_API_KEY.includes("YOUR_GOOGLE_MAPS_API_KEY");
 
   const handleAddField = () => {
     if (!newField.name || !newField.parcelCode || !newField.size || !newField.crop) {
@@ -104,11 +100,9 @@ const MapView = () => {
 
   const handleCenterOnMap = (field) => {
     if (field.coordinates) {
-      // For Google Maps iframe, we'll update the src to center on the field
-      const mapElement = document.querySelector('#google-maps-iframe') as HTMLIFrameElement;
-      if (mapElement) {
-        const newSrc = `https://www.google.com/maps/embed/v1/view?key=${GOOGLE_MAPS_API_KEY}&center=${field.coordinates.lat},${field.coordinates.lng}&zoom=16&maptype=${mapType}`;
-        mapElement.src = newSrc;
+      // Folosește funcția globală expusă de InteractiveMap
+      if ((window as any).centerMapOnField) {
+        (window as any).centerMapOnField(field);
       }
       
       toast({
@@ -122,6 +116,11 @@ const MapView = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const handleFieldSelect = (field) => {
+    setSelectedField(field);
+    setShowFieldInfo(true);
   };
 
   return (
@@ -165,6 +164,24 @@ const MapView = () => {
                     >
                       <Satellite className="h-4 w-4 mr-2" />
                       Satelit
+                    </Button>
+                    <Button
+                      variant={mapType === 'hybrid' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setMapType('hybrid')}
+                      className="justify-start"
+                    >
+                      <Layers className="h-4 w-4 mr-2" />
+                      Hibrid
+                    </Button>
+                    <Button
+                      variant={mapType === 'terrain' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setMapType('terrain')}
+                      className="justify-start"
+                    >
+                      <MapPin className="h-4 w-4 mr-2" />
+                      Teren
                     </Button>
                   </div>
                 </div>
@@ -349,7 +366,7 @@ const MapView = () => {
                   >
                     <div
                       className="w-4 h-4 rounded-full border-2 border-white shadow"
-                      style={{ backgroundColor: '#22c55e' }}
+                      style={{ backgroundColor: field.color || '#22c55e' }}
                     ></div>
                     <div className="flex-1">
                       <p className="font-medium text-sm">{field.name}</p>
@@ -366,55 +383,14 @@ const MapView = () => {
             <Card className="bg-white border-green-200 h-[600px]">
               <CardContent className="p-0 h-full">
                 <div className="relative w-full h-full rounded-lg overflow-hidden">
-                  {/* Google Maps Integration */}
-                  {isValidAPIKey ? (
-                    <iframe
-                      id="google-maps-iframe"
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0 }}
-                      loading="lazy"
-                      allowFullScreen
-                      src={`https://www.google.com/maps/embed/v1/view?key=${GOOGLE_MAPS_API_KEY}&center=45.7489,21.2087&zoom=14&maptype=${mapType}`}
-                    ></iframe>
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center">
-                      <div className="text-center">
-                        <MapPin className="h-16 w-16 text-green-600 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold text-green-800 mb-2">Google Maps va fi integrat aici</h3>
-                        <p className="text-gray-600 mb-4">Pentru a activa harta, înlocuiește YOUR_GOOGLE_MAPS_API_KEY cu cheia ta API Google Maps</p>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-md mx-auto">
-                          {fields.map((field) => (
-                            <div
-                              key={field.id}
-                              className="bg-white/80 p-3 rounded-lg border cursor-pointer hover:shadow-md transition-shadow"
-                              onClick={() => {
-                                setSelectedField(field);
-                                setShowFieldInfo(true);
-                              }}
-                            >
-                              <div className="flex items-center space-x-2 mb-2">
-                                <div
-                                  className="w-3 h-3 rounded-full"
-                                  style={{ backgroundColor: '#22c55e' }}
-                                ></div>
-                                <span className="text-sm font-medium">{field.name}</span>
-                              </div>
-                              <p className="text-xs text-gray-600">{field.size} ha • {field.parcelCode}</p>
-                              <div className="flex items-center space-x-1 mt-1">
-                                <Sprout className="h-3 w-3 text-green-600" />
-                                <span className="text-xs">{field.crop}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <InteractiveMap 
+                    mapType={mapType} 
+                    onFieldSelect={handleFieldSelect}
+                  />
 
                   {/* Field Info Modal */}
                   {showFieldInfo && selectedField && (
-                    <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 w-64 border">
+                    <div className="absolute top-4 right-4 bg-white rounded-lg shadow-lg p-4 w-64 border z-20">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-semibold text-green-800">{selectedField.name}</h4>
                         <Button variant="ghost" size="sm" onClick={() => setShowFieldInfo(false)}>
