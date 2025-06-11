@@ -261,7 +261,7 @@ const MapView = () => {
               <CardContent className="p-0 h-full">
                 <div className="relative w-full h-full rounded-lg overflow-hidden">
                   {/* Google Maps Integration */}
-                  {GOOGLE_MAPS_API_KEY !== "YOUR_GOOGLE_MAPS_API_KEY" ? <iframe width="100%" height="100%" style={{
+                  {GOOGLE_MAPS_API_KEY !== "AIzaSyDloS4Jj3CMvgpmdrWUECSOKs12A8wX1io" ? <iframe width="100%" height="100%" style={{
                   border: 0
                 }} loading="lazy" allowFullScreen src={`https://www.google.com/maps/embed/v1/view?key=${GOOGLE_MAPS_API_KEY}&center=45.7489,21.2087&zoom=14&maptype=${mapType}`}></iframe> : <div className="w-full h-full bg-gradient-to-br from-green-100 to-blue-100 flex items-center justify-center">
                       <div className="text-center">
