@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 
@@ -28,6 +29,47 @@ const AddFieldDialog = () => {
     color: '#22c55e'
   });
 
+  const validateCoordinates = (coordsString: string) => {
+    if (!coordsString.trim()) return { isValid: true, coordinates: undefined };
+    
+    try {
+      // Împarte coordonatele pe linii noi sau puncte și virgule
+      const coordPairs = coordsString.split(/[\n;]/).map(line => line.trim()).filter(line => line);
+      
+      if (coordPairs.length === 1) {
+        // Un singur punct (centru)
+        const [lat, lng] = coordPairs[0].split(',').map(coord => parseFloat(coord.trim()));
+        if (isNaN(lat) || isNaN(lng)) {
+          return { isValid: false, error: 'Coordonatele trebuie să fie în format: latitudine,longitudine' };
+        }
+        return { 
+          isValid: true, 
+          coordinates: { lat, lng },
+          type: 'point'
+        };
+      } else if (coordPairs.length >= 3) {
+        // Poligon (minimum 3 puncte)
+        const coordinates = [];
+        for (const pair of coordPairs) {
+          const [lat, lng] = pair.split(',').map(coord => parseFloat(coord.trim()));
+          if (isNaN(lat) || isNaN(lng)) {
+            return { isValid: false, error: 'Toate coordonatele trebuie să fie în format: latitudine,longitudine' };
+          }
+          coordinates.push({ lat, lng });
+        }
+        return { 
+          isValid: true, 
+          coordinates: coordinates,
+          type: 'polygon'
+        };
+      } else {
+        return { isValid: false, error: 'Pentru un poligon sunt necesare minimum 3 puncte' };
+      }
+    } catch (error) {
+      return { isValid: false, error: 'Format invalid de coordonate' };
+    }
+  };
+
   const handleAddField = () => {
     if (!newField.name || !newField.parcelCode || !newField.size || !newField.crop) {
       toast({
@@ -37,30 +79,90 @@ const AddFieldDialog = () => {
       });
       return;
     }
-    const coordinates = newField.coords ? {
-      lat: parseFloat(newField.coords.split(',')[0]),
-      lng: parseFloat(newField.coords.split(',')[1])
-    } : undefined;
-    addField({
+
+    // Validează coordonatele
+    const coordValidation = validateCoordinates(newField.coords);
+    if (!coordValidation.isValid) {
+      toast({
+        title: "Eroare coordonate",
+        description: coordValidation.error,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Creează obiectul teren cu toate datele necesare pentru toate secțiunile
+    const fieldData = {
       name: newField.name,
       parcelCode: newField.parcelCode,
       size: parseFloat(newField.size),
       crop: newField.crop,
+      variety: newField.variety,
       status: 'healthy',
       location: newField.name,
-      coordinates,
+      coordinates: coordValidation.coordinates,
+      coordinatesType: coordValidation.type || 'point',
       plantingDate: newField.plantingDate,
       harvestDate: newField.harvestDate,
       workType: newField.workType,
       costs: newField.costs ? parseFloat(newField.costs) : undefined,
       inputs: newField.inputs,
       roi: 0,
-      color: newField.color
-    });
+      color: newField.color,
+      // Date pentru secțiunile aplicației
+      mapData: {
+        geometry: coordValidation.coordinates,
+        type: coordValidation.type || 'point',
+        color: newField.color,
+        style: {
+          fillColor: newField.color,
+          fillOpacity: 0.3,
+          strokeColor: newField.color,
+          strokeWeight: 2
+        }
+      },
+      // Date pentru inventar
+      inventoryData: {
+        inputs: newField.inputs,
+        costs: newField.costs ? parseFloat(newField.costs) : 0,
+        workType: newField.workType
+      },
+      // Date pentru documente și APIA/AFIR
+      documentData: {
+        parcelCode: newField.parcelCode,
+        size: parseFloat(newField.size),
+        crop: newField.crop,
+        variety: newField.variety,
+        coordinates: coordValidation.coordinates,
+        coordinatesType: coordValidation.type || 'point'
+      },
+      // Date pentru calendar
+      calendarData: {
+        plantingDate: newField.plantingDate,
+        harvestDate: newField.harvestDate,
+        workType: newField.workType,
+        crop: newField.crop
+      },
+      // Date pentru AI
+      aiData: {
+        crop: newField.crop,
+        variety: newField.variety,
+        size: parseFloat(newField.size),
+        plantingDate: newField.plantingDate,
+        harvestDate: newField.harvestDate,
+        inputs: newField.inputs,
+        soilType: 'unknown', // va fi actualizat ulterior
+        climateZone: 'temperate' // va fi actualizat ulterior
+      }
+    };
+
+    addField(fieldData);
+    
     toast({
       title: "Succes",
       description: `Terenul "${newField.name}" (${newField.parcelCode}) a fost adăugat cu succes.`
     });
+    
     setNewField({
       name: '',
       parcelCode: '',
@@ -153,6 +255,13 @@ const AddFieldDialog = () => {
             </Select>
           </div>
           <div>
+            <Label htmlFor="variety">Varietate</Label>
+            <Input id="variety" value={newField.variety} onChange={e => setNewField({
+            ...newField,
+            variety: e.target.value
+          })} placeholder="ex: Antonius, Glosa" />
+          </div>
+          <div>
             <Label htmlFor="plantingDate">Data însămânțare</Label>
             <Input id="plantingDate" type="date" value={newField.plantingDate} onChange={e => setNewField({
             ...newField,
@@ -165,6 +274,31 @@ const AddFieldDialog = () => {
             ...newField,
             harvestDate: e.target.value
           })} />
+          </div>
+          <div>
+            <Label htmlFor="workType">Tip lucrare</Label>
+            <Select onValueChange={value => setNewField({
+            ...newField,
+            workType: value
+          })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selectează tipul de lucrare" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Arătură conventională">Arătură conventională</SelectItem>
+                <SelectItem value="Cultivare minimă">Cultivare minimă</SelectItem>
+                <SelectItem value="No-till">No-till</SelectItem>
+                <SelectItem value="Disc">Disc</SelectItem>
+                <SelectItem value="Combinatorul">Combinatorul</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="costs">Costuri estimate (RON)</Label>
+            <Input id="costs" type="number" value={newField.costs} onChange={e => setNewField({
+            ...newField,
+            costs: e.target.value
+          })} placeholder="ex: 2500" />
           </div>
           
           <div>
@@ -203,11 +337,23 @@ const AddFieldDialog = () => {
           })} placeholder="ex: NPK 16:16:16, Herbicid" />
           </div>
           <div className="col-span-2">
-            <Label htmlFor="coords">Coordonate GPS</Label>
-            <Input id="coords" value={newField.coords} onChange={e => setNewField({
-            ...newField,
-            coords: e.target.value
-          })} placeholder="ex: 45.7489, 21.2087" />
+            <Label htmlFor="coords" className="flex items-center space-x-2">
+              <MapPin className="h-4 w-4" />
+              <span>Coordonate GPS</span>
+            </Label>
+            <Textarea 
+              id="coords" 
+              value={newField.coords} 
+              onChange={e => setNewField({
+                ...newField,
+                coords: e.target.value
+              })} 
+              placeholder="Pentru un punct: 45.7489, 21.2087&#10;Pentru un poligon (min. 3 puncte):&#10;45.7489, 21.2087&#10;45.7490, 21.2088&#10;45.7491, 21.2089"
+              className="min-h-[80px]"
+            />
+            <p className="text-xs text-gray-600 mt-1">
+              Format: latitudine,longitudine. Pentru poligon, introduceți minimum 3 puncte pe linii separate.
+            </p>
           </div>
         </div>
         <div className="flex space-x-2 mt-4">
