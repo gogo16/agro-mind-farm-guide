@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -135,19 +136,7 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
       workType: editedField.workType,
       costs: editedField.costs ? parseFloat(editedField.costs) : undefined,
       inputs: editedField.inputs,
-      color: editedField.color,
-      // Actualizăm și datele structurate pentru alte secțiuni
-      mapData: {
-        geometry: coordValidation.coordinates,
-        type: coordValidation.type || 'point',
-        color: editedField.color,
-        style: {
-          fillColor: editedField.color,
-          fillOpacity: 0.3,
-          strokeColor: editedField.color,
-          strokeWeight: 2
-        }
-      }
+      color: editedField.color
     });
 
     toast({
