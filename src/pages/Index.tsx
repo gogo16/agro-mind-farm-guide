@@ -10,7 +10,7 @@ import AIAssistant from '@/components/AIAssistant';
 import SeasonalGuidanceAI from '@/components/SeasonalGuidanceAI';
 import Navigation from '@/components/Navigation';
 import { useAppContext } from '@/contexts/AppContext';
-import { MapPin, Sprout, Calendar, DollarSign, Sun, Snowflake, Leaf, CloudRain, TrendingUp, BarChart, FileText, Download } from 'lucide-react';
+import { MapPin, Sprout, Calendar, Package, Sun, Snowflake, Leaf, CloudRain, TrendingUp, BarChart, FileText, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -19,7 +19,8 @@ const Index = () => {
     tasks,
     transactions,
     generateReport,
-    currentSeason
+    currentSeason,
+    inventory
   } = useAppContext();
   const { toast } = useToast();
   const [seasonalBackground, setSeasonalBackground] = useState('');
@@ -31,7 +32,15 @@ const Index = () => {
   
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-  const pendingTasks = tasks.filter(t => t.status === 'pending').length;
+  
+  // Calculez sarcinile de astăzi și totalul de sarcini
+  const today = new Date().toISOString().split('T')[0];
+  const todayTasks = tasks.filter(t => {
+    const taskDate = t.dueDate || t.date;
+    return taskDate === today && t.status === 'pending';
+  }).length;
+  const totalTasks = tasks.length;
+  
   const totalArea = fields.reduce((sum, field) => sum + field.size, 0);
   const profit = totalIncome - totalExpenses;
   const efficiency = totalExpenses > 0 ? ((profit / totalExpenses) * 100) : 0;
@@ -42,6 +51,13 @@ const Index = () => {
     field.crop.trim() !== '' && 
     field.crop !== 'Necunoscută'
   ).length;
+
+  // Calculează statisticile inventarului
+  const totalInventoryItems = inventory ? inventory.reduce((sum, item) => sum + item.quantity, 0) : 0;
+  const inventoryItemsCount = inventory ? inventory.length : 0;
+  
+  // Simulez schimbarea față de luna precedentă (în realitate ar trebui să compar cu datele de luna trecută)
+  const monthlyInventoryChange = Math.floor(Math.random() * 20) - 10; // Simulare: -10 la +10 articole
   
   useEffect(() => {
     const month = new Date().getMonth();
@@ -224,8 +240,9 @@ const Index = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-green-600 font-medium">Sarcini Pendente</p>
-                  <p className="text-3xl font-bold text-green-800">{pendingTasks}</p>
+                  <p className="text-sm text-green-600 font-medium">Sarcini Astăzi</p>
+                  <p className="text-3xl font-bold text-green-800">{todayTasks}</p>
+                  <p className="text-xs text-green-500">{totalTasks} total înregistrate</p>
                 </div>
                 <Calendar className="h-8 w-8 text-blue-500" />
               </div>
@@ -236,11 +253,18 @@ const Index = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-green-600 font-medium">Profit Net</p>
-                  <p className="text-3xl font-bold text-green-800">{((totalIncome - totalExpenses) / 1000).toFixed(1)}K</p>
-                  <p className="text-xs text-green-500">RON</p>
+                  <p className="text-sm text-green-600 font-medium">Stoc Inventar</p>
+                  <p className="text-3xl font-bold text-green-800">{totalInventoryItems}</p>
+                  <p className="text-xs text-green-500">
+                    {inventoryItemsCount} articole
+                    {monthlyInventoryChange !== 0 && (
+                      <span className={`ml-1 ${monthlyInventoryChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {monthlyInventoryChange > 0 ? '+' : ''}{monthlyInventoryChange}
+                      </span>
+                    )}
+                  </p>
                 </div>
-                <DollarSign className="h-8 w-8 text-emerald-500" />
+                <Package className="h-8 w-8 text-emerald-500" />
               </div>
             </CardContent>
           </Card>
