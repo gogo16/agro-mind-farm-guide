@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -41,7 +42,7 @@ const MapView = () => {
     color: '#22c55e'
   });
   const handleAddField = () => {
-    if (!newField.name || !newField.parcelCode || !newField.size || !newField.crop) {
+    if (!newField.name || !newField.parcelCode || !newField.size) {
       toast({
         title: "Eroare",
         description: "Te rugăm să completezi toate câmpurile obligatorii.",
@@ -60,7 +61,7 @@ const MapView = () => {
       name: newField.name,
       parcelCode: newField.parcelCode,
       size: parseFloat(newField.size),
-      crop: newField.crop,
+      crop: newField.crop || 'Necunoscută',
       status: 'healthy',
       location: newField.name,
       coordinates,
@@ -188,7 +189,7 @@ const MapView = () => {
                         })} placeholder="ex: 10.5" />
                         </div>
                         <div>
-                          <Label htmlFor="crop">Cultură *</Label>
+                          <Label htmlFor="crop">Cultură</Label>
                           <Select onValueChange={value => setNewField({
                           ...newField,
                           crop: value
@@ -272,11 +273,11 @@ const MapView = () => {
                           </Select>
                         </div>
                         <div className="col-span-2">
-                          <Label htmlFor="inputs">Istoric îngrășăminte/chimicale</Label>
+                          <Label htmlFor="inputs">Îngrășăminte folosite</Label>
                           <Input id="inputs" value={newField.inputs} onChange={e => setNewField({
                           ...newField,
                           inputs: e.target.value
-                        })} placeholder="ex: NPK 16:16:16, Herbicid" />
+                        })} placeholder="ex: NPK 16:16:16, Uree" />
                         </div>
                         <div className="col-span-2">
                           <Label htmlFor="coords">Coordonate GPS</Label>

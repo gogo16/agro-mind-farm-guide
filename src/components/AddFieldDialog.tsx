@@ -71,7 +71,7 @@ const AddFieldDialog = () => {
   };
 
   const handleAddField = () => {
-    if (!newField.name || !newField.parcelCode || !newField.size || !newField.crop) {
+    if (!newField.name || !newField.parcelCode || !newField.size) {
       toast({
         title: "Eroare",
         description: "Te rugăm să completezi toate câmpurile obligatorii.",
@@ -96,7 +96,7 @@ const AddFieldDialog = () => {
       name: newField.name,
       parcelCode: newField.parcelCode,
       size: parseFloat(newField.size),
-      crop: newField.crop,
+      crop: newField.crop || 'Necunoscută',
       variety: newField.variety,
       status: 'healthy',
       location: newField.name,
@@ -131,7 +131,7 @@ const AddFieldDialog = () => {
       documentData: {
         parcelCode: newField.parcelCode,
         size: parseFloat(newField.size),
-        crop: newField.crop,
+        crop: newField.crop || 'Necunoscută',
         variety: newField.variety,
         coordinates: coordValidation.coordinates,
         coordinatesType: coordValidation.type || 'point'
@@ -141,11 +141,11 @@ const AddFieldDialog = () => {
         plantingDate: newField.plantingDate,
         harvestDate: newField.harvestDate,
         workType: newField.workType,
-        crop: newField.crop
+        crop: newField.crop || 'Necunoscută'
       },
       // Date pentru AI
       aiData: {
-        crop: newField.crop,
+        crop: newField.crop || 'Necunoscută',
         variety: newField.variety,
         size: parseFloat(newField.size),
         plantingDate: newField.plantingDate,
@@ -215,7 +215,7 @@ const AddFieldDialog = () => {
           })} placeholder="ex: 10.5" />
           </div>
           <div>
-            <Label htmlFor="crop">Cultură *</Label>
+            <Label htmlFor="crop">Cultură</Label>
             <Select onValueChange={value => setNewField({
             ...newField,
             crop: value
@@ -330,11 +330,11 @@ const AddFieldDialog = () => {
             </Select>
           </div>
           <div className="col-span-2">
-            <Label htmlFor="inputs">Inputuri folosite</Label>
+            <Label htmlFor="inputs">Îngrășăminte folosite</Label>
             <Input id="inputs" value={newField.inputs} onChange={e => setNewField({
             ...newField,
             inputs: e.target.value
-          })} placeholder="ex: NPK 16:16:16, Herbicid" />
+          })} placeholder="ex: NPK 16:16:16, Uree" />
           </div>
           <div className="col-span-2">
             <Label htmlFor="coords" className="flex items-center space-x-2">

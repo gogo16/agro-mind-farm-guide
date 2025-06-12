@@ -106,7 +106,7 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
   };
 
   const handleSave = () => {
-    if (!editedField.name || !editedField.parcelCode || !editedField.size || !editedField.crop) {
+    if (!editedField.name || !editedField.parcelCode || !editedField.size) {
       toast({
         title: "Eroare",
         description: "Te rugăm să completezi toate câmpurile obligatorii.",
@@ -129,7 +129,7 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
       name: editedField.name,
       parcelCode: editedField.parcelCode,
       size: parseFloat(editedField.size),
-      crop: editedField.crop,
+      crop: editedField.crop || 'Necunoscută',
       coordinates: coordValidation.coordinates,
       plantingDate: editedField.plantingDate,
       harvestDate: editedField.harvestDate,
@@ -186,7 +186,7 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
             />
           </div>
           <div>
-            <Label htmlFor="crop">Cultură *</Label>
+            <Label htmlFor="crop">Cultură</Label>
             <Select value={editedField.crop} onValueChange={(value) => setEditedField({...editedField, crop: value})}>
               <SelectTrigger>
                 <SelectValue placeholder="Selectează cultura" />
@@ -271,12 +271,12 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
             </Select>
           </div>
           <div className="col-span-2">
-            <Label htmlFor="inputs">Inputuri folosite</Label>
+            <Label htmlFor="inputs">Îngrășăminte folosite</Label>
             <Input
               id="inputs"
               value={editedField.inputs}
               onChange={(e) => setEditedField({...editedField, inputs: e.target.value})}
-              placeholder="ex: NPK 16:16:16, Herbicid"
+              placeholder="ex: NPK 16:16:16, Uree"
             />
           </div>
           <div className="col-span-2">
