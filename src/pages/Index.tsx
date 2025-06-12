@@ -53,7 +53,7 @@ const Index = () => {
   ).length;
 
   // Calculează statisticile inventarului
-  const totalInventoryItems = inventory ? inventory.reduce((sum, item) => sum + item.quantity, 0) : 0;
+  const totalInventoryItems = inventory ? inventory.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0;
   const inventoryItemsCount = inventory ? inventory.length : 0;
   
   // Simulez schimbarea față de luna precedentă (în realitate ar trebui să compar cu datele de luna trecută)
