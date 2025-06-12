@@ -36,8 +36,12 @@ const Index = () => {
   const profit = totalIncome - totalExpenses;
   const efficiency = totalExpenses > 0 ? ((profit / totalExpenses) * 100) : 0;
   
-  // Calculează numărul de culturi plantate (terenuri care au o cultură introdusă)
-  const plantedCrops = fields.filter(field => field.crop && field.crop.trim() !== '').length;
+  // Calculează numărul de culturi plantate (terenuri care au o cultură introdusă și diferită de 'Necunoscută')
+  const plantedCrops = fields.filter(field => 
+    field.crop && 
+    field.crop.trim() !== '' && 
+    field.crop !== 'Necunoscută'
+  ).length;
   
   useEffect(() => {
     const month = new Date().getMonth();
