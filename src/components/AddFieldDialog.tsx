@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -9,10 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
-
 const AddFieldDialog = () => {
-  const { toast } = useToast();
-  const { addField } = useAppContext();
+  const {
+    toast
+  } = useToast();
+  const {
+    addField
+  } = useAppContext();
   const [isAddingField, setIsAddingField] = useState(false);
   const [newField, setNewField] = useState({
     name: '',
@@ -28,23 +30,29 @@ const AddFieldDialog = () => {
     inputs: '',
     color: '#22c55e'
   });
-
   const validateCoordinates = (coordsString: string) => {
-    if (!coordsString.trim()) return { isValid: true, coordinates: undefined };
-    
+    if (!coordsString.trim()) return {
+      isValid: true,
+      coordinates: undefined
+    };
     try {
       // Împarte coordonatele pe linii noi sau puncte și virgule
       const coordPairs = coordsString.split(/[\n;]/).map(line => line.trim()).filter(line => line);
-      
       if (coordPairs.length === 1) {
         // Un singur punct (centru)
         const [lat, lng] = coordPairs[0].split(',').map(coord => parseFloat(coord.trim()));
         if (isNaN(lat) || isNaN(lng)) {
-          return { isValid: false, error: 'Coordonatele trebuie să fie în format: latitudine,longitudine' };
+          return {
+            isValid: false,
+            error: 'Coordonatele trebuie să fie în format: latitudine,longitudine'
+          };
         }
-        return { 
-          isValid: true, 
-          coordinates: { lat, lng },
+        return {
+          isValid: true,
+          coordinates: {
+            lat,
+            lng
+          },
           type: 'point'
         };
       } else if (coordPairs.length >= 3) {
@@ -53,23 +61,34 @@ const AddFieldDialog = () => {
         for (const pair of coordPairs) {
           const [lat, lng] = pair.split(',').map(coord => parseFloat(coord.trim()));
           if (isNaN(lat) || isNaN(lng)) {
-            return { isValid: false, error: 'Toate coordonatele trebuie să fie în format: latitudine,longitudine' };
+            return {
+              isValid: false,
+              error: 'Toate coordonatele trebuie să fie în format: latitudine,longitudine'
+            };
           }
-          coordinates.push({ lat, lng });
+          coordinates.push({
+            lat,
+            lng
+          });
         }
-        return { 
-          isValid: true, 
+        return {
+          isValid: true,
           coordinates: coordinates,
           type: 'polygon'
         };
       } else {
-        return { isValid: false, error: 'Pentru un poligon sunt necesare minimum 3 puncte' };
+        return {
+          isValid: false,
+          error: 'Pentru un poligon sunt necesare minimum 3 puncte'
+        };
       }
     } catch (error) {
-      return { isValid: false, error: 'Format invalid de coordonate' };
+      return {
+        isValid: false,
+        error: 'Format invalid de coordonate'
+      };
     }
   };
-
   const handleAddField = () => {
     if (!newField.name || !newField.parcelCode || !newField.size) {
       toast({
@@ -151,18 +170,16 @@ const AddFieldDialog = () => {
         plantingDate: newField.plantingDate,
         harvestDate: newField.harvestDate,
         inputs: newField.inputs,
-        soilType: 'unknown', // va fi actualizat ulterior
+        soilType: 'unknown',
+        // va fi actualizat ulterior
         climateZone: 'temperate' // va fi actualizat ulterior
       }
     };
-
     addField(fieldData);
-    
     toast({
       title: "Succes",
       description: `Terenul "${newField.name}" (${newField.parcelCode}) a fost adăugat cu succes.`
     });
-    
     setNewField({
       name: '',
       parcelCode: '',
@@ -179,9 +196,7 @@ const AddFieldDialog = () => {
     });
     setIsAddingField(false);
   };
-
-  return (
-    <Dialog open={isAddingField} onOpenChange={setIsAddingField}>
+  return <Dialog open={isAddingField} onOpenChange={setIsAddingField}>
       <DialogTrigger asChild>
         <Button size="sm" className="bg-green-600 hover:bg-green-700">
           <Plus className="h-4 w-4 mr-1" />
@@ -275,31 +290,8 @@ const AddFieldDialog = () => {
             harvestDate: e.target.value
           })} />
           </div>
-          <div>
-            <Label htmlFor="workType">Tip lucrare</Label>
-            <Select onValueChange={value => setNewField({
-            ...newField,
-            workType: value
-          })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selectează tipul de lucrare" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Arătură conventională">Arătură conventională</SelectItem>
-                <SelectItem value="Cultivare minimă">Cultivare minimă</SelectItem>
-                <SelectItem value="No-till">No-till</SelectItem>
-                <SelectItem value="Disc">Disc</SelectItem>
-                <SelectItem value="Combinatorul">Combinatorul</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="costs">Costuri estimate (RON)</Label>
-            <Input id="costs" type="number" value={newField.costs} onChange={e => setNewField({
-            ...newField,
-            costs: e.target.value
-          })} placeholder="ex: 2500" />
-          </div>
+          
+          
           
           <div>
             <Label htmlFor="color">Culoare pe hartă</Label>
@@ -341,16 +333,10 @@ const AddFieldDialog = () => {
               <MapPin className="h-4 w-4" />
               <span>Coordonate GPS</span>
             </Label>
-            <Textarea 
-              id="coords" 
-              value={newField.coords} 
-              onChange={e => setNewField({
-                ...newField,
-                coords: e.target.value
-              })} 
-              placeholder="Pentru un punct: 45.7489, 21.2087&#10;Pentru un poligon (min. 3 puncte):&#10;45.7489, 21.2087&#10;45.7490, 21.2088&#10;45.7491, 21.2089"
-              className="min-h-[80px]"
-            />
+            <Textarea id="coords" value={newField.coords} onChange={e => setNewField({
+            ...newField,
+            coords: e.target.value
+          })} placeholder="Pentru un punct: 45.7489, 21.2087&#10;Pentru un poligon (min. 3 puncte):&#10;45.7489, 21.2087&#10;45.7490, 21.2088&#10;45.7491, 21.2089" className="min-h-[80px]" />
             <p className="text-xs text-gray-600 mt-1">
               Format: latitudine,longitudine. Pentru poligon, introduceți minimum 3 puncte pe linii separate.
             </p>
@@ -365,8 +351,6 @@ const AddFieldDialog = () => {
           </Button>
         </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 };
-
 export default AddFieldDialog;
