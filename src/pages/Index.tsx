@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -53,7 +54,7 @@ const Index = () => {
   ).length;
 
   // Calculează statisticile inventarului
-  const totalInventoryItems = inventory ? inventory.reduce((sum, item) => sum + (item.quantity || 0), 0) : 0;
+  const totalInventoryItems = inventory ? inventory.reduce((sum, item) => sum + Number(item.quantity || 0), 0) : 0;
   const inventoryItemsCount = inventory ? inventory.length : 0;
   
   // Simulez schimbarea față de luna precedentă (în realitate ar trebui să compar cu datele de luna trecută)
