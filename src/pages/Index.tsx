@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -53,8 +52,7 @@ const Index = () => {
     field.crop !== 'Necunoscută'
   ).length;
 
-  // Calculează statisticile inventarului
-  const totalInventoryItems = inventory ? inventory.reduce((sum, item) => sum + Number(item.quantity || 0), 0) : 0;
+  // Calculează statisticile inventarului - numărul de elemente (nu suma cantităților)
   const inventoryItemsCount = inventory ? inventory.length : 0;
   
   // Simulez schimbarea față de luna precedentă (în realitate ar trebui să compar cu datele de luna trecută)
@@ -255,9 +253,9 @@ const Index = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-green-600 font-medium">Stoc Inventar</p>
-                  <p className="text-3xl font-bold text-green-800">{totalInventoryItems}</p>
+                  <p className="text-3xl font-bold text-green-800">{inventoryItemsCount}</p>
                   <p className="text-xs text-green-500">
-                    {inventoryItemsCount} articole
+                    articole în inventar
                     {monthlyInventoryChange !== 0 && (
                       <span className={`ml-1 ${monthlyInventoryChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {monthlyInventoryChange > 0 ? '+' : ''}{monthlyInventoryChange}
