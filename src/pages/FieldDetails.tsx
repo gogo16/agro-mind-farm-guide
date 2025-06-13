@@ -267,21 +267,19 @@ const FieldDetails = () => {
           </TabsContent>
 
           <TabsContent value="soil" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <SoilSection fieldId={field.id} />
-              </div>
-              <div>
-                <AIRecommendationsCard
-                  zoneId="ai-soil-recommendations"
-                  title="Recomandări Sol AI"
-                  icon={<Sprout className="h-5 w-5" />}
-                  gradientClass="from-green-500 to-emerald-600"
-                />
-              </div>
-            </div>
+            <SoilSection fieldId={field.id} />
           </TabsContent>
         </Tabs>
+
+        {/* AI Recommendations at the bottom */}
+        <div className="mt-8">
+          <AIRecommendationsCard
+            zoneId="ai-soil-recommendations"
+            title="Recomandări AI pentru Sol"
+            icon={<Sprout className="h-5 w-5" />}
+            gradientClass="from-green-500 to-emerald-600"
+          />
+        </div>
       </div>
     </div>
   );
