@@ -7,9 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAIRecommendations } from '@/hooks/useAIRecommendations';
+import AIRecommendationsCard from '@/components/AIRecommendationsCard';
+import { Sprout } from 'lucide-react';
+
 interface SoilSectionProps {
   fieldId: number;
 }
+
 const SoilSection = ({
   fieldId
 }: SoilSectionProps) => {
@@ -19,7 +23,9 @@ const SoilSection = ({
   const {
     getRecommendationsByZone
   } = useAIRecommendations();
+
   const soilRecommendations = getRecommendationsByZone('ai-soil-recommendations');
+
   const [soilData, setSoilData] = useState({
     soilType: 'Cernoziom',
     pH: 7.2,
@@ -29,10 +35,13 @@ const SoilSection = ({
     organicMatter: 3.8,
     lastAnalysis: '2024-03-15'
   });
+
   const [isAddingCustomSoil, setIsAddingCustomSoil] = useState(false);
   const [customSoilType, setCustomSoilType] = useState('');
   const [editingField, setEditingField] = useState<string | null>(null);
+
   const soilTypes = ['Cernoziom', 'Luvosol', 'Cambisol', 'Fluvisol', 'Regosol', 'Gleysol', 'Vertisol', 'Podzol'];
+
   const handleSoilTypeChange = (newSoilType: string) => {
     if (newSoilType === 'custom') {
       setIsAddingCustomSoil(true);
@@ -47,6 +56,7 @@ const SoilSection = ({
       description: `Tipul de sol a fost schimbat la: ${newSoilType}`
     });
   };
+
   const handleCustomSoilAdd = () => {
     if (!customSoilType.trim()) {
       toast({
@@ -67,6 +77,7 @@ const SoilSection = ({
     setCustomSoilType('');
     setIsAddingCustomSoil(false);
   };
+
   const handleValueUpdate = (field: string, value: number) => {
     setSoilData({
       ...soilData,
@@ -78,6 +89,7 @@ const SoilSection = ({
       description: `${field} a fost actualizat cu succes.`
     });
   };
+
   const renderEditableValue = (field: string, value: number, unit: string, label: string) => {
     if (editingField === field) {
       return <div className="flex items-center space-x-2">
@@ -95,7 +107,6 @@ const SoilSection = ({
       </div>;
   };
 
-  // Generate AI-based recommendations
   const getAIRecommendations = () => {
     const recommendations = [];
     if (soilData.pH >= 7.0 && soilData.pH <= 7.5) {
@@ -138,8 +149,11 @@ const SoilSection = ({
     }
     return recommendations;
   };
+
   const aiRecommendations = getAIRecommendations();
-  return <div className="space-y-6">
+
+  return (
+    <div className="space-y-6">
       <Card className="bg-white border-green-200">
         <CardHeader>
           <CardTitle className="text-green-800">Analiza Solului</CardTitle>
@@ -186,10 +200,16 @@ const SoilSection = ({
               {renderEditableValue('organicMatter', soilData.organicMatter, '%', 'Materie organică')}
             </div>
           </div>
-
-          
         </CardContent>
       </Card>
+
+      {/* AI Recommendations Section */}
+      <AIRecommendationsCard
+        zoneId="ai-soil-recommendations"
+        title="Recomandări AI pentru Sol"
+        icon={<Sprout className="h-5 w-5" />}
+        gradientClass="from-green-500 to-emerald-600"
+      />
 
       <Dialog open={isAddingCustomSoil} onOpenChange={setIsAddingCustomSoil}>
         <DialogContent>
@@ -212,6 +232,8 @@ const SoilSection = ({
           </div>
         </DialogContent>
       </Dialog>
-    </div>;
+    </div>
+  );
 };
+
 export default SoilSection;

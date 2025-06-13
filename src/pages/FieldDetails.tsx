@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -12,7 +11,6 @@ import VisualCropJournal from '@/components/VisualCropJournal';
 import EditFieldDialog from '@/components/EditFieldDialog';
 import AddPhotoDialog from '@/components/AddPhotoDialog';
 import SoilSection from '@/components/SoilSection';
-import AIRecommendationsCard from '@/components/AIRecommendationsCard';
 import { useAppContext } from '@/contexts/AppContext';
 import { useAIRecommendations } from '@/hooks/useAIRecommendations';
 
@@ -80,6 +78,8 @@ const FieldDetails = () => {
       
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
+        
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <Button variant="ghost" onClick={() => navigate('/')} className="text-green-700 hover:text-green-800">
@@ -116,6 +116,8 @@ const FieldDetails = () => {
             />
           </div>
         </div>
+
+        {/* Quick Info Cards */}
 
         {/* Quick Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -166,6 +168,8 @@ const FieldDetails = () => {
 
         {/* Detailed Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
+          {/* Tabs list and overview content */}
+          
           <TabsList className="grid w-full grid-cols-4 lg:w-[480px] bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="overview">Prezentare</TabsTrigger>
             <TabsTrigger value="activities">Istoric Activități</TabsTrigger>
@@ -230,6 +234,8 @@ const FieldDetails = () => {
             </div>
           </TabsContent>
 
+          {/* Activities and journal tabs */}
+
           <TabsContent value="activities" className="space-y-6">
             <Card className="bg-white border-green-200">
               <CardHeader className="flex flex-row items-center justify-between">
@@ -270,16 +276,6 @@ const FieldDetails = () => {
             <SoilSection fieldId={field.id} />
           </TabsContent>
         </Tabs>
-
-        {/* AI Recommendations at the bottom */}
-        <div className="mt-8">
-          <AIRecommendationsCard
-            zoneId="ai-soil-recommendations"
-            title="Recomandări AI pentru Sol"
-            icon={<Sprout className="h-5 w-5" />}
-            gradientClass="from-green-500 to-emerald-600"
-          />
-        </div>
       </div>
     </div>
   );
