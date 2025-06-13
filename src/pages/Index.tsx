@@ -10,7 +10,7 @@ import AIAssistant from '@/components/AIAssistant';
 import SeasonalGuidanceAI from '@/components/SeasonalGuidanceAI';
 import Navigation from '@/components/Navigation';
 import { useAppContext } from '@/contexts/AppContext';
-import { MapPin, Sprout, Calendar, Package, Sun, Snowflake, Leaf, CloudRain, TrendingUp, BarChart, FileText, Download } from 'lucide-react';
+import { MapPin, Sprout, Calendar, Package, Sun, Snowflake, Leaf, CloudRain, TrendingUp, BarChart, FileText, Download, Fuel } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -52,11 +52,18 @@ const Index = () => {
     field.crop !== 'Necunoscută'
   ).length;
 
-  // Calculează statisticile inventarului - numărul de elemente (nu suma cantităților)
-  const inventoryItemsCount = inventory ? inventory.length : 0;
+  // Calculează nivelul total de combustibil din inventar
+  const totalFuelLevel = inventory 
+    ? inventory
+        .filter(item => item.type === 'fuel')
+        .reduce((sum, item) => {
+          const currentLevel = parseFloat(item.currentLevel || '0');
+          return sum + currentLevel;
+        }, 0)
+    : 0;
   
-  // Simulez schimbarea față de luna precedentă (în realitate ar trebui să compar cu datele de luna trecută)
-  const monthlyInventoryChange = Math.floor(Math.random() * 20) - 10; // Simulare: -10 la +10 articole
+  // Simulez schimbarea față de luna precedentă
+  const monthlyFuelChange = Math.floor(Math.random() * 500) - 250; // Simulare: -250L la +250L
   
   useEffect(() => {
     const month = new Date().getMonth();
@@ -252,18 +259,18 @@ const Index = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-green-600 font-medium">Stoc Inventar</p>
-                  <p className="text-3xl font-bold text-green-800">{inventoryItemsCount}</p>
+                  <p className="text-sm text-green-600 font-medium">Combustibil (L)</p>
+                  <p className="text-3xl font-bold text-green-800">{totalFuelLevel.toFixed(0)}</p>
                   <p className="text-xs text-green-500">
-                    articole în inventar
-                    {monthlyInventoryChange !== 0 && (
-                      <span className={`ml-1 ${monthlyInventoryChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {monthlyInventoryChange > 0 ? '+' : ''}{monthlyInventoryChange}
+                    nivel curent combustibil
+                    {monthlyFuelChange !== 0 && (
+                      <span className={`ml-1 ${monthlyFuelChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {monthlyFuelChange > 0 ? '+' : ''}{monthlyFuelChange}L
                       </span>
                     )}
                   </p>
                 </div>
-                <Package className="h-8 w-8 text-emerald-500" />
+                <Fuel className="h-8 w-8 text-orange-500" />
               </div>
             </CardContent>
           </Card>
