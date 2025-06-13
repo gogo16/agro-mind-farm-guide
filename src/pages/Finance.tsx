@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
+import MarketPricesTab from '@/components/MarketPricesTab';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
@@ -174,218 +176,232 @@ const Finance = () => {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Transactions */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="bg-white border-green-200">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-green-800">Tranzacții recente</CardTitle>
-                <Dialog open={isAddingTransaction} onOpenChange={setIsAddingTransaction}>
-                  <DialogTrigger asChild>
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                      <Plus className="h-4 w-4 mr-1" />
-                      Adaugă
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Adaugă tranzacție nouă</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="type">Tip tranzacție *</Label>
-                        <Select onValueChange={(value) => setNewTransaction({...newTransaction, type: value})}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selectează tipul" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="income">Venit</SelectItem>
-                            <SelectItem value="expense">Cheltuială</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="amount">Sumă (RON) *</Label>
-                        <Input
-                          id="amount"
-                          type="number"
-                          value={newTransaction.amount}
-                          onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})}
-                          placeholder="ex: 1500"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="description">Descriere *</Label>
-                        <Input
-                          id="description"
-                          value={newTransaction.description}
-                          onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})}
-                          placeholder="ex: Îngrășământ NPK"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="category">Categorie</Label>
-                        <Select onValueChange={(value) => setNewTransaction({...newTransaction, category: value})}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selectează categoria" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Fertilizatori">Fertilizatori</SelectItem>
-                            <SelectItem value="Tratamente">Tratamente</SelectItem>
-                            <SelectItem value="Combustibil">Combustibil</SelectItem>
-                            <SelectItem value="Vânzări">Vânzări</SelectItem>
-                            <SelectItem value="Utilaje">Utilaje</SelectItem>
-                            <SelectItem value="Altele">Altele</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="field">Teren</Label>
-                        <Select onValueChange={(value) => setNewTransaction({...newTransaction, field: value})}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selectează terenul" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {fields.map((field) => (
-                              <SelectItem key={field.id} value={field.name}>{field.name}</SelectItem>
-                            ))}
-                            <SelectItem value="General">General</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="date">Data</Label>
-                        <Input
-                          id="date"
-                          type="date"
-                          value={newTransaction.date}
-                          onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})}
-                        />
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button onClick={() => setIsAddingTransaction(false)} variant="outline" className="flex-1">
-                          Anulează
+        {/* Main Finance Tabs */}
+        <Tabs defaultValue="transactions" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2 lg:w-[300px] bg-white/80 backdrop-blur-sm">
+            <TabsTrigger value="transactions">Tranzacții</TabsTrigger>
+            <TabsTrigger value="market">Prețuri Piață</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="transactions" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Transactions */}
+              <div className="lg:col-span-2 space-y-6">
+                <Card className="bg-white border-green-200">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-green-800">Tranzacții recente</CardTitle>
+                    <Dialog open={isAddingTransaction} onOpenChange={setIsAddingTransaction}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                          <Plus className="h-4 w-4 mr-1" />
+                          Adaugă
                         </Button>
-                        <Button onClick={handleAddTransaction} className="flex-1 bg-green-600 hover:bg-green-700">
-                          Adaugă tranzacție
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {transactions.slice(0, 8).map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-lg ${
-                        transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'
-                      }`}>
-                        {transaction.type === 'income' ? (
-                          <ArrowUpRight className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <ArrowDownRight className="h-4 w-4 text-red-600" />
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{transaction.description}</p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Badge variant="secondary" className="text-xs">{transaction.category}</Badge>
-                          <span className="text-xs text-gray-500">{transaction.field}</span>
-                          <span className="text-xs text-gray-500">{transaction.date}</span>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Adaugă tranzacție nouă</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="type">Tip tranzacție *</Label>
+                            <Select onValueChange={(value) => setNewTransaction({...newTransaction, type: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selectează tipul" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="income">Venit</SelectItem>
+                                <SelectItem value="expense">Cheltuială</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label htmlFor="amount">Sumă (RON) *</Label>
+                            <Input
+                              id="amount"
+                              type="number"
+                              value={newTransaction.amount}
+                              onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})}
+                              placeholder="ex: 1500"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="description">Descriere *</Label>
+                            <Input
+                              id="description"
+                              value={newTransaction.description}
+                              onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})}
+                              placeholder="ex: Îngrășământ NPK"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="category">Categorie</Label>
+                            <Select onValueChange={(value) => setNewTransaction({...newTransaction, category: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selectează categoria" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Fertilizatori">Fertilizatori</SelectItem>
+                                <SelectItem value="Tratamente">Tratamente</SelectItem>
+                                <SelectItem value="Combustibil">Combustibil</SelectItem>
+                                <SelectItem value="Vânzări">Vânzări</SelectItem>
+                                <SelectItem value="Utilaje">Utilaje</SelectItem>
+                                <SelectItem value="Altele">Altele</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label htmlFor="field">Teren</Label>
+                            <Select onValueChange={(value) => setNewTransaction({...newTransaction, field: value})}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selectează terenul" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {fields.map((field) => (
+                                  <SelectItem key={field.id} value={field.name}>{field.name}</SelectItem>
+                                ))}
+                                <SelectItem value="General">General</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label htmlFor="date">Data</Label>
+                            <Input
+                              id="date"
+                              type="date"
+                              value={newTransaction.date}
+                              onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})}
+                            />
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button onClick={() => setIsAddingTransaction(false)} variant="outline" className="flex-1">
+                              Anulează
+                            </Button>
+                            <Button onClick={handleAddTransaction} className="flex-1 bg-green-600 hover:bg-green-700">
+                              Adaugă tranzacție
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {transactions.slice(0, 8).map((transaction) => (
+                      <div key={transaction.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-2 rounded-lg ${
+                            transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'
+                          }`}>
+                            {transaction.type === 'income' ? (
+                              <ArrowUpRight className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <ArrowDownRight className="h-4 w-4 text-red-600" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">{transaction.description}</p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <Badge variant="secondary" className="text-xs">{transaction.category}</Badge>
+                              <span className="text-xs text-gray-500">{transaction.field}</span>
+                              <span className="text-xs text-gray-500">{transaction.date}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="text-right">
+                            <p className={`font-semibold ${
+                              transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toLocaleString()} RON
+                            </p>
+                          </div>
+                          <Button size="sm" variant="outline" onClick={() => handleEditTransaction(transaction)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Ești sigur că vrei să ștergi această tranzacție?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Această acțiune nu poate fi anulată. Tranzacția "{transaction.description}" va fi ștersă permanent.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Anulează</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteTransaction(transaction.id)} className="bg-red-600 hover:bg-red-700">
+                                  Șterge definitiv
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="text-right">
-                        <p className={`font-semibold ${
-                          transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toLocaleString()} RON
-                        </p>
+                    ))}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Quick Actions & Budget */}
+              <div className="space-y-6">
+                <Card className="bg-white border-green-200">
+                  <CardHeader>
+                    <CardTitle className="text-green-800">Buget lunar</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span>Cheltuieli planificate</span>
+                        <span>75%</span>
                       </div>
-                      <Button size="sm" variant="outline" onClick={() => handleEditTransaction(transaction)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Ești sigur că vrei să ștergi această tranzacție?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Această acțiune nu poate fi anulată. Tranzacția "{transaction.description}" va fi ștersă permanent.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Anulează</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDeleteTransaction(transaction.id)} className="bg-red-600 hover:bg-red-700">
-                              Șterge definitiv
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">18.750 / 25.000 RON</p>
                     </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
+                    <div>
+                      <div className="flex justify-between text-sm mb-1">
+                        <span>Venituri estimate</span>
+                        <span>60%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-green-600 h-2 rounded-full" style={{ width: '60%' }}></div>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">12.000 / 20.000 RON</p>
+                    </div>
+                  </CardContent>
+                </Card>
 
-          {/* Quick Actions & Budget */}
-          <div className="space-y-6">
-            <Card className="bg-white border-green-200">
-              <CardHeader>
-                <CardTitle className="text-green-800">Buget lunar</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Cheltuieli planificate</span>
-                    <span>75%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">18.750 / 25.000 RON</p>
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Venituri estimate</span>
-                    <span>60%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-600 h-2 rounded-full" style={{ width: '60%' }}></div>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">12.000 / 20.000 RON</p>
-                </div>
-              </CardContent>
-            </Card>
+                <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0">
+                  <CardHeader>
+                    <CardTitle>💡 Sfaturi financiare</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="bg-white/10 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-1">Optimizare costuri</p>
+                      <p className="text-xs">
+                        Cheltuielile cu fertilizatorii au crescut cu 15%. Consideră furnizori alternativi.
+                      </p>
+                    </div>
+                    <div className="bg-white/10 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-1">Oportunitate vânzare</p>
+                      <p className="text-xs">
+                        Prețul porumbului a crescut cu 8%. Momentul ideal pentru vânzare.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
 
-            <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0">
-              <CardHeader>
-                <CardTitle>💡 Sfaturi financiare</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="bg-white/10 rounded-lg p-3">
-                  <p className="text-sm font-medium mb-1">Optimizare costuri</p>
-                  <p className="text-xs">
-                    Cheltuielile cu fertilizatorii au crescut cu 15%. Consideră furnizori alternativi.
-                  </p>
-                </div>
-                <div className="bg-white/10 rounded-lg p-3">
-                  <p className="text-sm font-medium mb-1">Oportunitate vânzare</p>
-                  <p className="text-xs">
-                    Prețul porumbului a crescut cu 8%. Momentul ideal pentru vânzare.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+          <TabsContent value="market">
+            <MarketPricesTab />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Edit Transaction Dialog */}
