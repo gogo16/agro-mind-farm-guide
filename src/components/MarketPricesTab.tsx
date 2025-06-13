@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { TrendingUp, TrendingDown, AlertTriangle, Settings, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -14,6 +14,7 @@ interface MarketPrice {
   name: string;
   symbol: string;
   price: number;
+  priceEur: number;
   change: number;
   changePercent: number;
   volume: number;
@@ -34,6 +35,7 @@ const MarketPricesTab = () => {
       name: 'Grâu',
       symbol: 'WHEAT',
       price: 1250,
+      priceEur: 252,
       change: 25,
       changePercent: 2.04,
       volume: 15680,
@@ -45,6 +47,7 @@ const MarketPricesTab = () => {
       name: 'Porumb',
       symbol: 'CORN',
       price: 980,
+      priceEur: 198,
       change: -15,
       changePercent: -1.51,
       volume: 22340,
@@ -56,6 +59,7 @@ const MarketPricesTab = () => {
       name: 'Orz',
       symbol: 'BARLEY',
       price: 890,
+      priceEur: 179,
       change: 8,
       changePercent: 0.91,
       volume: 8920,
@@ -67,6 +71,7 @@ const MarketPricesTab = () => {
       name: 'Floarea-soarelui',
       symbol: 'SUNFL',
       price: 2150,
+      priceEur: 433,
       change: 45,
       changePercent: 2.14,
       volume: 12560,
@@ -78,6 +83,7 @@ const MarketPricesTab = () => {
       name: 'Soia',
       symbol: 'SOY',
       price: 1890,
+      priceEur: 381,
       change: -12,
       changePercent: -0.63,
       volume: 9840,
@@ -89,9 +95,94 @@ const MarketPricesTab = () => {
       name: 'Rapiță',
       symbol: 'RAPE',
       price: 2320,
+      priceEur: 468,
       change: 18,
       changePercent: 0.78,
       volume: 6740,
+      lastUpdate: '2024-06-13 09:15',
+      unit: 'RON/tonă'
+    },
+    {
+      id: 'rice',
+      name: 'Orez',
+      symbol: 'RICE',
+      price: 3200,
+      priceEur: 645,
+      change: 35,
+      changePercent: 1.11,
+      volume: 4560,
+      lastUpdate: '2024-06-13 09:15',
+      unit: 'RON/tonă'
+    },
+    {
+      id: 'oats',
+      name: 'Ovăz',
+      symbol: 'OATS',
+      price: 1120,
+      priceEur: 226,
+      change: -8,
+      changePercent: -0.71,
+      volume: 3890,
+      lastUpdate: '2024-06-13 09:15',
+      unit: 'RON/tonă'
+    },
+    {
+      id: 'sugar_beet',
+      name: 'Sfeclă de zahăr',
+      symbol: 'SUGAR',
+      price: 340,
+      priceEur: 69,
+      change: 5,
+      changePercent: 1.49,
+      volume: 28900,
+      lastUpdate: '2024-06-13 09:15',
+      unit: 'RON/tonă'
+    },
+    {
+      id: 'potatoes',
+      name: 'Cartofi',
+      symbol: 'POTATO',
+      price: 890,
+      priceEur: 179,
+      change: 22,
+      changePercent: 2.53,
+      volume: 15600,
+      lastUpdate: '2024-06-13 09:15',
+      unit: 'RON/tonă'
+    },
+    {
+      id: 'canola',
+      name: 'Canola',
+      symbol: 'CANOLA',
+      price: 2480,
+      priceEur: 500,
+      change: -18,
+      changePercent: -0.72,
+      volume: 7230,
+      lastUpdate: '2024-06-13 09:15',
+      unit: 'RON/tonă'
+    },
+    {
+      id: 'lentils',
+      name: 'Linte',
+      symbol: 'LENTIL',
+      price: 4500,
+      priceEur: 908,
+      change: 67,
+      changePercent: 1.51,
+      volume: 2340,
+      lastUpdate: '2024-06-13 09:15',
+      unit: 'RON/tonă'
+    },
+    {
+      id: 'chickpeas',
+      name: 'Năut',
+      symbol: 'CHICK',
+      price: 5200,
+      priceEur: 1048,
+      change: -45,
+      changePercent: -0.86,
+      volume: 1890,
       lastUpdate: '2024-06-13 09:15',
       unit: 'RON/tonă'
     }
@@ -228,30 +319,37 @@ const MarketPricesTab = () => {
               Nu urmărești niciun produs. Selectează produse din lista de mai jos.
             </p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {getWatchedPrices().map((price) => (
-                <div key={price.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <h4 className="font-semibold">{price.name}</h4>
-                      <Badge variant="secondary" className="text-xs">{price.symbol}</Badge>
+            <ScrollArea className="h-80">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-4">
+                {getWatchedPrices().map((price) => (
+                  <div key={price.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold">{price.name}</h4>
+                        <Badge variant="secondary" className="text-xs">{price.symbol}</Badge>
+                      </div>
+                      {getTrendIcon(price.change)}
                     </div>
-                    {getTrendIcon(price.change)}
+                    <div className="space-y-1">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-xl font-bold">
+                          {price.price.toLocaleString()} <span className="text-sm font-normal">RON/tonă</span>
+                        </p>
+                        <p className="text-lg font-semibold text-blue-600">
+                          {price.priceEur.toLocaleString()} <span className="text-sm font-normal">EUR/tonă</span>
+                        </p>
+                      </div>
+                      <p className={`text-sm ${getTrendColor(price.change)}`}>
+                        {price.change > 0 ? '+' : ''}{price.change} RON ({price.changePercent > 0 ? '+' : ''}{price.changePercent}%)
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Volum: {price.volume.toLocaleString()} tone | Actualizat: {price.lastUpdate}
+                      </p>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-2xl font-bold">
-                      {price.price.toLocaleString()} <span className="text-sm font-normal">{price.unit}</span>
-                    </p>
-                    <p className={`text-sm ${getTrendColor(price.change)}`}>
-                      {price.change > 0 ? '+' : ''}{price.change} RON ({price.changePercent > 0 ? '+' : ''}{price.changePercent}%)
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Volum: {price.volume.toLocaleString()} tone | Actualizat: {price.lastUpdate}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </ScrollArea>
           )}
         </CardContent>
       </Card>
@@ -262,43 +360,48 @@ const MarketPricesTab = () => {
           <CardTitle className="text-green-800">Toate Produsele Disponibile</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {marketPrices.map((price) => (
-              <div key={price.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
-                <div className="flex items-center space-x-4">
-                  <div>
-                    <h4 className="font-medium">{price.name}</h4>
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="secondary" className="text-xs">{price.symbol}</Badge>
-                      <span className="text-sm text-gray-600">{price.price.toLocaleString()} {price.unit}</span>
+          <ScrollArea className="h-96">
+            <div className="space-y-3 pr-4">
+              {marketPrices.map((price) => (
+                <div key={price.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                  <div className="flex items-center space-x-4">
+                    <div>
+                      <h4 className="font-medium">{price.name}</h4>
+                      <div className="flex items-center space-x-2">
+                        <Badge variant="secondary" className="text-xs">{price.symbol}</Badge>
+                        <div className="flex flex-col">
+                          <span className="text-sm text-gray-600">{price.price.toLocaleString()} RON</span>
+                          <span className="text-sm text-blue-600">{price.priceEur.toLocaleString()} EUR</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="text-right">
-                    <p className={`text-sm font-medium ${getTrendColor(price.change)}`}>
-                      {price.change > 0 ? '+' : ''}{price.change} RON
-                    </p>
-                    <p className={`text-xs ${getTrendColor(price.change)}`}>
-                      {price.changePercent > 0 ? '+' : ''}{price.changePercent}%
-                    </p>
+                  <div className="flex items-center space-x-3">
+                    <div className="text-right">
+                      <p className={`text-sm font-medium ${getTrendColor(price.change)}`}>
+                        {price.change > 0 ? '+' : ''}{price.change} RON
+                      </p>
+                      <p className={`text-xs ${getTrendColor(price.change)}`}>
+                        {price.changePercent > 0 ? '+' : ''}{price.changePercent}%
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => toggleProductWatch(price.id)}
+                      className={watchedProducts.includes(price.id) ? 'bg-green-50 border-green-200' : ''}
+                    >
+                      {watchedProducts.includes(price.id) ? (
+                        <><Eye className="h-4 w-4 mr-1" /> Urmărește</>
+                      ) : (
+                        <><EyeOff className="h-4 w-4 mr-1" /> Adaugă</>
+                      )}
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => toggleProductWatch(price.id)}
-                    className={watchedProducts.includes(price.id) ? 'bg-green-50 border-green-200' : ''}
-                  >
-                    {watchedProducts.includes(price.id) ? (
-                      <><Eye className="h-4 w-4 mr-1" /> Urmărește</>
-                    ) : (
-                      <><EyeOff className="h-4 w-4 mr-1" /> Adaugă</>
-                    )}
-                  </Button>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
 
