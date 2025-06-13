@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useAIRecommendations } from '@/hooks/useAIRecommendations';
 
 interface SoilSectionProps {
   fieldId: number;
@@ -14,6 +15,9 @@ interface SoilSectionProps {
 
 const SoilSection = ({ fieldId }: SoilSectionProps) => {
   const { toast } = useToast();
+  const { getRecommendationsByZone } = useAIRecommendations();
+  const soilRecommendations = getRecommendationsByZone('ai-soil-recommendations');
+  
   const [soilData, setSoilData] = useState({
     soilType: 'Cernoziom',
     pH: 7.2,
@@ -112,13 +116,63 @@ const SoilSection = ({ fieldId }: SoilSectionProps) => {
     );
   };
 
+  // Generate AI-based recommendations
+  const getAIRecommendations = () => {
+    const recommendations = [];
+    
+    if (soilData.pH >= 7.0 && soilData.pH <= 7.5) {
+      recommendations.push({
+        type: 'success',
+        message: '✓ Nivelul de pH este optim pentru majoritatea culturilor'
+      });
+    } else if (soilData.pH > 7.5) {
+      recommendations.push({
+        type: 'warning',
+        message: '⚠ pH bazic - consideră aplicarea de sulf pentru acidifiere'
+      });
+    } else {
+      recommendations.push({
+        type: 'warning',
+        message: '⚠ pH acid - consideră aplicarea de var pentru alcalinizare'
+      });
+    }
+
+    if (soilData.phosphorus < 50) {
+      recommendations.push({
+        type: 'warning',
+        message: '⚠ Nivelul de fosfor este moderat - consideră fertilizarea fosfatică'
+      });
+    } else {
+      recommendations.push({
+        type: 'success',
+        message: '✓ Nivelul de fosfor este adecvat'
+      });
+    }
+
+    if (soilData.organicMatter >= 3.5) {
+      recommendations.push({
+        type: 'info',
+        message: 'ℹ Conținutul de materie organică este bun'
+      });
+    } else {
+      recommendations.push({
+        type: 'warning',
+        message: '⚠ Consideră îmbunătățirea materiei organice prin compost'
+      });
+    }
+
+    return recommendations;
+  };
+
+  const aiRecommendations = getAIRecommendations();
+
   return (
     <div className="space-y-6">
       <Card className="bg-white border-green-200">
         <CardHeader>
           <CardTitle className="text-green-800">Analiza Solului</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6" data-ai-zone="ai-soil-recommendations">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <Label>Tip de sol</Label>
@@ -164,17 +218,26 @@ const SoilSection = ({ fieldId }: SoilSectionProps) => {
           </div>
 
           <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900">Recomandări</h4>
+            <h4 className="font-semibold text-gray-900">Recomandări AI</h4>
             <div className="space-y-2">
-              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p className="text-sm text-green-800">✓ Nivelul de pH este optim pentru majoritatea culturilor</p>
-              </div>
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-sm text-amber-800">⚠ Nivelul de fosfor este moderat - consideră fertilizarea fosfatică</p>
-              </div>
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">ℹ Conținutul de materie organică este bun</p>
-              </div>
+              {aiRecommendations.map((rec, index) => (
+                <div 
+                  key={index}
+                  className={`p-3 border rounded-lg ${
+                    rec.type === 'success' ? 'bg-green-50 border-green-200' :
+                    rec.type === 'warning' ? 'bg-amber-50 border-amber-200' :
+                    'bg-blue-50 border-blue-200'
+                  }`}
+                >
+                  <p className={`text-sm ${
+                    rec.type === 'success' ? 'text-green-800' :
+                    rec.type === 'warning' ? 'text-amber-800' :
+                    'text-blue-800'
+                  }`}>
+                    {rec.message}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </CardContent>

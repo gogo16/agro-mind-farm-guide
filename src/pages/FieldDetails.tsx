@@ -7,21 +7,29 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, Sprout, Calendar, ArrowLeft, Edit, History, Camera } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import VisualCropJournal from '@/components/VisualCropJournal';
 import EditFieldDialog from '@/components/EditFieldDialog';
 import AddPhotoDialog from '@/components/AddPhotoDialog';
 import SoilSection from '@/components/SoilSection';
+import AIRecommendationsCard from '@/components/AIRecommendationsCard';
 import { useAppContext } from '@/contexts/AppContext';
+import { useAIRecommendations } from '@/hooks/useAIRecommendations';
 
 const FieldDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { fields, tasks } = useAppContext();
+  const { getFieldProgress, getFieldStatus } = useAIRecommendations();
   const [isEditingField, setIsEditingField] = useState(false);
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
 
   const fieldId = id ? parseInt(id, 10) : null;
   const field = fieldId ? fields.find(f => f.id === fieldId) : null;
+
+  // Get AI-powered field status and progress
+  const fieldStatus = fieldId ? getFieldStatus(fieldId) : { status: 'Necunoscut', description: 'Date indisponibile', color: 'gray' };
+  const fieldProgress = fieldId ? getFieldProgress(fieldId) : { developmentProgress: 0, daysToHarvest: 0 };
 
   // Get completed tasks for this field
   const completedActivities = tasks.filter(task => 
@@ -31,7 +39,7 @@ const FieldDetails = () => {
     date: task.dueDate || new Date().toISOString().split('T')[0],
     activity: task.title,
     details: task.description || 'Activitate completată',
-    cost: 0, // Tasks don't have costs by default
+    cost: 0,
     weather: 'N/A'
   }));
 
@@ -55,6 +63,16 @@ const FieldDetails = () => {
       </div>
     );
   }
+
+  const getStatusColor = (color: string) => {
+    switch (color) {
+      case 'green': return 'bg-green-100 text-green-800';
+      case 'yellow': return 'bg-yellow-100 text-yellow-800';
+      case 'red': return 'bg-red-100 text-red-800';
+      case 'blue': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
@@ -134,14 +152,14 @@ const FieldDetails = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-green-200">
+          <Card className="bg-white/80 backdrop-blur-sm border-green-200" data-ai-zone="ai-field-status">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2 mb-2">
-                <div className="w-5 h-5 bg-green-500 rounded-full"></div>
+                <div className={`w-5 h-5 rounded-full ${fieldStatus.color === 'green' ? 'bg-green-500' : fieldStatus.color === 'yellow' ? 'bg-yellow-500' : fieldStatus.color === 'red' ? 'bg-red-500' : fieldStatus.color === 'blue' ? 'bg-blue-500' : 'bg-gray-500'}`}></div>
                 <span className="text-sm font-medium text-gray-700">Status</span>
               </div>
-              <Badge className="bg-green-100 text-green-800">Sănătos</Badge>
-              <p className="text-sm text-gray-600 mt-1">Dezvoltare normală</p>
+              <Badge className={getStatusColor(fieldStatus.color)}>{fieldStatus.status}</Badge>
+              <p className="text-sm text-gray-600 mt-1">{fieldStatus.description}</p>
             </CardContent>
           </Card>
         </div>
@@ -183,7 +201,7 @@ const FieldDetails = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-green-200">
+              <Card className="bg-white border-green-200" data-ai-zone="ai-season-progress">
                 <CardHeader>
                   <CardTitle className="text-green-800">Progres Sezon</CardTitle>
                 </CardHeader>
@@ -192,24 +210,19 @@ const FieldDetails = () => {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Progres dezvoltare</span>
-                        <span>75%</span>
+                        <span>{fieldProgress.developmentProgress}%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-green-600 h-2 rounded-full" style={{
-                        width: '75%'
-                      }}></div>
-                      </div>
+                      <Progress value={fieldProgress.developmentProgress} className="h-2" />
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Zile până la recoltare</span>
-                        <span>45 zile</span>
+                        <span>{fieldProgress.daysToHarvest} zile</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-amber-600 h-2 rounded-full" style={{
-                        width: '60%'
-                      }}></div>
-                      </div>
+                      <Progress 
+                        value={Math.max(0, 100 - (fieldProgress.daysToHarvest / 120) * 100)} 
+                        className="h-2" 
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -224,24 +237,27 @@ const FieldDetails = () => {
                   <History className="h-5 w-5" />
                   <span>Istoric Activități</span>
                 </CardTitle>
-                
               </CardHeader>
               <CardContent className="space-y-4">
-                {completedActivities.length > 0 ? completedActivities.map(activity => <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-gray-900">{activity.activity}</h4>
-                        <Badge variant="secondary" className="text-xs">{activity.date}</Badge>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">{activity.details}</p>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-500">Sarcină completată</span>
-                        <span className="font-medium text-green-600">Finalizat</span>
-                      </div>
-                    </div>) : <div className="text-center py-8 text-gray-500">
+                {completedActivities.length > 0 ? completedActivities.map(activity => (
+                  <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-semibold text-gray-900">{activity.activity}</h4>
+                      <Badge variant="secondary" className="text-xs">{activity.date}</Badge>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-2">{activity.details}</p>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-500">Sarcină completată</span>
+                      <span className="font-medium text-green-600">Finalizat</span>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="text-center py-8 text-gray-500">
                     <History className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                     <p>Nu există activități completate pentru acest teren</p>
                     <p className="text-sm">Activitățile completate vor apărea aici</p>
-                  </div>}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -251,7 +267,19 @@ const FieldDetails = () => {
           </TabsContent>
 
           <TabsContent value="soil" className="space-y-6">
-            <SoilSection fieldId={field.id} />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <SoilSection fieldId={field.id} />
+              </div>
+              <div>
+                <AIRecommendationsCard
+                  zoneId="ai-soil-recommendations"
+                  title="Recomandări Sol AI"
+                  icon={<Sprout className="h-5 w-5" />}
+                  gradientClass="from-green-500 to-emerald-600"
+                />
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
