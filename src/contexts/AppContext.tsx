@@ -118,13 +118,6 @@ interface InventoryItem {
   expiration?: string;
   purpose?: string;
   stockLevel?: 'low' | 'normal' | 'high';
-  // Fuel-specific fields
-  fuelType?: string;
-  octaneRating?: string;
-  density?: string;
-  supplier?: string;
-  tankCapacity?: string;
-  currentLevel?: string;
 }
 
 interface Notification {
