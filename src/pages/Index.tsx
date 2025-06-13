@@ -12,6 +12,8 @@ import Navigation from '@/components/Navigation';
 import { useAppContext } from '@/contexts/AppContext';
 import { MapPin, Sprout, Calendar, Package, Sun, Snowflake, Leaf, CloudRain, TrendingUp, BarChart, FileText, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAIRecommendations } from '@/hooks/useAIRecommendations';
+import AIChatSystem from '@/components/AIChatSystem';
 
 const Index = () => {
   const {
@@ -57,6 +59,8 @@ const Index = () => {
   
   // Simulez schimbarea față de luna precedentă (în realitate ar trebui să compar cu datele de luna trecută)
   const monthlyInventoryChange = Math.floor(Math.random() * 20) - 10; // Simulare: -10 la +10 articole
+  
+  const { getRecommendationsByZone, isLoading: aiLoading, refreshRecommendations } = useAIRecommendations();
   
   useEffect(() => {
     const month = new Date().getMonth();
@@ -190,17 +194,60 @@ const Index = () => {
     }
   };
 
+  const renderAIRecommendations = (zoneId: string, recommendations: any[]) => {
+    if (aiLoading) {
+      return (
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white/10 rounded-lg p-3 animate-pulse">
+              <div className="h-4 bg-white/20 rounded mb-2"></div>
+              <div className="h-3 bg-white/15 rounded"></div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {recommendations.map((rec) => (
+          <div key={rec.id} className="bg-white/10 rounded-lg p-3 relative">
+            {rec.isNew && (
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full"></div>
+            )}
+            <p className="text-sm font-medium mb-1">{rec.title}</p>
+            <p className="text-xs">{rec.content}</p>
+            {rec.priority === 'high' && (
+              <div className="mt-2">
+                <span className="text-xs bg-red-500/20 text-red-100 px-2 py-1 rounded">Prioritate înaltă</span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return <div className={`min-h-screen bg-gradient-to-br ${seasonalBackground}`}>
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
-        {/* Header */}
+        {/* Header with AI refresh button */}
         <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-4">
-            {seasonIcon}
-            <h1 className="text-4xl font-bold text-green-800">
-              Bună ziua! 👋
-            </h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 mb-4">
+              {seasonIcon}
+              <h1 className="text-4xl font-bold text-green-800">
+                Bună ziua! 👋
+              </h1>
+            </div>
+            <Button 
+              onClick={refreshRecommendations}
+              disabled={aiLoading}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              🤖 Refresh AI
+            </Button>
           </div>
           <p className="text-green-600 text-lg mb-2">
             Gestionează-ți ferma inteligent cu AgroMind
@@ -320,7 +367,9 @@ const Index = () => {
               
               <div className="space-y-6">
                 <TasksWidget />
-                <AIAssistant />
+                
+                {/* AI Chat System */}
+                <AIChatSystem />
                 
                 {/* Generated Report Preview */}
                 {generatedReport && (
@@ -340,23 +389,29 @@ const Index = () => {
                   </Card>
                 )}
 
-                <Card className="bg-gradient-to-r from-purple-500 to-blue-600 text-white border-0">
+                {/* AI Main Insights */}
+                <Card 
+                  className="bg-gradient-to-r from-purple-500 to-blue-600 text-white border-0"
+                  data-ai-zone="ai-main-insights"
+                >
                   <CardHeader>
                     <CardTitle>🤖 Perspective AI</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="bg-white/10 rounded-lg p-3">
-                      <p className="text-sm font-medium mb-1">Tendință Pozitivă</p>
-                      <p className="text-xs">
-                        Profitul a crescut cu {efficiency.toFixed(0)}% față de luna trecută datorită optimizării costurilor.
-                      </p>
-                    </div>
-                    <div className="bg-white/10 rounded-lg p-3">
-                      <p className="text-sm font-medium mb-1">Recomandare</p>
-                      <p className="text-xs">
-                        Considerați extinderea terenurilor productive pe baza marjei de profit ridicate.
-                      </p>
-                    </div>
+                  <CardContent>
+                    {renderAIRecommendations('ai-main-insights', getRecommendationsByZone('ai-main-insights'))}
+                  </CardContent>
+                </Card>
+
+                {/* AI Daily Recommendation */}
+                <Card 
+                  className="bg-gradient-to-r from-green-500 to-teal-600 text-white border-0"
+                  data-ai-zone="ai-daily-recommendation"
+                >
+                  <CardHeader>
+                    <CardTitle>💡 Recomandarea Zilei</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {renderAIRecommendations('ai-daily-recommendation', getRecommendationsByZone('ai-daily-recommendation'))}
                   </CardContent>
                 </Card>
               </div>
@@ -367,7 +422,7 @@ const Index = () => {
             <TasksWidget />
           </TabsContent>
 
-          <TabsContent value="seasonal">
+          <TabsContent value="seasonal" data-ai-zone="ai-seasonal-guidance">
             <SeasonalGuidanceAI />
           </TabsContent>
         </Tabs>
