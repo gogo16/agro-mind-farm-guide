@@ -16,8 +16,8 @@ serve(async (req) => {
     const url = new URL(req.url)
     const action = url.searchParams.get('action')
     
-    // Updated base URL
-    const EU_API_BASE = 'https://agridata.ec.europa.eu/agrifood/api'
+    // Correct EU API base URL
+    const EU_API_BASE = 'https://ec.europa.eu/agrifood/api/cereal'
     
     let apiUrl: string
     
@@ -25,60 +25,51 @@ serve(async (req) => {
       case 'prices':
         const memberStateCodes = url.searchParams.get('memberStateCodes') || 'RO'
         const productCodes = url.searchParams.get('productCodes') || ''
-        const stageCodes = url.searchParams.get('stageCodes') || ''
-        const marketCodes = url.searchParams.get('marketCodes') || ''
         const beginDate = url.searchParams.get('beginDate') || ''
         const endDate = url.searchParams.get('endDate') || ''
         
-        // Build the prices URL with better parameter handling
-        apiUrl = `${EU_API_BASE}/cereals/prices?memberStateCodes=${memberStateCodes}`
-        if (productCodes) {
-          // Split product codes and test them individually for better error handling
-          const products = productCodes.split(',')
-          console.log('Testing product codes:', products)
-          apiUrl += `&productCodes=${productCodes}`
+        // Required parameters for EU API
+        const stageCodes = 'FOB,FGATE,DEPSILO,DELPORT,CIF'
+        const marketCodes = 'CON,BAN,MUT,OLT'
+        
+        if (!productCodes) {
+          return new Response(
+            JSON.stringify({ error: 'productCodes parameter is required' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
         }
-        if (stageCodes) apiUrl += `&stageCodes=${stageCodes}`
-        if (marketCodes) apiUrl += `&marketCodes=${marketCodes}`
+        
+        apiUrl = `${EU_API_BASE}/prices?memberStateCodes=${memberStateCodes}&productCodes=${productCodes}&stageCodes=${stageCodes}&marketCodes=${marketCodes}`
         if (beginDate) apiUrl += `&beginDate=${beginDate}`
         if (endDate) apiUrl += `&endDate=${endDate}`
         break
         
       case 'products':
-        // Get all available products to understand correct codes
-        apiUrl = `${EU_API_BASE}/cereals/products`
+        apiUrl = `${EU_API_BASE}/products`
         break
         
       case 'markets':
-        apiUrl = `${EU_API_BASE}/cereals/markets`
+        apiUrl = `${EU_API_BASE}/markets`
         break
         
       case 'stages':
-        apiUrl = `${EU_API_BASE}/cereals/stages`
+        apiUrl = `${EU_API_BASE}/stages`
         break
         
-      case 'production':
-        const memberStateCodesProduction = url.searchParams.get('memberStateCodes') || 'RO'
-        const years = url.searchParams.get('years') || '2024'
-        const crops = url.searchParams.get('crops') || ''
-        
-        apiUrl = `${EU_API_BASE}/cereals/production?memberStateCodes=${memberStateCodesProduction}&years=${years}`
-        if (crops) apiUrl += `&crops=${crops}`
-        break
-        
-      case 'test-single-product':
-        // Test with a single known product for debugging
-        const testProduct = url.searchParams.get('productCode') || 'commonWheat'
-        const testBeginDate = url.searchParams.get('beginDate') || '01/01/2024'
+      case 'test-product':
+        const testProduct = url.searchParams.get('productCode') || 'MAI'
+        const testBeginDate = url.searchParams.get('beginDate') || '14/06/2024'
         const testEndDate = url.searchParams.get('endDate') || '14/06/2025'
         
-        apiUrl = `${EU_API_BASE}/cereals/prices?memberStateCodes=RO&productCodes=${testProduct}&beginDate=${testBeginDate}&endDate=${testEndDate}`
+        apiUrl = `${EU_API_BASE}/prices?memberStateCodes=RO&productCodes=${testProduct}&stageCodes=FOB,FGATE,DEPSILO,DELPORT,CIF&marketCodes=CON,BAN,MUT,OLT&beginDate=${testBeginDate}&endDate=${testEndDate}`
         break
         
       default:
-        console.log('Invalid action parameter:', action)
         return new Response(
-          JSON.stringify({ error: 'Invalid action parameter', availableActions: ['prices', 'products', 'markets', 'stages', 'production', 'test-single-product'] }),
+          JSON.stringify({ 
+            error: 'Invalid action parameter', 
+            availableActions: ['prices', 'products', 'markets', 'stages', 'test-product'] 
+          }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
@@ -97,24 +88,13 @@ serve(async (req) => {
     if (!response.ok) {
       console.error('EU API error:', response.status, response.statusText)
       const errorText = await response.text()
-      console.error('EU API error response:', errorText.substring(0, 500)) // Limit log size
-      
-      // Check if it's an HTML error page (Qlik Sense error)
-      if (errorText.includes('<!doctype html>') || errorText.includes('<html>')) {
-        return new Response(
-          JSON.stringify({ 
-            error: `EU API returned HTML error page (${response.status})`,
-            details: 'This suggests invalid parameters or server-side rejection',
-            suggestion: 'Check product codes, date format (DD/MM/YYYY), and member state codes'
-          }),
-          { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
+      console.error('EU API error response:', errorText.substring(0, 500))
       
       return new Response(
         JSON.stringify({ 
           error: `EU API error: ${response.status} - ${response.statusText}`,
-          details: errorText.substring(0, 200)
+          details: errorText.substring(0, 200),
+          url: apiUrl
         }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
@@ -123,11 +103,8 @@ serve(async (req) => {
     const data = await response.json()
     console.log('EU API response received, data length:', Array.isArray(data) ? data.length : 'not array')
     
-    // Log sample data for debugging (but limit size)
     if (Array.isArray(data) && data.length > 0) {
       console.log('Sample data:', JSON.stringify(data[0]).substring(0, 300))
-    } else if (typeof data === 'object') {
-      console.log('Non-array response:', JSON.stringify(data).substring(0, 300))
     }
 
     // Store prices in database if it's a prices request
@@ -137,38 +114,57 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       )
 
-      // Transform and store data with better handling of missing fields
+      // Transform data for storage
       const transformedData = data.map((item: any) => ({
-        member_state_code: item.memberStateCode || item.memberState || 'RO',
-        member_state_name: item.memberStateName || item.memberState || 'Romania',
-        begin_date: item.beginDate || item.startDate,
-        end_date: item.endDate || item.finishDate,
-        reference_period: item.referencePeriod || item.date || item.beginDate,
+        member_state_code: item.memberStateCode || 'RO',
+        member_state_name: item.memberStateName || 'Romania',
+        begin_date: item.beginDate,
+        end_date: item.endDate,
+        reference_period: item.referencePeriod,
         week_number: item.weekNumber || null,
-        product_name: item.productName || item.product || 'Unknown',
-        product_code: item.productCode || item.product || 'UNKNOWN',
-        stage_name: item.stageName || item.stage || 'Unknown',
-        stage_code: item.stageCode || item.stage || 'UNKNOWN',
-        market_name: item.marketName || item.market || 'Unknown',
-        market_code: item.marketCode || item.market || 'UNKNOWN',
-        unit: item.unit || 'EUR/tonne',
-        price: parseFloat(String(item.price || item.value || '0').replace(',', '.')),
+        product_name: item.productName,
+        product_code: item.productCode,
+        stage_name: item.stageName,
+        stage_code: item.stageCode,
+        market_name: item.marketName,
+        market_code: item.marketCode,
+        unit: item.unit,
+        price: parseFloat(String(item.price || '0').replace(',', '.')),
         currency: 'EUR'
       }))
 
-      console.log('Transformed data sample:', JSON.stringify(transformedData[0]).substring(0, 200))
+      console.log('Storing', transformedData.length, 'price records')
 
       // Insert/update prices
-      const { error } = await supabase
+      const { error: pricesError } = await supabase
         .from('eu_market_prices')
         .upsert(transformedData, {
-          onConflict: 'member_state_code,product_code,reference_period,market_code'
+          onConflict: 'member_state_code,product_code,reference_period,market_code,stage_code'
         })
 
-      if (error) {
-        console.error('Database error:', error)
+      if (pricesError) {
+        console.error('Database error (prices):', pricesError)
+      }
+
+      // Also store in price history for AI training
+      const historyData = transformedData.map((item: any) => ({
+        product_code: item.product_code,
+        price: item.price,
+        currency: item.currency,
+        date: item.reference_period,
+        data_source: 'eu_api'
+      }))
+
+      const { error: historyError } = await supabase
+        .from('price_history')
+        .upsert(historyData, {
+          onConflict: 'product_code,date,data_source'
+        })
+
+      if (historyError) {
+        console.error('Database error (history):', historyError)
       } else {
-        console.log('Successfully stored', transformedData.length, 'price records')
+        console.log('Successfully stored price history for AI training')
       }
     }
 
