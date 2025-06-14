@@ -114,6 +114,21 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       )
 
+      // Helper function to extract numeric price from string like "€183.67"
+      const extractNumericPrice = (priceString: string): number => {
+        if (!priceString) return 0;
+        // Remove currency symbols and extract numeric value
+        const numericMatch = priceString.match(/[\d.,]+/);
+        if (numericMatch) {
+          const numericStr = numericMatch[0].replace(',', '.');
+          const price = parseFloat(numericStr);
+          console.log(`Parsed price: "${priceString}" -> ${price}`);
+          return isNaN(price) ? 0 : price;
+        }
+        console.log(`Failed to parse price: "${priceString}"`);
+        return 0;
+      }
+
       // Transform data for storage
       const transformedData = data.map((item: any) => ({
         member_state_code: item.memberStateCode || 'RO',
@@ -129,7 +144,7 @@ serve(async (req) => {
         market_name: item.marketName,
         market_code: item.marketCode,
         unit: item.unit,
-        price: parseFloat(String(item.price || '0').replace(',', '.')),
+        price: extractNumericPrice(item.price),
         currency: 'EUR'
       }))
 

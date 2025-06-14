@@ -26,6 +26,18 @@ export const useEUMarketData = () => {
     return `${day}/${month}/${year}`;
   };
 
+  const extractNumericPrice = (priceString: string): number => {
+    if (!priceString) return 0;
+    // Remove currency symbols and extract numeric value
+    const numericMatch = priceString.match(/[\d.,]+/);
+    if (numericMatch) {
+      const numericStr = numericMatch[0].replace(',', '.');
+      const price = parseFloat(numericStr);
+      return isNaN(price) ? 0 : price;
+    }
+    return 0;
+  };
+
   const fetchEUMarketData = async () => {
     setIsLoading(true);
     setError(null);
@@ -111,14 +123,14 @@ export const useEUMarketData = () => {
                 item.referencePeriod !== latestPrice.referencePeriod
               );
 
-              const currentPriceValue = parseFloat(String(latestPrice.price || '0').replace(',', '.'));
-              const previousPriceValue = previousPrice ? parseFloat(String(previousPrice.price || '0').replace(',', '.')) : currentPriceValue;
+              const currentPriceValue = extractNumericPrice(latestPrice.price || '0');
+              const previousPriceValue = previousPrice ? extractNumericPrice(previousPrice.price || '0') : currentPriceValue;
 
               const { change, changePercent } = calculateChange(currentPriceValue, previousPriceValue);
 
               allPrices.push({
                 id: `${productCode}_${key}`,
-                name: `${romanianName} - ${latestPrice.stageName}`,
+                name: romanianName, // Only show the Romanian product name
                 symbol: romanianSymbol,
                 price: currentPriceValue,
                 change: change,
