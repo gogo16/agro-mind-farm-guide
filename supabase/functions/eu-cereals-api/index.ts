@@ -16,7 +16,7 @@ serve(async (req) => {
     const url = new URL(req.url)
     const action = url.searchParams.get('action')
     
-    // Updated base URL from Gemini
+    // Updated base URL
     const EU_API_BASE = 'https://agridata.ec.europa.eu/agrifood/api'
     
     let apiUrl: string
@@ -30,9 +30,14 @@ serve(async (req) => {
         const beginDate = url.searchParams.get('beginDate') || ''
         const endDate = url.searchParams.get('endDate') || ''
         
-        // Use the correct EU API URL structure
+        // Build the prices URL with better parameter handling
         apiUrl = `${EU_API_BASE}/cereals/prices?memberStateCodes=${memberStateCodes}`
-        if (productCodes) apiUrl += `&productCodes=${productCodes}`
+        if (productCodes) {
+          // Split product codes and test them individually for better error handling
+          const products = productCodes.split(',')
+          console.log('Testing product codes:', products)
+          apiUrl += `&productCodes=${productCodes}`
+        }
         if (stageCodes) apiUrl += `&stageCodes=${stageCodes}`
         if (marketCodes) apiUrl += `&marketCodes=${marketCodes}`
         if (beginDate) apiUrl += `&beginDate=${beginDate}`
@@ -40,6 +45,7 @@ serve(async (req) => {
         break
         
       case 'products':
+        // Get all available products to understand correct codes
         apiUrl = `${EU_API_BASE}/cereals/products`
         break
         
@@ -60,10 +66,19 @@ serve(async (req) => {
         if (crops) apiUrl += `&crops=${crops}`
         break
         
+      case 'test-single-product':
+        // Test with a single known product for debugging
+        const testProduct = url.searchParams.get('productCode') || 'commonWheat'
+        const testBeginDate = url.searchParams.get('beginDate') || '01/01/2024'
+        const testEndDate = url.searchParams.get('endDate') || '14/06/2025'
+        
+        apiUrl = `${EU_API_BASE}/cereals/prices?memberStateCodes=RO&productCodes=${testProduct}&beginDate=${testBeginDate}&endDate=${testEndDate}`
+        break
+        
       default:
         console.log('Invalid action parameter:', action)
         return new Response(
-          JSON.stringify({ error: 'Invalid action parameter' }),
+          JSON.stringify({ error: 'Invalid action parameter', availableActions: ['prices', 'products', 'markets', 'stages', 'production', 'test-single-product'] }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
     }
@@ -82,11 +97,24 @@ serve(async (req) => {
     if (!response.ok) {
       console.error('EU API error:', response.status, response.statusText)
       const errorText = await response.text()
-      console.error('EU API error response:', errorText)
+      console.error('EU API error response:', errorText.substring(0, 500)) // Limit log size
+      
+      // Check if it's an HTML error page (Qlik Sense error)
+      if (errorText.includes('<!doctype html>') || errorText.includes('<html>')) {
+        return new Response(
+          JSON.stringify({ 
+            error: `EU API returned HTML error page (${response.status})`,
+            details: 'This suggests invalid parameters or server-side rejection',
+            suggestion: 'Check product codes, date format (DD/MM/YYYY), and member state codes'
+          }),
+          { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      
       return new Response(
         JSON.stringify({ 
           error: `EU API error: ${response.status} - ${response.statusText}`,
-          details: errorText
+          details: errorText.substring(0, 200)
         }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
@@ -94,7 +122,13 @@ serve(async (req) => {
 
     const data = await response.json()
     console.log('EU API response received, data length:', Array.isArray(data) ? data.length : 'not array')
-    console.log('Sample data:', Array.isArray(data) && data.length > 0 ? data[0] : data)
+    
+    // Log sample data for debugging (but limit size)
+    if (Array.isArray(data) && data.length > 0) {
+      console.log('Sample data:', JSON.stringify(data[0]).substring(0, 300))
+    } else if (typeof data === 'object') {
+      console.log('Non-array response:', JSON.stringify(data).substring(0, 300))
+    }
 
     // Store prices in database if it's a prices request
     if (action === 'prices' && Array.isArray(data) && data.length > 0) {
@@ -122,7 +156,7 @@ serve(async (req) => {
         currency: 'EUR'
       }))
 
-      console.log('Transformed data sample:', transformedData[0])
+      console.log('Transformed data sample:', JSON.stringify(transformedData[0]).substring(0, 200))
 
       // Insert/update prices
       const { error } = await supabase

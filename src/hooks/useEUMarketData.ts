@@ -16,6 +16,60 @@ export const useEUMarketData = () => {
     return { change: parseFloat(change.toFixed(2)), changePercent: parseFloat(changePercent.toFixed(2)) };
   };
 
+  const fetchAvailableProducts = async () => {
+    try {
+      console.log('Fetching available products from EU API...');
+      
+      const response = await fetch(`https://jpwweizjcmkjzilautjh.supabase.co/functions/v1/eu-cereals-api?action=products`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impwd3dlaXpqY21ranppbGF1dGpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0MDI5MzAsImV4cCI6MjA2NDk3ODkzMH0.-gIjWS8THojoItrUC1PAi5LurlU3SHDjJxBTgygeVH4`,
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (response.ok) {
+        const products = await response.json();
+        console.log('Available products:', products);
+        return products;
+      } else {
+        console.error('Failed to fetch products:', response.status);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      return null;
+    }
+  };
+
+  const testSingleProduct = async (productCode: string) => {
+    try {
+      console.log(`Testing single product: ${productCode}`);
+      
+      const queryParams = new URLSearchParams({
+        action: 'test-single-product',
+        productCode: productCode,
+        beginDate: '01/01/2024',
+        endDate: '14/06/2025'
+      });
+
+      const response = await fetch(`https://jpwweizjcmkjzilautjh.supabase.co/functions/v1/eu-cereals-api?${queryParams}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impwd3dlaXpqY21ranppbGF1dGpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0MDI5MzAsImV4cCI6MjA2NDk3ODkzMH0.-gIjWS8THojoItrUC1PAi5LurlU3SHDjJxBTgygeVH4`,
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const result = await response.json();
+      console.log(`Test result for ${productCode}:`, result);
+      return { productCode, success: response.ok, data: result };
+    } catch (error) {
+      console.error(`Error testing ${productCode}:`, error);
+      return { productCode, success: false, error: error.message };
+    }
+  };
+
   const fetchEUMarketData = async () => {
     setIsLoading(true);
     setError(null);
@@ -23,7 +77,27 @@ export const useEUMarketData = () => {
     try {
       console.log('Starting EU market data fetch...');
       
-      // Get product mappings
+      // Step 1: Test connectivity and get available products
+      const availableProducts = await fetchAvailableProducts();
+      
+      // Step 2: Test known product codes individually
+      const testProducts = ['commonWheat', 'maize', 'barley', 'BLT', 'MAI', 'ORG'];
+      const testResults = [];
+      
+      for (const productCode of testProducts) {
+        const result = await testSingleProduct(productCode);
+        testResults.push(result);
+        
+        // If we find a working product, break early for now
+        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+          console.log(`Found working product code: ${productCode}`);
+          break;
+        }
+      }
+      
+      console.log('Test results:', testResults);
+      
+      // Get product mappings from database
       const { data: mappings, error: mappingError } = await supabase
         .from('product_mapping')
         .select('*');
@@ -39,10 +113,11 @@ export const useEUMarketData = () => {
 
       console.log('Found product mappings:', mappings.length);
 
-      // Get current date and date from 30 days ago for more data
+      // Step 3: Try to fetch data with updated approach
+      // Use more conservative date range
       const endDate = new Date();
       const beginDate = new Date();
-      beginDate.setDate(beginDate.getDate() - 30);
+      beginDate.setDate(beginDate.getDate() - 7); // Only last 7 days for testing
 
       const formatDate = (date: Date) => {
         const day = date.getDate().toString().padStart(2, '0');
@@ -51,20 +126,27 @@ export const useEUMarketData = () => {
         return `${day}/${month}/${year}`;
       };
 
-      // Get EU market data from our Edge Function using GET with query parameters
-      const productCodes = mappings.map((m: ProductMapping) => m.eu_product_code).join(',');
+      // Try with known working product codes or fallback to original
+      const workingProduct = testResults.find(r => r.success && Array.isArray(r.data) && r.data.length > 0);
+      let productCodesToTry;
       
+      if (workingProduct) {
+        productCodesToTry = workingProduct.productCode;
+      } else {
+        // Fallback to trying common product names
+        productCodesToTry = 'commonWheat,maize,barley';
+      }
+
       const queryParams = new URLSearchParams({
         action: 'prices',
         memberStateCodes: 'RO',
-        productCodes: productCodes,
+        productCodes: productCodesToTry,
         beginDate: formatDate(beginDate),
         endDate: formatDate(endDate)
       });
 
       console.log('Calling Edge Function with params:', queryParams.toString());
 
-      // Use fetch directly with GET request to the Edge Function
       const response = await fetch(`https://jpwweizjcmkjzilautjh.supabase.co/functions/v1/eu-cereals-api?${queryParams}`, {
         method: 'GET',
         headers: {
@@ -90,25 +172,30 @@ export const useEUMarketData = () => {
       // Transform EU data to our MarketPrice format
       const transformedPrices: MarketPrice[] = [];
 
-      for (const mapping of mappings) {
-        console.log('Processing mapping:', mapping.romanian_name, mapping.eu_product_code);
-        
-        // Find the most recent price for this product
-        const productPrices = euData.filter(
-          (item: EUCerealPrice) => 
-            (item.productCode && item.productCode === mapping.eu_product_code) ||
-            (item.productName && item.productName.toLowerCase().includes(mapping.eu_product_name.toLowerCase()))
+      // Process available data
+      const processedData = new Map();
+      
+      euData.forEach((item: EUCerealPrice) => {
+        const productKey = item.productCode || item.productName || 'unknown';
+        if (!processedData.has(productKey)) {
+          processedData.set(productKey, []);
+        }
+        processedData.get(productKey).push(item);
+      });
+
+      console.log('Processed products:', Array.from(processedData.keys()));
+
+      // Create market prices from available data
+      let productIndex = 0;
+      for (const [productKey, productPrices] of processedData.entries()) {
+        if (productPrices.length === 0) continue;
+
+        // Sort by date to get latest
+        productPrices.sort((a: any, b: any) => 
+          new Date(b.referencePeriod || b.endDate || b.beginDate).getTime() - 
+          new Date(a.referencePeriod || a.endDate || a.beginDate).getTime()
         );
 
-        if (productPrices.length === 0) {
-          console.warn('No prices found for product:', mapping.romanian_name);
-          continue;
-        }
-
-        console.log('Found', productPrices.length, 'prices for', mapping.romanian_name);
-
-        // Sort by reference period to get the latest
-        productPrices.sort((a, b) => new Date(b.referencePeriod || b.endDate || b.beginDate).getTime() - new Date(a.referencePeriod || a.endDate || a.beginDate).getTime());
         const latestPrice = productPrices[0];
         const previousPrice = productPrices[1];
 
@@ -117,30 +204,25 @@ export const useEUMarketData = () => {
 
         const { change, changePercent } = calculateChange(currentPriceValue, previousPriceValue);
 
-        // Generate mock volume based on product type (will be replaced with real data when available)
-        const mockVolumes: { [key: string]: number } = {
-          'WHEAT': 15680,
-          'CORN': 22340,
-          'BARLEY': 8920,
-          'RAPE': 6740,
-          'OATS': 3890,
-          'DUR_WHEAT': 4560,
-          'RYE': 5230,
-          'TRITICALE': 3450,
-          'SUNFLOWER': 8920,
-          'SOYBEANS': 7650
-        };
+        // Map to Romanian names or use default
+        const productMapping = mappings.find(m => 
+          m.eu_product_code === productKey || 
+          m.eu_product_name.toLowerCase().includes(productKey.toLowerCase())
+        );
+
+        const romanianName = productMapping?.romanian_name || latestPrice.productName || productKey;
+        const romanianSymbol = productMapping?.romanian_symbol || productKey.toUpperCase();
 
         const referenceDate = latestPrice.referencePeriod || latestPrice.endDate || latestPrice.beginDate;
 
         transformedPrices.push({
-          id: mapping.romanian_symbol.toLowerCase(),
-          name: mapping.romanian_name,
-          symbol: mapping.romanian_symbol,
+          id: `product_${productIndex}`,
+          name: romanianName,
+          symbol: romanianSymbol,
           price: currentPriceValue,
           change: change,
           changePercent: changePercent,
-          volume: mockVolumes[mapping.romanian_symbol] || 5000,
+          volume: 5000 + Math.floor(Math.random() * 15000), // Mock volume
           lastUpdate: new Date(referenceDate).toLocaleString('ro-RO'),
           unit: `EUR/${(latestPrice.unit || 'tonă').toLowerCase()}`,
           currency: 'EUR',
@@ -152,25 +234,7 @@ export const useEUMarketData = () => {
           referencePeriod: referenceDate
         });
 
-        // Store in price history for future AI analysis
-        try {
-          await supabase
-            .from('price_history')
-            .upsert({
-              product_code: mapping.romanian_symbol,
-              price: currentPriceValue,
-              currency: 'EUR',
-              date: referenceDate,
-              change_amount: change,
-              change_percent: changePercent,
-              volume: mockVolumes[mapping.romanian_symbol] || 5000,
-              data_source: 'eu_api'
-            }, {
-              onConflict: 'product_code,date,data_source'
-            });
-        } catch (historyError) {
-          console.error('Error saving to price history:', historyError);
-        }
+        productIndex++;
       }
 
       setMarketPrices(transformedPrices);
@@ -181,7 +245,7 @@ export const useEUMarketData = () => {
       console.error('Error fetching EU market data:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch market data');
       
-      // Fallback to mock data for demonstration
+      // Fallback to mock data
       console.log('Using fallback mock data');
       setMarketPrices([
         {
@@ -215,30 +279,6 @@ export const useEUMarketData = () => {
           price: 179,
           change: 2,
           changePercent: 1.13,
-          volume: 8920,
-          lastUpdate: new Date().toLocaleString('ro-RO'),
-          unit: 'EUR/tonă',
-          currency: 'EUR'
-        },
-        {
-          id: 'rye',
-          name: 'Secară',
-          symbol: 'RYE',
-          price: 185,
-          change: 1,
-          changePercent: 0.54,
-          volume: 5230,
-          lastUpdate: new Date().toLocaleString('ro-RO'),
-          unit: 'EUR/tonă',
-          currency: 'EUR'
-        },
-        {
-          id: 'sunflower',
-          name: 'Floarea-soarelui',
-          symbol: 'SUNFLOWER',
-          price: 425,
-          change: 8,
-          changePercent: 1.92,
           volume: 8920,
           lastUpdate: new Date().toLocaleString('ro-RO'),
           unit: 'EUR/tonă',
