@@ -3,19 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import MarketPriceCard from './MarketPriceCard';
-
-interface MarketPrice {
-  id: string;
-  name: string;
-  symbol: string;
-  price: number;
-  priceEur: number;
-  change: number;
-  changePercent: number;
-  volume: number;
-  lastUpdate: string;
-  unit: string;
-}
+import type { MarketPrice } from '@/types/market';
 
 interface WatchedProductsListProps {
   watchedPrices: MarketPrice[];
