@@ -16,7 +16,8 @@ serve(async (req) => {
     const url = new URL(req.url)
     const action = url.searchParams.get('action')
     
-    const EU_API_BASE = 'https://agridata.ec.europa.eu/extensions/DataPortal/API'
+    // Updated base URL from Gemini
+    const EU_API_BASE = 'https://agridata.ec.europa.eu/agrifood/api'
     
     let apiUrl: string
     
@@ -29,7 +30,8 @@ serve(async (req) => {
         const beginDate = url.searchParams.get('beginDate') || ''
         const endDate = url.searchParams.get('endDate') || ''
         
-        apiUrl = `${EU_API_BASE}/cereal/prices?memberStateCodes=${memberStateCodes}`
+        // Use the correct EU API URL structure
+        apiUrl = `${EU_API_BASE}/cereals/prices?memberStateCodes=${memberStateCodes}`
         if (productCodes) apiUrl += `&productCodes=${productCodes}`
         if (stageCodes) apiUrl += `&stageCodes=${stageCodes}`
         if (marketCodes) apiUrl += `&marketCodes=${marketCodes}`
@@ -38,15 +40,15 @@ serve(async (req) => {
         break
         
       case 'products':
-        apiUrl = `${EU_API_BASE}/cereal/products`
+        apiUrl = `${EU_API_BASE}/cereals/products`
         break
         
       case 'markets':
-        apiUrl = `${EU_API_BASE}/cereal/markets`
+        apiUrl = `${EU_API_BASE}/cereals/markets`
         break
         
       case 'stages':
-        apiUrl = `${EU_API_BASE}/cereal/stages`
+        apiUrl = `${EU_API_BASE}/cereals/stages`
         break
         
       case 'production':
@@ -54,11 +56,12 @@ serve(async (req) => {
         const years = url.searchParams.get('years') || '2024'
         const crops = url.searchParams.get('crops') || ''
         
-        apiUrl = `${EU_API_BASE}/cereal/production?memberStateCodes=${memberStateCodesProduction}&years=${years}`
+        apiUrl = `${EU_API_BASE}/cereals/production?memberStateCodes=${memberStateCodesProduction}&years=${years}`
         if (crops) apiUrl += `&crops=${crops}`
         break
         
       default:
+        console.log('Invalid action parameter:', action)
         return new Response(
           JSON.stringify({ error: 'Invalid action parameter' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -71,20 +74,27 @@ serve(async (req) => {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json;charset=UTF-8'
+        'Content-Type': 'application/json;charset=UTF-8',
+        'User-Agent': 'AgricultureApp/1.0'
       }
     })
 
     if (!response.ok) {
       console.error('EU API error:', response.status, response.statusText)
+      const errorText = await response.text()
+      console.error('EU API error response:', errorText)
       return new Response(
-        JSON.stringify({ error: `EU API error: ${response.status}` }),
+        JSON.stringify({ 
+          error: `EU API error: ${response.status} - ${response.statusText}`,
+          details: errorText
+        }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     const data = await response.json()
-    console.log('EU API response:', data)
+    console.log('EU API response received, data length:', Array.isArray(data) ? data.length : 'not array')
+    console.log('Sample data:', Array.isArray(data) && data.length > 0 ? data[0] : data)
 
     // Store prices in database if it's a prices request
     if (action === 'prices' && Array.isArray(data) && data.length > 0) {
@@ -93,24 +103,26 @@ serve(async (req) => {
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       )
 
-      // Transform and store data
+      // Transform and store data with better handling of missing fields
       const transformedData = data.map((item: any) => ({
-        member_state_code: item.memberStateCode,
-        member_state_name: item.memberStateName,
-        begin_date: item.beginDate,
-        end_date: item.endDate,
-        reference_period: item.referencePeriod,
-        week_number: item.weekNumber,
-        product_name: item.productName,
-        product_code: item.productCode || 'UNKNOWN',
-        stage_name: item.stageName,
-        stage_code: item.stageCode || 'UNKNOWN',
-        market_name: item.marketName,
-        market_code: item.marketCode || 'UNKNOWN',
-        unit: item.unit,
-        price: parseFloat(item.price?.replace(',', '.') || '0'),
+        member_state_code: item.memberStateCode || item.memberState || 'RO',
+        member_state_name: item.memberStateName || item.memberState || 'Romania',
+        begin_date: item.beginDate || item.startDate,
+        end_date: item.endDate || item.finishDate,
+        reference_period: item.referencePeriod || item.date || item.beginDate,
+        week_number: item.weekNumber || null,
+        product_name: item.productName || item.product || 'Unknown',
+        product_code: item.productCode || item.product || 'UNKNOWN',
+        stage_name: item.stageName || item.stage || 'Unknown',
+        stage_code: item.stageCode || item.stage || 'UNKNOWN',
+        market_name: item.marketName || item.market || 'Unknown',
+        market_code: item.marketCode || item.market || 'UNKNOWN',
+        unit: item.unit || 'EUR/tonne',
+        price: parseFloat(String(item.price || item.value || '0').replace(',', '.')),
         currency: 'EUR'
       }))
+
+      console.log('Transformed data sample:', transformedData[0])
 
       // Insert/update prices
       const { error } = await supabase
@@ -121,6 +133,8 @@ serve(async (req) => {
 
       if (error) {
         console.error('Database error:', error)
+      } else {
+        console.log('Successfully stored', transformedData.length, 'price records')
       }
     }
 
@@ -132,7 +146,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Function error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        stack: error.stack 
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
