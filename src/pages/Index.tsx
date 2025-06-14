@@ -232,22 +232,13 @@ const Index = () => {
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
-        {/* Header with AI refresh button */}
+        {/* Header without AI refresh button */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3 mb-4">
-              {seasonIcon}
-              <h1 className="text-4xl font-bold text-green-800">
-                Bună ziua! 👋
-              </h1>
-            </div>
-            <Button 
-              onClick={refreshRecommendations}
-              disabled={aiLoading}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              🤖 Refresh AI
-            </Button>
+          <div className="flex items-center space-x-3 mb-4">
+            {seasonIcon}
+            <h1 className="text-4xl font-bold text-green-800">
+              Bună ziua! 👋
+            </h1>
           </div>
           <p className="text-green-600 text-lg mb-2">
             Gestionează-ți ferma inteligent cu AgroMind
