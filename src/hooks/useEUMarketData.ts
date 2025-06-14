@@ -65,10 +65,10 @@ export const useEUMarketData = () => {
       console.log('Calling Edge Function with params:', queryParams.toString());
 
       // Use fetch directly with GET request to the Edge Function
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/eu-cereals-api?${queryParams}`, {
+      const response = await fetch(`https://jpwweizjcmkjzilautjh.supabase.co/functions/v1/eu-cereals-api?${queryParams}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impwd3dlaXpqY21ranppbGF1dGpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0MDI5MzAsImV4cCI6MjA2NDk3ODkzMH0.-gIjWS8THojoItrUC1PAi5LurlU3SHDjJxBTgygeVH4`,
           'Content-Type': 'application/json',
         }
       });
