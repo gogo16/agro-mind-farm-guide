@@ -6,9 +6,11 @@ export interface AIRecommendation {
   title: string;
   content: string;
   priority: 'high' | 'medium' | 'low';
-  type: 'financial' | 'inventory' | 'seasonal' | 'market' | 'general' | 'field-status' | 'soil' | 'progress';
+  type: 'financial' | 'inventory' | 'seasonal' | 'market' | 'general' | 'field-status' | 'soil' | 'progress' | 'crop-rotation' | 'equipment-maintenance' | 'seasonal-planning' | 'analytics';
   timestamp: string;
   isNew?: boolean;
+  actionable?: boolean;
+  estimatedSavings?: number;
 }
 
 export interface AIZoneContent {
@@ -21,6 +23,10 @@ export interface AIZoneContent {
   'ai-field-status': AIRecommendation[];
   'ai-season-progress': AIRecommendation[];
   'ai-soil-recommendations': AIRecommendation[];
+  'ai-crop-rotation': AIRecommendation[];
+  'ai-equipment-maintenance': AIRecommendation[];
+  'ai-seasonal-planning': AIRecommendation[];
+  'ai-analytics': AIRecommendation[];
 }
 
 export const useAIRecommendations = () => {
@@ -34,7 +40,11 @@ export const useAIRecommendations = () => {
     'ai-seasonal-guidance': [],
     'ai-field-status': [],
     'ai-season-progress': [],
-    'ai-soil-recommendations': []
+    'ai-soil-recommendations': [],
+    'ai-crop-rotation': [],
+    'ai-equipment-maintenance': [],
+    'ai-seasonal-planning': [],
+    'ai-analytics': []
   });
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
@@ -54,7 +64,11 @@ export const useAIRecommendations = () => {
         'ai-seasonal-guidance': generateSeasonalGuidance(),
         'ai-field-status': generateFieldStatus(),
         'ai-season-progress': generateSeasonProgress(),
-        'ai-soil-recommendations': generateSoilRecommendations()
+        'ai-soil-recommendations': generateSoilRecommendations(),
+        'ai-crop-rotation': generateCropRotationRecommendations(),
+        'ai-equipment-maintenance': generateEquipmentMaintenanceRecommendations(),
+        'ai-seasonal-planning': generateSeasonalPlanningRecommendations(),
+        'ai-analytics': generateAnalyticsRecommendations()
       };
       
       setAiContent(newContent);
@@ -376,6 +390,147 @@ export const useAIRecommendations = () => {
     }
 
     return recommendations;
+  };
+
+  const generateCropRotationRecommendations = (): AIRecommendation[] => {
+    const cropHistory = fields.map(field => ({
+      id: field.id,
+      name: field.name,
+      crop: field.crop,
+      size: field.size,
+      lastYearCrop: 'Grâu' // Mock data - should come from historical records
+    }));
+
+    return [
+      {
+        id: 'rotation-1',
+        title: 'Rotația Optimă pentru 2024',
+        content: `Pe parcela "${fields[0]?.name || 'Teren 1'}", treci de la grâu la rapiță pentru reducerea presiunii dăunătorilor și creșterea profitului cu ~12%.`,
+        priority: 'high',
+        type: 'crop-rotation',
+        timestamp: new Date().toISOString(),
+        actionable: true,
+        estimatedSavings: 2400
+      },
+      {
+        id: 'rotation-2',
+        title: 'Diversificare Culturi',
+        content: 'Consideră introducerea unei culturi leguminoase (soia/mazăre) pentru îmbunătățirea fertilității solului natural.',
+        priority: 'medium',
+        type: 'crop-rotation',
+        timestamp: new Date().toISOString()
+      },
+      {
+        id: 'rotation-3',
+        title: 'Analiză Compatibilitate Sol',
+        content: 'Solul tău este optim pentru culturi de toamnă. Planifică însămânțarea timpurie pentru randament maxim.',
+        priority: 'medium',
+        type: 'crop-rotation',
+        timestamp: new Date().toISOString()
+      }
+    ];
+  };
+
+  const generateEquipmentMaintenanceRecommendations = (): AIRecommendation[] => {
+    // Mock equipment data - in real implementation would come from equipment tracking
+    const mockEquipment = [
+      { name: 'Tractor Fendt 724', lastMaintenance: '2024-03-15', hours: 1250 },
+      { name: 'Combină John Deere S760', lastMaintenance: '2024-02-20', hours: 520 },
+      { name: 'Semănătoarea Amazone', lastMaintenance: '2024-01-10', hours: 180 }
+    ];
+
+    return [
+      {
+        id: 'maintenance-1',
+        title: 'Verificare Filtru Aer - Tractor',
+        content: 'Tractorul Fendt 724 necesită schimbarea filtrului de aer (1250h). Programează în următoarele 2 săptămâni.',
+        priority: 'high',
+        type: 'equipment-maintenance',
+        timestamp: new Date().toISOString(),
+        actionable: true
+      },
+      {
+        id: 'maintenance-2',
+        title: 'Service Anual Combină',
+        content: 'Combina John Deere S760 necesită service anual complet înainte de sezonul de recoltare.',
+        priority: 'medium',
+        type: 'equipment-maintenance',
+        timestamp: new Date().toISOString(),
+        actionable: true
+      },
+      {
+        id: 'maintenance-3',
+        title: 'Calibrare Semănătoare',
+        content: 'Verifică și calibrează semănătoarea Amazone pentru uniformitatea distribuției semințelor.',
+        priority: 'medium',
+        type: 'equipment-maintenance',
+        timestamp: new Date().toISOString()
+      }
+    ];
+  };
+
+  const generateSeasonalPlanningRecommendations = (): AIRecommendation[] => {
+    const currentMonth = new Date().getMonth();
+    
+    return [
+      {
+        id: 'planning-1',
+        title: 'Calendar Lucrări 2024',
+        content: 'Planifică: Februarie - pregătire sol, Martie - semănat porumb, Aprilie - tratamente, Mai - fertilizare.',
+        priority: 'high',
+        type: 'seasonal-planning',
+        timestamp: new Date().toISOString()
+      },
+      {
+        id: 'planning-2',
+        title: 'Buget Sezonier',
+        content: 'Estimare costuri pentru 2024: 45.000 RON/ha (semințe: 8.000, tratamente: 12.000, combustibil: 15.000, altele: 10.000).',
+        priority: 'high',
+        type: 'seasonal-planning',
+        timestamp: new Date().toISOString()
+      },
+      {
+        id: 'planning-3',
+        title: 'Previziuni Meteo pe Termen Lung',
+        content: 'Primăvara 2024: temperaturi cu 1°C peste medie, precipitații normale. Ideal pentru cultura de porumb.',
+        priority: 'medium',
+        type: 'seasonal-planning',
+        timestamp: new Date().toISOString()
+      }
+    ];
+  };
+
+  const generateAnalyticsRecommendations = (): AIRecommendation[] => {
+    const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    
+    return [
+      {
+        id: 'analytics-1',
+        title: 'Comparație vs Media Națională',
+        content: 'Randamentul tău este cu 18% peste media națională pentru grâu. Costurile sunt însă cu 12% mai mari.',
+        priority: 'medium',
+        type: 'analytics',
+        timestamp: new Date().toISOString()
+      },
+      {
+        id: 'analytics-2',
+        title: 'Eficiență Financiară',
+        content: 'ROI-ul fermei tale: 23%. Recomandare: optimizează costurile cu tratamentele pentru +5% profit.',
+        priority: 'high',
+        type: 'analytics',
+        timestamp: new Date().toISOString(),
+        estimatedSavings: 3500
+      },
+      {
+        id: 'analytics-3',
+        title: 'Proiecție 6 Luni',
+        content: 'Bazat pe tendințele actuale, profitul estimat pentru următoarele 6 luni: +15% vs perioada similară anul trecut.',
+        priority: 'medium',
+        type: 'analytics',
+        timestamp: new Date().toISOString()
+      }
+    ];
   };
 
   // Refresh recommendations when farm data changes

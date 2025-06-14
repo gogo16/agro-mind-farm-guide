@@ -12,7 +12,8 @@ import {
   Menu,
   FileStack,
   Package,
-  FolderOpen
+  FolderOpen,
+  BarChart3
 } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
 import UserProfile from './UserProfile';
@@ -28,6 +29,7 @@ const Navigation = () => {
     { icon: MapPin, label: 'Hartă', path: '/map' },
     { icon: Calendar, label: 'Planificare', path: '/planning' },
     { icon: DollarSign, label: 'Finanțe', path: '/finance' },
+    { icon: BarChart3, label: 'Analize', path: '/analytics' },
     { icon: FileText, label: 'Documente', path: '/documents' },
     { icon: FileStack, label: 'APIA/AFIR', path: '/modules' },
     { icon: Package, label: 'Inventar', path: '/inventory' },

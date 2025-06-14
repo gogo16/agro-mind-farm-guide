@@ -13,6 +13,7 @@ import FieldDetails from "./pages/FieldDetails";
 import Modules from "./pages/Modules";
 import Documents from "./pages/Documents";
 import Inventory from "./pages/Inventory";
+import Analytics from "./pages/Analytics";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/modules" element={<Modules />} />
             <Route path="/documents" element={<Documents />} />
             <Route path="/inventory" element={<Inventory />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="/field/:id" element={<FieldDetails />} />
             <Route path="/login" element={<Login />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
