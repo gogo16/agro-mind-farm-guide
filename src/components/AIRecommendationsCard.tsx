@@ -7,7 +7,7 @@ import { RefreshCw, Lightbulb } from 'lucide-react';
 import { useAIRecommendations, AIRecommendation } from '@/hooks/useAIRecommendations';
 
 interface AIRecommendationsCardProps {
-  zoneId: 'ai-financial-tips' | 'ai-inventory-recommendations' | 'ai-soil-recommendations' | 'ai-seasonal-guidance' | 'ai-field-status' | 'ai-season-progress';
+  zoneId: 'ai-financial-tips' | 'ai-inventory-recommendations' | 'ai-soil-recommendations' | 'ai-seasonal-guidance' | 'ai-field-status' | 'ai-season-progress' | 'ai-crop-rotation' | 'ai-equipment-maintenance' | 'ai-seasonal-planning' | 'ai-analytics';
   title: string;
   icon?: React.ReactNode;
   gradientClass?: string;
