@@ -9,7 +9,135 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      eu_market_prices: {
+        Row: {
+          begin_date: string
+          created_at: string
+          currency: string
+          end_date: string
+          id: string
+          market_code: string
+          market_name: string
+          member_state_code: string
+          member_state_name: string
+          price: number
+          product_code: string
+          product_name: string
+          reference_period: string
+          stage_code: string
+          stage_name: string
+          unit: string
+          updated_at: string
+          week_number: number | null
+        }
+        Insert: {
+          begin_date: string
+          created_at?: string
+          currency?: string
+          end_date: string
+          id?: string
+          market_code: string
+          market_name: string
+          member_state_code: string
+          member_state_name: string
+          price: number
+          product_code: string
+          product_name: string
+          reference_period: string
+          stage_code: string
+          stage_name: string
+          unit: string
+          updated_at?: string
+          week_number?: number | null
+        }
+        Update: {
+          begin_date?: string
+          created_at?: string
+          currency?: string
+          end_date?: string
+          id?: string
+          market_code?: string
+          market_name?: string
+          member_state_code?: string
+          member_state_name?: string
+          price?: number
+          product_code?: string
+          product_name?: string
+          reference_period?: string
+          stage_code?: string
+          stage_name?: string
+          unit?: string
+          updated_at?: string
+          week_number?: number | null
+        }
+        Relationships: []
+      }
+      price_history: {
+        Row: {
+          change_amount: number | null
+          change_percent: number | null
+          created_at: string
+          currency: string
+          data_source: string | null
+          date: string
+          id: string
+          price: number
+          product_code: string
+          volume: number | null
+        }
+        Insert: {
+          change_amount?: number | null
+          change_percent?: number | null
+          created_at?: string
+          currency: string
+          data_source?: string | null
+          date: string
+          id?: string
+          price: number
+          product_code: string
+          volume?: number | null
+        }
+        Update: {
+          change_amount?: number | null
+          change_percent?: number | null
+          created_at?: string
+          currency?: string
+          data_source?: string | null
+          date?: string
+          id?: string
+          price?: number
+          product_code?: string
+          volume?: number | null
+        }
+        Relationships: []
+      }
+      product_mapping: {
+        Row: {
+          created_at: string
+          eu_product_code: string
+          eu_product_name: string
+          id: string
+          romanian_name: string
+          romanian_symbol: string
+        }
+        Insert: {
+          created_at?: string
+          eu_product_code: string
+          eu_product_name: string
+          id?: string
+          romanian_name: string
+          romanian_symbol: string
+        }
+        Update: {
+          created_at?: string
+          eu_product_code?: string
+          eu_product_name?: string
+          id?: string
+          romanian_name?: string
+          romanian_symbol?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
