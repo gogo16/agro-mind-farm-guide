@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import MarketPricesTab from '@/components/MarketPricesTab';
@@ -121,8 +122,8 @@ const Finance = () => {
     setEditingTransaction(null);
   };
 
-  const handleDeleteTransaction = (id: number) => {
-    deleteTransaction(id.toString());
+  const handleDeleteTransaction = (id: string) => {
+    deleteTransaction(id);
     toast({
       title: "Tranzacție ștersă",
       description: "Tranzacția a fost ștersă cu succes.",
@@ -361,7 +362,7 @@ const Finance = () => {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Anulează</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteTransaction(transaction.id)} className="bg-red-600 hover:bg-red-700">
+                                <AlertDialogAction onClick={() => handleDeleteTransaction(transaction.id.toString())} className="bg-red-600 hover:bg-red-700">
                                   Șterge definitiv
                                 </AlertDialogAction>
                               </AlertDialogFooter>

@@ -33,7 +33,7 @@ const FieldDetails = () => {
   const completedActivities = tasks.filter(task => 
     (task.field === field?.name || task.fieldName === field?.name) && task.status === 'completed'
   ).map(task => ({
-    id: task.id,
+    id: task.id.toString(), // Ensure ID is string
     date: task.dueDate || task.date || new Date().toISOString().split('T')[0],
     activity: task.title,
     details: task.description || 'Activitate completată',
