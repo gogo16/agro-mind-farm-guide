@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import MarketPricesTab from '@/components/MarketPricesTab';
@@ -107,7 +108,7 @@ const Finance = () => {
       return;
     }
 
-    updateTransaction(editingTransaction.id, {
+    updateTransaction(editingTransaction.id.toString(), {
       ...editingTransaction,
       amount: parseFloat(editingTransaction.amount)
     });
@@ -121,7 +122,7 @@ const Finance = () => {
   };
 
   const handleDeleteTransaction = (id: number) => {
-    deleteTransaction(id);
+    deleteTransaction(id.toString());
     toast({
       title: "Tranzacție ștersă",
       description: "Tranzacția a fost ștersă cu succes.",

@@ -25,7 +25,7 @@ const FieldDetails = () => {
 
   const field = id ? fields.find(f => f.id === id) : null;
 
-  // Get AI-powered field status and progress
+  // Get AI-powered field status and progress - use string ID
   const fieldStatus = id ? getFieldStatus(id) : { status: 'Necunoscut', description: 'Date indisponibile', color: 'gray' };
   const fieldProgress = id ? getFieldProgress(id) : { developmentProgress: 0, daysToHarvest: 0 };
 
