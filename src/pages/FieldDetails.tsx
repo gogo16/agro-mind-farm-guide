@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -32,7 +33,7 @@ const FieldDetails = () => {
   const completedActivities = tasks.filter(task => 
     (task.field === field?.name || task.fieldName === field?.name) && task.status === 'completed'
   ).map((task, index) => ({
-    id: index, // Use index as number for key prop
+    id: `activity-${index}`, // Use a string ID to avoid type conflicts
     originalId: task.id, // Keep original ID for reference
     date: task.dueDate || task.date || new Date().toISOString().split('T')[0],
     activity: task.title,
