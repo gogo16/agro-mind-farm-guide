@@ -15,6 +15,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 import { format, isToday, parseISO, isSameDay } from 'date-fns';
 import { ro } from 'date-fns/locale';
+
 const Planning = () => {
   const {
     fields,
@@ -24,9 +25,7 @@ const Planning = () => {
     markNotificationAsRead,
     addNotification
   } = useAppContext();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [newTask, setNewTask] = useState({
@@ -36,7 +35,7 @@ const Planning = () => {
     dueDate: '',
     dueTime: '',
     priority: 'medium',
-    duration: '',
+    estimatedDuration: '',
     category: 'maintenance'
   });
 
@@ -100,9 +99,7 @@ const Planning = () => {
       priority: newTask.priority as 'low' | 'medium' | 'high',
       status: 'pending',
       aiSuggested: false,
-      estimatedDuration: newTask.duration ? `${newTask.duration} ore` : undefined,
-      duration: newTask.duration ? parseInt(newTask.duration) : undefined,
-      category: newTask.category
+      estimatedDuration: newTask.estimatedDuration ? `${newTask.estimatedDuration} ore` : undefined
     });
     toast({
       title: "Succes",
@@ -115,7 +112,7 @@ const Planning = () => {
       dueDate: '',
       dueTime: '',
       priority: 'medium',
-      duration: '',
+      estimatedDuration: '',
       category: 'maintenance'
     });
     setIsAddingTask(false);
@@ -386,7 +383,8 @@ const Planning = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {pendingTasks.map(task => <div key={task.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+                  {pendingTasks.map(task => (
+                    <div key={task.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-medium text-gray-900 text-sm">{task.title}</h4>
                         <Badge className={getPriorityColor(task.priority)}>
@@ -395,19 +393,51 @@ const Planning = () => {
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-gray-600 mb-1">
                         <MapPin className="h-3 w-3" />
-                        <span>{task.field}</span>
+                        <span>{task.field || task.fieldName}</span>
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-gray-600">
                         <CalendarIcon className="h-3 w-3" />
                         <span>{task.dueDate || task.date} {(task.dueTime || task.time) && `la ${task.dueTime || task.time}`}</span>
                       </div>
-                    </div>)}
+                    </div>
+                  ))}
                   {pendingTasks.length === 0 && <p className="text-gray-500 text-center py-4">Nu există sarcini în așteptare</p>}
                 </CardContent>
               </Card>
 
               {/* In Progress Tasks */}
-              
+              <Card className="bg-white border-blue-200">
+                <CardHeader>
+                  <CardTitle className="text-blue-800 flex items-center space-x-2">
+                    <AlertTriangle className="h-5 w-5 text-blue-600" />
+                    <span>În progres ({inProgressTasks.length})</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {inProgressTasks.map(task => (
+                    <div key={task.id} className="border border-blue-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-medium text-gray-900 text-sm">{task.title}</h4>
+                        <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                          În progres
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-gray-600 mb-1">
+                        <MapPin className="h-3 w-3" />
+                        <span>{task.field || task.fieldName}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-gray-600">
+                        <CalendarIcon className="h-3 w-3" />
+                        <span>{task.dueDate || task.date} {(task.dueTime || task.time) && `la ${task.dueTime || task.time}`}</span>
+                      </div>
+                      {task.estimatedDuration && (
+                        <div className="text-xs text-gray-500 mt-1">Durată: {task.estimatedDuration}</div>
+                      )}
+                    </div>
+                  ))}
+                  {inProgressTasks.length === 0 && <p className="text-gray-500 text-center py-4">Nu există sarcini în progres</p>}
+                </CardContent>
+              </Card>
 
               {/* Completed Tasks */}
               <Card className="bg-white border-green-200">
@@ -418,7 +448,8 @@ const Planning = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {completedTasks.map(task => <div key={task.id} className="border border-green-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+                  {completedTasks.map(task => (
+                    <div key={task.id} className="border border-green-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
                       <div className="flex justify-between items-start mb-2">
                         <h4 className="font-medium text-gray-900 text-sm">{task.title}</h4>
                         <Badge className="bg-green-100 text-green-800 border-green-200">
@@ -427,13 +458,14 @@ const Planning = () => {
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-gray-600 mb-1">
                         <MapPin className="h-3 w-3" />
-                        <span>{task.field}</span>
+                        <span>{task.field || task.fieldName}</span>
                       </div>
                       <div className="flex items-center space-x-2 text-xs text-gray-600">
                         <CalendarIcon className="h-3 w-3" />
                         <span>{task.dueDate || task.date} {(task.dueTime || task.time) && `la ${task.dueTime || task.time}`}</span>
                       </div>
-                    </div>)}
+                    </div>
+                  ))}
                   {completedTasks.length === 0 && <p className="text-gray-500 text-center py-4">Nu există sarcini completate</p>}
                 </CardContent>
               </Card>
@@ -443,4 +475,5 @@ const Planning = () => {
       </div>
     </div>;
 };
+
 export default Planning;

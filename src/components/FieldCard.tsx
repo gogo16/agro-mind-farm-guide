@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ interface FieldCardProps {
 const FieldCard = ({ field }: FieldCardProps) => {
   const navigate = useNavigate();
   const { deleteField } = useAppContext();
+  const [isEditingField, setIsEditingField] = useState(false);
   const { weatherData, getWeatherDescription } = useWeatherData(
     field.coordinates?.lat,
     field.coordinates?.lng
@@ -64,12 +65,13 @@ const FieldCard = ({ field }: FieldCardProps) => {
               <Eye className="mr-2 h-4 w-4" />
               Vezi detalii
             </DropdownMenuItem>
-            <EditFieldDialog field={field} trigger={
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                <Edit className="mr-2 h-4 w-4" />
-                Editează
-              </DropdownMenuItem>
-            } />
+            <DropdownMenuItem onSelect={(e) => {
+              e.preventDefault();
+              setIsEditingField(true);
+            }}>
+              <Edit className="mr-2 h-4 w-4" />
+              Editează
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleDelete} className="text-red-600">
               Șterge
             </DropdownMenuItem>
@@ -140,6 +142,13 @@ const FieldCard = ({ field }: FieldCardProps) => {
           </Button>
         </div>
       </CardContent>
+
+      <EditFieldDialog 
+        field={field} 
+        isOpen={isEditingField} 
+        onOpenChange={setIsEditingField} 
+        trigger={<></>} 
+      />
     </Card>
   );
 };

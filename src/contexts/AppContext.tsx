@@ -18,7 +18,7 @@ export interface Field {
   lastActivity?: string;
   notes?: string;
   photos?: string[];
-  // Add missing properties that other components expect
+  // Required properties that other components expect
   parcelCode: string;
   size: number;
   status: string;
@@ -56,7 +56,7 @@ interface Task {
   field?: string;
   dueDate?: string;
   date?: string;
-  status: 'pending' | 'completed';
+  status: 'pending' | 'completed' | 'in-progress';
   priority: 'low' | 'medium' | 'high';
   time?: string;
   aiSuggested?: boolean;
