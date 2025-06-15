@@ -1,238 +1,131 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { useAIRecommendations } from '@/hooks/useAIRecommendations';
-import AIRecommendationsCard from '@/components/AIRecommendationsCard';
-import { Sprout } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Beaker, Droplets, Thermometer, Leaf } from 'lucide-react';
 
 interface SoilSectionProps {
-  fieldId: number;
+  fieldId?: string;
 }
 
-const SoilSection = ({
-  fieldId
-}: SoilSectionProps) => {
-  const {
-    toast
-  } = useToast();
-  const {
-    getRecommendationsByZone
-  } = useAIRecommendations();
-
-  const soilRecommendations = getRecommendationsByZone('ai-soil-recommendations');
-
-  const [soilData, setSoilData] = useState({
-    soilType: 'Cernoziom',
-    pH: 7.2,
+const SoilSection = ({ fieldId }: SoilSectionProps) => {
+  // Mock soil data - în viitor aceasta va fi obținută din baza de date
+  const soilData = {
+    ph: 6.8,
     nitrogen: 85,
-    phosphorus: 45,
-    potassium: 120,
-    organicMatter: 3.8,
-    lastAnalysis: '2024-03-15'
-  });
-
-  const [isAddingCustomSoil, setIsAddingCustomSoil] = useState(false);
-  const [customSoilType, setCustomSoilType] = useState('');
-  const [editingField, setEditingField] = useState<string | null>(null);
-
-  const soilTypes = ['Cernoziom', 'Luvosol', 'Cambisol', 'Fluvisol', 'Regosol', 'Gleysol', 'Vertisol', 'Podzol'];
-
-  const handleSoilTypeChange = (newSoilType: string) => {
-    if (newSoilType === 'custom') {
-      setIsAddingCustomSoil(true);
-      return;
-    }
-    setSoilData({
-      ...soilData,
-      soilType: newSoilType
-    });
-    toast({
-      title: "Tip sol actualizat",
-      description: `Tipul de sol a fost schimbat la: ${newSoilType}`
-    });
+    phosphorus: 42,
+    potassium: 78,
+    organicMatter: 3.2,
+    moisture: 65,
+    temperature: 18,
+    type: 'Cernoziom',
+    lastTested: '2024-05-15'
   };
 
-  const handleCustomSoilAdd = () => {
-    if (!customSoilType.trim()) {
-      toast({
-        title: "Eroare",
-        description: "Te rugăm să introduci un nume pentru tipul de sol.",
-        variant: "destructive"
-      });
-      return;
-    }
-    setSoilData({
-      ...soilData,
-      soilType: customSoilType
-    });
-    toast({
-      title: "Tip sol personalizat adăugat",
-      description: `Tipul de sol "${customSoilType}" a fost adăugat cu succes.`
-    });
-    setCustomSoilType('');
-    setIsAddingCustomSoil(false);
+  const getSoilHealthColor = (value: number, min: number, max: number) => {
+    if (value >= min && value <= max) return 'bg-green-100 text-green-800';
+    if (value < min * 0.8 || value > max * 1.2) return 'bg-red-100 text-red-800';
+    return 'bg-yellow-100 text-yellow-800';
   };
-
-  const handleValueUpdate = (field: string, value: number) => {
-    setSoilData({
-      ...soilData,
-      [field]: value
-    });
-    setEditingField(null);
-    toast({
-      title: "Valoare actualizată",
-      description: `${field} a fost actualizat cu succes.`
-    });
-  };
-
-  const renderEditableValue = (field: string, value: number, unit: string, label: string) => {
-    if (editingField === field) {
-      return <div className="flex items-center space-x-2">
-          <Input type="number" step="0.1" defaultValue={value} className="w-20 h-8" onBlur={e => handleValueUpdate(field, parseFloat(e.target.value) || value)} onKeyPress={e => {
-          if (e.key === 'Enter') {
-            handleValueUpdate(field, parseFloat((e.target as HTMLInputElement).value) || value);
-          }
-        }} autoFocus />
-          <span className="text-xs text-gray-500">{unit}</span>
-        </div>;
-    }
-    return <div className="cursor-pointer hover:bg-gray-100 p-1 rounded" onClick={() => setEditingField(field)}>
-        <p className="text-2xl font-bold text-blue-600">{value}</p>
-        <p className="text-xs text-gray-500">{unit}</p>
-      </div>;
-  };
-
-  const getAIRecommendations = () => {
-    const recommendations = [];
-    if (soilData.pH >= 7.0 && soilData.pH <= 7.5) {
-      recommendations.push({
-        type: 'success',
-        message: '✓ Nivelul de pH este optim pentru majoritatea culturilor'
-      });
-    } else if (soilData.pH > 7.5) {
-      recommendations.push({
-        type: 'warning',
-        message: '⚠ pH bazic - consideră aplicarea de sulf pentru acidifiere'
-      });
-    } else {
-      recommendations.push({
-        type: 'warning',
-        message: '⚠ pH acid - consideră aplicarea de var pentru alcalinizare'
-      });
-    }
-    if (soilData.phosphorus < 50) {
-      recommendations.push({
-        type: 'warning',
-        message: '⚠ Nivelul de fosfor este moderat - consideră fertilizarea fosfatică'
-      });
-    } else {
-      recommendations.push({
-        type: 'success',
-        message: '✓ Nivelul de fosfor este adecvat'
-      });
-    }
-    if (soilData.organicMatter >= 3.5) {
-      recommendations.push({
-        type: 'info',
-        message: 'ℹ Conținutul de materie organică este bun'
-      });
-    } else {
-      recommendations.push({
-        type: 'warning',
-        message: '⚠ Consideră îmbunătățirea materiei organice prin compost'
-      });
-    }
-    return recommendations;
-  };
-
-  const aiRecommendations = getAIRecommendations();
 
   return (
-    <div className="space-y-6">
-      <Card className="bg-white border-green-200">
-        <CardHeader>
-          <CardTitle className="text-green-800">Analiza Solului</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6" data-ai-zone="ai-soil-recommendations">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label>Tip de sol</Label>
-              <Select value={soilData.soilType} onValueChange={handleSoilTypeChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {soilTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                  <SelectItem value="custom">+ Adaugă tip personalizat</SelectItem>
-                </SelectContent>
-              </Select>
+    <Card className="bg-white border-green-200">
+      <CardHeader>
+        <CardTitle className="text-green-800 flex items-center space-x-2">
+          <Beaker className="h-5 w-5" />
+          <span>Analiza Solului</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Proprietăți chimice */}
+        <div>
+          <h4 className="font-semibold mb-3 text-gray-700">Proprietăți Chimice</h4>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{soilData.ph}</div>
+              <div className="text-sm text-gray-600">pH</div>
+              <Badge className={getSoilHealthColor(soilData.ph, 6.0, 7.5)}>
+                {soilData.ph >= 6.0 && soilData.ph <= 7.5 ? 'Optim' : 'Atenție'}
+              </Badge>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">Ultima analiză</p>
-              <p className="font-medium">{soilData.lastAnalysis}</p>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{soilData.nitrogen}%</div>
+              <div className="text-sm text-gray-600">Azot</div>
+              <Badge className={getSoilHealthColor(soilData.nitrogen, 70, 90)}>
+                {soilData.nitrogen >= 70 && soilData.nitrogen <= 90 ? 'Bun' : 'Moderat'}
+              </Badge>
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-gray-600">pH</p>
-              {renderEditableValue('pH', soilData.pH, 'Neutru', 'pH')}
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">{soilData.phosphorus}</div>
+              <div className="text-sm text-gray-600">Fosfor (ppm)</div>
+              <Badge className={getSoilHealthColor(soilData.phosphorus, 30, 50)}>
+                {soilData.phosphorus >= 30 && soilData.phosphorus <= 50 ? 'Bun' : 'Scăzut'}
+              </Badge>
             </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-sm text-gray-600">Azot (N)</p>
-              {renderEditableValue('nitrogen', soilData.nitrogen, 'mg/kg', 'Azot')}
-            </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm text-gray-600">Fosfor (P)</p>
-              {renderEditableValue('phosphorus', soilData.phosphorus, 'mg/kg', 'Fosfor')}
-            </div>
-            <div className="text-center p-4 bg-orange-50 rounded-lg">
-              <p className="text-sm text-gray-600">Potasiu (K)</p>
-              {renderEditableValue('potassium', soilData.potassium, 'mg/kg', 'Potasiu')}
-            </div>
-            <div className="text-center p-4 bg-amber-50 rounded-lg">
-              <p className="text-sm text-gray-600">Materie organică</p>
-              {renderEditableValue('organicMatter', soilData.organicMatter, '%', 'Materie organică')}
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">{soilData.potassium}</div>
+              <div className="text-sm text-gray-600">Potasiu (ppm)</div>
+              <Badge className={getSoilHealthColor(soilData.potassium, 60, 80)}>
+                {soilData.potassium >= 60 && soilData.potassium <= 80 ? 'Bun' : 'Moderat'}
+              </Badge>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* AI Recommendations Section */}
-      <AIRecommendationsCard
-        zoneId="ai-soil-recommendations"
-        title="Recomandări AI pentru Sol"
-        icon={<Sprout className="h-5 w-5" />}
-        gradientClass="from-green-500 to-emerald-600"
-      />
-
-      <Dialog open={isAddingCustomSoil} onOpenChange={setIsAddingCustomSoil}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Adaugă tip de sol personalizat</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="customSoil">Nume tip de sol</Label>
-              <Input id="customSoil" value={customSoilType} onChange={e => setCustomSoilType(e.target.value)} placeholder="ex: Sol argilos local" />
+        {/* Proprietăți fizice */}
+        <div>
+          <h4 className="font-semibold mb-3 text-gray-700">Proprietăți Fizice</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+              <Droplets className="h-8 w-8 text-blue-500" />
+              <div>
+                <div className="text-lg font-semibold">{soilData.moisture}%</div>
+                <div className="text-sm text-gray-600">Umiditate</div>
+              </div>
             </div>
-            <div className="flex space-x-2">
-              <Button onClick={() => setIsAddingCustomSoil(false)} variant="outline" className="flex-1">
-                Anulează
-              </Button>
-              <Button onClick={handleCustomSoilAdd} className="flex-1 bg-green-600 hover:bg-green-700">
-                Adaugă
-              </Button>
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+              <Thermometer className="h-8 w-8 text-red-500" />
+              <div>
+                <div className="text-lg font-semibold">{soilData.temperature}°C</div>
+                <div className="text-sm text-gray-600">Temperatură</div>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+              <Leaf className="h-8 w-8 text-green-500" />
+              <div>
+                <div className="text-lg font-semibold">{soilData.organicMatter}%</div>
+                <div className="text-sm text-gray-600">Materie organică</div>
+              </div>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        </div>
+
+        {/* Informații generale */}
+        <div>
+          <h4 className="font-semibold mb-3 text-gray-700">Informații Generale</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <div className="text-sm text-gray-600">Tip sol</div>
+              <div className="font-medium">{soilData.type}</div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-600">Ultima analiză</div>
+              <div className="font-medium">{soilData.lastTested}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Recomandări */}
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h4 className="font-semibold mb-2 text-blue-800">Recomandări</h4>
+          <ul className="text-sm text-blue-700 space-y-1">
+            <li>• Nivelul de fosfor este scăzut - considerați aplicarea unui îngrășământ cu fosfor</li>
+            <li>• pH-ul este în intervalul optim pentru majoritatea culturilor</li>
+            <li>• Umiditatea solului este bună pentru această perioadă</li>
+          </ul>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

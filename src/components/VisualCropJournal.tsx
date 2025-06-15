@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 
 interface VisualCropJournalProps {
-  fieldId?: number;
+  fieldId?: string;
 }
 
 const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
