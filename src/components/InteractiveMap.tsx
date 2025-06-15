@@ -1,15 +1,15 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface InteractiveMapProps {
-  mapType: string;
+  mapType?: string;
   onFieldSelect?: (field: any) => void;
+  onMapClick?: (lat: number, lng: number) => void;
 }
 
-const InteractiveMap = ({ mapType, onFieldSelect }: InteractiveMapProps) => {
+const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: InteractiveMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const polygonsRef = useRef<google.maps.Polygon[]>([]);
@@ -182,6 +182,15 @@ const InteractiveMap = ({ mapType, onFieldSelect }: InteractiveMapProps) => {
         const map = new google.maps.Map(mapRef.current!, mapOptions);
         mapInstanceRef.current = map;
 
+        // Add map click listener for adding new fields
+        if (onMapClick) {
+          map.addListener('click', (event: google.maps.MapMouseEvent) => {
+            if (event.latLng) {
+              onMapClick(event.latLng.lat(), event.latLng.lng());
+            }
+          });
+        }
+
         // Ajustează view-ul pentru a include toate terenurile
         if (bounds instanceof google.maps.LatLngBounds && fields.length > 0) {
           map.fitBounds(bounds);
@@ -227,7 +236,7 @@ const InteractiveMap = ({ mapType, onFieldSelect }: InteractiveMapProps) => {
       });
       polygonsRef.current = [];
     };
-  }, [fields, mapType]);
+  }, [fields, mapType, onMapClick]);
 
   // Actualizează tipul de hartă
   useEffect(() => {
