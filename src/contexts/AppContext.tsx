@@ -1,8 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { WeatherSyncService } from '@/utils/weatherSync';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface Field {
   id: string;
@@ -107,6 +107,7 @@ interface AppContextType {
   addFieldPhoto?: (photo: any) => void;
   generateAPIADocument?: (fieldId: string) => any;
   user?: any;
+  loading: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -122,104 +123,8 @@ export const useAppContext = () => {
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [fields, setFields] = useState<Field[]>([
-    {
-      id: '1',
-      name: 'Parcela Nord',
-      location: 'Bulzești, Dolj',
-      area: 12.5,
-      crop: 'Grâu',
-      coordinates: {
-        lat: 44.5642,
-        lng: 23.8822
-      },
-      soilType: 'Cernoziom',
-      lastActivity: 'Semănat - 15 Oct 2024',
-      notes: 'Teren cu productivitate ridicată, necesită atenție specială la irigare în perioada de vară.',
-      photos: [],
-      parcelCode: 'PN-001',
-      size: 12.5,
-      status: 'healthy',
-      color: '#22c55e',
-      plantingDate: '2024-10-15',
-      harvestDate: '2025-07-15',
-      workType: 'Arătură conventională',
-      inputs: 'NPK 16:16:16',
-      variety: 'Antonius',
-      costs: 2500,
-      roi: 15,
-      weather: {
-        temperature: 22,
-        condition: 'sunny',
-        humidity: 65,
-        windSpeed: 12
-      }
-    },
-    {
-      id: '2',
-      name: 'Parcela Sud',
-      location: 'Bulzești, Dolj',
-      area: 8.3,
-      crop: 'Porumb',
-      coordinates: {
-        lat: 44.5580,
-        lng: 23.8900
-      },
-      soilType: 'Luto-argilos',
-      lastActivity: 'Fertilizat - 20 Mar 2024',
-      notes: 'Zonă cu drenaj moderat, potrivită pentru culturile de vară.',
-      photos: [],
-      parcelCode: 'PS-002',
-      size: 8.3,
-      status: 'excellent',
-      color: '#f59e0b',
-      plantingDate: '2024-04-15',
-      harvestDate: '2024-09-20',
-      workType: 'No-till',
-      inputs: 'Uree',
-      variety: 'Pioneer',
-      costs: 1800,
-      roi: 20,
-      weather: {
-        temperature: 24,
-        condition: 'cloudy',
-        humidity: 70,
-        windSpeed: 8
-      }
-    },
-    {
-      id: '3',
-      name: 'Parcela Est',
-      location: 'Bulzești, Dolj',
-      area: 15.2,
-      crop: 'Floarea-soarelui',
-      coordinates: {
-        lat: 44.5700,
-        lng: 23.8950
-      },
-      soilType: 'Aluvionar',
-      lastActivity: 'Recoltat - 05 Sep 2024',
-      notes: 'Teren nou achiziționat, în proces de optimizare a fertilității solului.',
-      photos: [],
-      parcelCode: 'PE-003',
-      size: 15.2,
-      status: 'attention',
-      color: '#ef4444',
-      plantingDate: '2024-03-20',
-      harvestDate: '2024-09-05',
-      workType: 'Cultivare minimă',
-      inputs: 'NPK 20:20:0',
-      variety: 'Limagrain',
-      costs: 3200,
-      roi: 12,
-      weather: {
-        temperature: 20,
-        condition: 'rainy',
-        humidity: 80,
-        windSpeed: 15
-      }
-    }
-  ]);
+  const [fields, setFields] = useState<Field[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [transactions, setTransactions] = useState<Transaction[]>([
     {
@@ -278,81 +183,254 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const currentSeason = 'Vară';
 
-  // Auto-sync weather data for existing fields when user logs in
-  useEffect(() => {
-    if (user && fields.length > 0) {
-      const firstField = fields[0];
-      if (firstField.coordinates) {
-        WeatherSyncService.syncForUser(user.id, firstField.coordinates)
-          .then(result => {
-            if (result.success) {
-              console.log('Weather data synced for user fields');
-            }
-          })
-          .catch(error => {
-            console.error('Failed to sync weather data:', error);
-          });
-      }
+  // Fetch fields from database
+  const fetchFields = async () => {
+    if (!user) {
+      setFields([]);
+      setLoading(false);
+      return;
     }
-  }, [user, fields.length]);
 
-  const addField = async (fieldData: Omit<Field, 'id'>) => {
-    const newField: Field = {
-      ...fieldData,
-      id: Date.now().toString(),
-      size: fieldData.area,
-      parcelCode: fieldData.parcelCode || `P-${Date.now()}`,
-      status: fieldData.status || 'healthy',
-      color: fieldData.color || '#22c55e'
-    };
-    
-    setFields(prev => [...prev, newField]);
+    try {
+      const { data, error } = await supabase
+        .from('fields')
+        .select('*')
+        .eq('user_id', user.id);
 
-    if (user && fieldData.coordinates) {
-      try {
-        await WeatherSyncService.syncForUser(user.id, fieldData.coordinates);
+      if (error) {
+        console.error('Error fetching fields:', error);
         toast({
-          title: "Teren adăugat",
-          description: "Datele meteo au fost sincronizate automat pentru noul teren.",
-        });
-      } catch (error) {
-        console.error('Failed to sync weather for new field:', error);
-        toast({
-          title: "Teren adăugat",
-          description: "Terenul a fost adăugat, dar sincronizarea meteo a eșuat. Încercați să actualizați manual.",
+          title: "Eroare",
+          description: "Nu s-au putut încărca terenurile.",
           variant: "destructive"
         });
+        return;
       }
-    } else {
+
+      const formattedFields: Field[] = (data || []).map(field => ({
+        id: field.id,
+        name: field.name,
+        location: field.location,
+        area: Number(field.area),
+        crop: field.crop,
+        coordinates: field.coordinates_lat && field.coordinates_lng ? {
+          lat: Number(field.coordinates_lat),
+          lng: Number(field.coordinates_lng)
+        } : undefined,
+        soilType: field.soil_type || undefined,
+        lastActivity: field.last_activity || undefined,
+        notes: field.notes || undefined,
+        photos: [],
+        parcelCode: field.parcel_code,
+        size: Number(field.area),
+        status: field.status,
+        color: field.color,
+        plantingDate: field.planting_date || undefined,
+        harvestDate: field.harvest_date || undefined,
+        workType: field.work_type || undefined,
+        inputs: field.inputs || undefined,
+        variety: field.variety || undefined,
+        costs: field.costs ? Number(field.costs) : undefined,
+        roi: field.roi ? Number(field.roi) : undefined,
+        weather: {
+          temperature: 22,
+          condition: 'sunny',
+          humidity: 65,
+          windSpeed: 12
+        }
+      }));
+
+      setFields(formattedFields);
+
+      // Auto-sync weather data for each field
+      for (const field of formattedFields) {
+        if (field.coordinates) {
+          WeatherSyncService.syncForUser(user.id, field.coordinates)
+            .then(result => {
+              if (result.success) {
+                console.log(`Weather data synced for field ${field.name}`);
+              }
+            })
+            .catch(error => {
+              console.error(`Failed to sync weather for field ${field.name}:`, error);
+            });
+        }
+      }
+    } catch (error) {
+      console.error('Error in fetchFields:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFields();
+  }, [user]);
+
+  const addField = async (fieldData: Omit<Field, 'id'>) => {
+    if (!user) {
       toast({
-        title: "Teren adăugat",
-        description: "Terenul a fost adăugat cu succes.",
+        title: "Eroare",
+        description: "Trebuie să fii autentificat pentru a adăuga terenuri.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('fields')
+        .insert([{
+          user_id: user.id,
+          name: fieldData.name,
+          location: fieldData.location,
+          area: fieldData.area,
+          crop: fieldData.crop,
+          coordinates_lat: fieldData.coordinates?.lat,
+          coordinates_lng: fieldData.coordinates?.lng,
+          soil_type: fieldData.soilType,
+          last_activity: fieldData.lastActivity,
+          notes: fieldData.notes,
+          parcel_code: fieldData.parcelCode || `P-${Date.now()}`,
+          status: fieldData.status || 'healthy',
+          color: fieldData.color || '#22c55e',
+          planting_date: fieldData.plantingDate,
+          harvest_date: fieldData.harvestDate,
+          work_type: fieldData.workType,
+          inputs: fieldData.inputs,
+          variety: fieldData.variety,
+          costs: fieldData.costs,
+          roi: fieldData.roi
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding field:', error);
+        toast({
+          title: "Eroare",
+          description: "Nu s-a putut adăuga terenul.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Refresh fields list
+      await fetchFields();
+
+      if (fieldData.coordinates) {
+        try {
+          await WeatherSyncService.syncForUser(user.id, fieldData.coordinates);
+          toast({
+            title: "Teren adăugat",
+            description: "Datele meteo au fost sincronizate automat pentru noul teren.",
+          });
+        } catch (error) {
+          console.error('Failed to sync weather for new field:', error);
+          toast({
+            title: "Teren adăugat",
+            description: "Terenul a fost adăugat, dar sincronizarea meteo a eșuat.",
+            variant: "destructive"
+          });
+        }
+      } else {
+        toast({
+          title: "Teren adăugat",
+          description: "Terenul a fost adăugat cu succes.",
+        });
+      }
+    } catch (error) {
+      console.error('Error in addField:', error);
+      toast({
+        title: "Eroare",
+        description: "A apărut o eroare neașteptată.",
+        variant: "destructive"
       });
     }
   };
 
-  const updateField = (id: string, fieldData: Partial<Field>) => {
-    setFields(prev => prev.map(field => 
-      field.id === id ? { 
-        ...field, 
-        ...fieldData,
-        size: fieldData.area || field.size
-      } : field
-    ));
-    
-    toast({
-      title: "Teren actualizat",
-      description: "Informațiile terenului au fost actualizate cu succes.",
-    });
+  const updateField = async (id: string, fieldData: Partial<Field>) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('fields')
+        .update({
+          name: fieldData.name,
+          location: fieldData.location,
+          area: fieldData.area,
+          crop: fieldData.crop,
+          coordinates_lat: fieldData.coordinates?.lat,
+          coordinates_lng: fieldData.coordinates?.lng,
+          soil_type: fieldData.soilType,
+          last_activity: fieldData.lastActivity,
+          notes: fieldData.notes,
+          parcel_code: fieldData.parcelCode,
+          status: fieldData.status,
+          color: fieldData.color,
+          planting_date: fieldData.plantingDate,
+          harvest_date: fieldData.harvestDate,
+          work_type: fieldData.workType,
+          inputs: fieldData.inputs,
+          variety: fieldData.variety,
+          costs: fieldData.costs,
+          roi: fieldData.roi
+        })
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error updating field:', error);
+        toast({
+          title: "Eroare",
+          description: "Nu s-a putut actualiza terenul.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Refresh fields list
+      await fetchFields();
+      
+      toast({
+        title: "Teren actualizat",
+        description: "Informațiile terenului au fost actualizate cu succes.",
+      });
+    } catch (error) {
+      console.error('Error in updateField:', error);
+    }
   };
 
-  const deleteField = (id: string) => {
-    setFields(prev => prev.filter(field => field.id !== id));
-    
-    toast({
-      title: "Teren șters",
-      description: "Terenul a fost șters cu succes.",
-    });
+  const deleteField = async (id: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('fields')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error deleting field:', error);
+        toast({
+          title: "Eroare",
+          description: "Nu s-a putut șterge terenul.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Refresh fields list
+      await fetchFields();
+      
+      toast({
+        title: "Teren șters",
+        description: "Terenul a fost șters cu succes.",
+      });
+    } catch (error) {
+      console.error('Error in deleteField:', error);
+    }
   };
 
   const getField = (id: string) => {
@@ -432,7 +510,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const fetchSatelliteData = (fieldId: string) => {
-    // Mock implementation
     console.log('Fetching satellite data for field:', fieldId);
   };
 
@@ -517,7 +594,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       fieldPhotos,
       addFieldPhoto,
       generateAPIADocument,
-      user
+      user,
+      loading
     }}>
       {children}
     </AppContext.Provider>

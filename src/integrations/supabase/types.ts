@@ -72,6 +72,122 @@ export type Database = {
         }
         Relationships: []
       }
+      field_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          date_taken: string
+          field_id: string
+          id: string
+          photo_url: string
+          user_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          date_taken?: string
+          field_id: string
+          id?: string
+          photo_url: string
+          user_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          date_taken?: string
+          field_id?: string
+          id?: string
+          photo_url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_photos_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fields: {
+        Row: {
+          area: number
+          color: string
+          coordinates_lat: number | null
+          coordinates_lng: number | null
+          costs: number | null
+          created_at: string
+          crop: string
+          harvest_date: string | null
+          id: string
+          inputs: string | null
+          last_activity: string | null
+          location: string
+          name: string
+          notes: string | null
+          parcel_code: string
+          planting_date: string | null
+          roi: number | null
+          soil_type: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          variety: string | null
+          work_type: string | null
+        }
+        Insert: {
+          area: number
+          color?: string
+          coordinates_lat?: number | null
+          coordinates_lng?: number | null
+          costs?: number | null
+          created_at?: string
+          crop: string
+          harvest_date?: string | null
+          id?: string
+          inputs?: string | null
+          last_activity?: string | null
+          location: string
+          name: string
+          notes?: string | null
+          parcel_code: string
+          planting_date?: string | null
+          roi?: number | null
+          soil_type?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          variety?: string | null
+          work_type?: string | null
+        }
+        Update: {
+          area?: number
+          color?: string
+          coordinates_lat?: number | null
+          coordinates_lng?: number | null
+          costs?: number | null
+          created_at?: string
+          crop?: string
+          harvest_date?: string | null
+          id?: string
+          inputs?: string | null
+          last_activity?: string | null
+          location?: string
+          name?: string
+          notes?: string | null
+          parcel_code?: string
+          planting_date?: string | null
+          roi?: number | null
+          soil_type?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          variety?: string | null
+          work_type?: string | null
+        }
+        Relationships: []
+      }
       price_history: {
         Row: {
           change_amount: number | null

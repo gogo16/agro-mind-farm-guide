@@ -127,7 +127,7 @@ const FieldCard = ({ field }: FieldCardProps) => {
         ) : (
           <div className="border-t pt-4">
             <div className="text-sm text-gray-500 text-center py-2">
-              Date meteo indisponibile
+              {field.coordinates ? 'Se încarcă datele meteo...' : 'Date meteo indisponibile - adaugă coordonate'}
             </div>
           </div>
         )}

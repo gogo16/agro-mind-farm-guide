@@ -18,7 +18,7 @@ import { useAIRecommendations } from '@/hooks/useAIRecommendations';
 const FieldDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { fields, tasks } = useAppContext();
+  const { fields, tasks, loading } = useAppContext();
   const { getFieldProgress, getFieldStatus } = useAIRecommendations();
   const [isEditingField, setIsEditingField] = useState(false);
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
@@ -46,6 +46,19 @@ const FieldDetails = () => {
   const lastCompletedTask = tasks
     .filter(task => (task.field === field?.name || task.fieldName === field?.name) && task.status === 'completed')
     .sort((a, b) => new Date(b.dueDate || b.date || '').getTime() - new Date(a.dueDate || a.date || '').getTime())[0];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+        <Navigation />
+        <div className="container mx-auto px-4 py-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-800 mb-4">Se încarcă...</h1>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!field) {
     return (
