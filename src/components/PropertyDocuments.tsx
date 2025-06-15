@@ -24,7 +24,7 @@ const PropertyDocuments = () => {
   const { toast } = useToast();
 
   const [isAddingDoc, setIsAddingDoc] = useState(false);
-  const [editingDoc, setEditingDoc] = useState<number | null>(null);
+  const [editingDoc, setEditingDoc] = useState<string | null>(null);
 
   const [newDoc, setNewDoc] = useState({
     parcelId: '',
@@ -68,7 +68,7 @@ const PropertyDocuments = () => {
   };
 
   // Funcție pentru obținerea culorii terenului cu transparență
-  const getFieldColor = (parcelId?: number) => {
+  const getFieldColor = (parcelId?: string) => {
     if (!parcelId) return 'rgba(0, 0, 0, 0)'; // Transparent pentru documente generale
     
     const field = fields.find(f => f.id === parcelId);
@@ -94,7 +94,7 @@ const PropertyDocuments = () => {
     }
 
     const docData = {
-      parcelId: newDoc.parcelId && newDoc.parcelId !== 'general' ? parseInt(newDoc.parcelId) : undefined,
+      parcelId: newDoc.parcelId && newDoc.parcelId !== 'general' ? newDoc.parcelId : undefined,
       type: newDoc.type,
       name: newDoc.name,
       fileName: newDoc.fileName || `${newDoc.name}.pdf`,
@@ -106,14 +106,14 @@ const PropertyDocuments = () => {
     };
 
     if (editingDoc) {
-      updatePropertyDocument(editingDoc, docData);
+      updatePropertyDocument?.(editingDoc, docData);
       setEditingDoc(null);
       toast({
         title: "Succes",
         description: "Documentul a fost actualizat cu succes."
       });
     } else {
-      addPropertyDocument(docData);
+      addPropertyDocument?.(docData);
       toast({
         title: "Succes",
         description: "Documentul a fost adăugat cu succes."
@@ -154,7 +154,7 @@ const PropertyDocuments = () => {
     }
   };
 
-  const getFieldName = (parcelId?: number) => {
+  const getFieldName = (parcelId?: string) => {
     if (!parcelId) return 'General';
     const field = fields.find(f => f.id === parcelId);
     return field ? `${field.name} (${field.parcelCode})` : 'Teren necunoscut';
@@ -222,7 +222,7 @@ const PropertyDocuments = () => {
                   <SelectContent>
                     <SelectItem value="general">General (nu se aplică unei parcele)</SelectItem>
                     {fields.map(field => (
-                      <SelectItem key={field.id} value={field.id.toString()}>
+                      <SelectItem key={field.id} value={field.id}>
                         {field.name} ({field.parcelCode})
                       </SelectItem>
                     ))}
@@ -390,7 +390,7 @@ const PropertyDocuments = () => {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Anulează</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deletePropertyDocument(doc.id)} className="bg-red-600 hover:bg-red-700">
+                          <AlertDialogAction onClick={() => deletePropertyDocument?.(doc.id)} className="bg-red-600 hover:bg-red-700">
                             Șterge
                           </AlertDialogAction>
                         </AlertDialogFooter>
