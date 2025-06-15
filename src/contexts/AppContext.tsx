@@ -19,10 +19,10 @@ export interface Field {
   notes?: string;
   photos?: string[];
   // Add missing properties that other components expect
-  parcelCode?: string;
-  size?: number;
-  status?: string;
-  color?: string;
+  parcelCode: string;
+  size: number;
+  status: string;
+  color: string;
   plantingDate?: string;
   harvestDate?: string;
   workType?: string;
@@ -60,6 +60,8 @@ interface Task {
   priority: 'low' | 'medium' | 'high';
   time?: string;
   aiSuggested?: boolean;
+  estimatedDuration?: string;
+  dueTime?: string;
 }
 
 interface InventoryItem {
@@ -78,7 +80,6 @@ interface AppContextType {
   updateField: (id: string, field: Partial<Field>) => void;
   deleteField: (id: string) => void;
   getField: (id: string) => Field | undefined;
-  // Add missing properties for compatibility
   transactions: Transaction[];
   tasks: Task[];
   inventory: InventoryItem[];
@@ -91,6 +92,8 @@ interface AppContextType {
   updateInventoryItem?: (id: string, item: Partial<InventoryItem>) => void;
   deleteInventoryItem?: (id: string) => void;
   addTransaction?: (transaction: Omit<Transaction, 'id'>) => void;
+  updateTransaction?: (id: string, transaction: Partial<Transaction>) => void;
+  deleteTransaction?: (id: string) => void;
   notifications?: any[];
   markNotificationAsRead?: (id: string) => void;
   addNotification?: (notification: any) => void;
@@ -101,7 +104,7 @@ interface AppContextType {
   satelliteData?: any[];
   fetchSatelliteData?: (fieldId: string) => void;
   fieldPhotos?: any[];
-  addFieldPhoto?: (fieldId: string, photo: any) => void;
+  addFieldPhoto?: (photo: any) => void;
   generateAPIADocument?: (fieldId: string) => any;
   user?: any;
 }
@@ -134,7 +137,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       lastActivity: 'Semănat - 15 Oct 2024',
       notes: 'Teren cu productivitate ridicată, necesită atenție specială la irigare în perioada de vară.',
       photos: [],
-      // Add missing properties with default values
       parcelCode: 'PN-001',
       size: 12.5,
       status: 'healthy',
@@ -219,8 +221,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   ]);
 
-  // Add default data for compatibility
-  const [transactions] = useState<Transaction[]>([
+  const [transactions, setTransactions] = useState<Transaction[]>([
     {
       id: '1',
       type: 'income',
@@ -241,7 +242,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   ]);
 
-  const [tasks] = useState<Task[]>([
+  const [tasks, setTasks] = useState<Task[]>([
     {
       id: '1',
       title: 'Verificare sistem irigare',
@@ -252,11 +253,13 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       status: 'pending',
       priority: 'high',
       time: '09:00',
-      aiSuggested: false
+      aiSuggested: false,
+      estimatedDuration: '2 ore',
+      dueTime: '09:00'
     }
   ]);
 
-  const [inventory] = useState<InventoryItem[]>([
+  const [inventory, setInventory] = useState<InventoryItem[]>([
     {
       id: '1',
       name: 'Îngrășământ NPK',
@@ -268,12 +271,16 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   ]);
 
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [propertyDocuments, setPropertyDocuments] = useState<any[]>([]);
+  const [satelliteData, setSatelliteData] = useState<any[]>([]);
+  const [fieldPhotos, setFieldPhotos] = useState<any[]>([]);
+
   const currentSeason = 'Vară';
 
   // Auto-sync weather data for existing fields when user logs in
   useEffect(() => {
     if (user && fields.length > 0) {
-      // Sync weather for the first field (representative coordinates)
       const firstField = fields[0];
       if (firstField.coordinates) {
         WeatherSyncService.syncForUser(user.id, firstField.coordinates)
@@ -293,7 +300,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const newField: Field = {
       ...fieldData,
       id: Date.now().toString(),
-      size: fieldData.area, // Map area to size for compatibility
+      size: fieldData.area,
       parcelCode: fieldData.parcelCode || `P-${Date.now()}`,
       status: fieldData.status || 'healthy',
       color: fieldData.color || '#22c55e'
@@ -301,7 +308,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     
     setFields(prev => [...prev, newField]);
 
-    // Auto-sync weather data for new field if it has coordinates and user is logged in
     if (user && fieldData.coordinates) {
       try {
         await WeatherSyncService.syncForUser(user.id, fieldData.coordinates);
@@ -330,7 +336,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       field.id === id ? { 
         ...field, 
         ...fieldData,
-        size: fieldData.area || field.size // Keep size in sync with area
+        size: fieldData.area || field.size
       } : field
     ));
     
@@ -351,6 +357,102 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const getField = (id: string) => {
     return fields.find(field => field.id === id);
+  };
+
+  const addTask = (taskData: Omit<Task, 'id'>) => {
+    const newTask: Task = {
+      ...taskData,
+      id: Date.now().toString()
+    };
+    setTasks(prev => [...prev, newTask]);
+  };
+
+  const updateTask = (id: string, taskData: Partial<Task>) => {
+    setTasks(prev => prev.map(task => 
+      task.id === id ? { ...task, ...taskData } : task
+    ));
+  };
+
+  const deleteTask = (id: string) => {
+    setTasks(prev => prev.filter(task => task.id !== id));
+  };
+
+  const addTransaction = (transactionData: Omit<Transaction, 'id'>) => {
+    const newTransaction: Transaction = {
+      ...transactionData,
+      id: Date.now().toString()
+    };
+    setTransactions(prev => [...prev, newTransaction]);
+  };
+
+  const updateTransaction = (id: string, transactionData: Partial<Transaction>) => {
+    setTransactions(prev => prev.map(transaction => 
+      transaction.id === id ? { ...transaction, ...transactionData } : transaction
+    ));
+  };
+
+  const deleteTransaction = (id: string) => {
+    setTransactions(prev => prev.filter(transaction => transaction.id !== id));
+  };
+
+  const addInventoryItem = (itemData: Omit<InventoryItem, 'id'>) => {
+    const newItem: InventoryItem = {
+      ...itemData,
+      id: Date.now().toString()
+    };
+    setInventory(prev => [...prev, newItem]);
+  };
+
+  const updateInventoryItem = (id: string, itemData: Partial<InventoryItem>) => {
+    setInventory(prev => prev.map(item => 
+      item.id === id ? { ...item, ...itemData } : item
+    ));
+  };
+
+  const deleteInventoryItem = (id: string) => {
+    setInventory(prev => prev.filter(item => item.id !== id));
+  };
+
+  const addFieldPhoto = (photo: any) => {
+    setFieldPhotos(prev => [...prev, photo]);
+  };
+
+  const addPropertyDocument = (doc: any) => {
+    setPropertyDocuments(prev => [...prev, { ...doc, id: Date.now().toString() }]);
+  };
+
+  const updatePropertyDocument = (id: string, doc: any) => {
+    setPropertyDocuments(prev => prev.map(document => 
+      document.id === id ? { ...document, ...doc } : document
+    ));
+  };
+
+  const deletePropertyDocument = (id: string) => {
+    setPropertyDocuments(prev => prev.filter(doc => doc.id !== id));
+  };
+
+  const fetchSatelliteData = (fieldId: string) => {
+    // Mock implementation
+    console.log('Fetching satellite data for field:', fieldId);
+  };
+
+  const generateAPIADocument = (fieldId: string) => {
+    const field = getField(fieldId);
+    return {
+      fieldId,
+      fieldName: field?.name || 'Unknown',
+      generatedAt: new Date().toISOString()
+    };
+  };
+
+  const markNotificationAsRead = (id: string) => {
+    setNotifications(prev => prev.map(notif => 
+      notif.id === id ? { ...notif, read: true } : notif
+    ));
+  };
+
+  const addNotification = (notification: any) => {
+    setNotifications(prev => [...prev, { ...notification, id: Date.now().toString() }]);
   };
 
   const generateReport = (type: string) => {
@@ -394,6 +496,27 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       inventory,
       currentSeason,
       generateReport,
+      addTask,
+      updateTask,
+      deleteTask,
+      addInventoryItem,
+      updateInventoryItem,
+      deleteInventoryItem,
+      addTransaction,
+      updateTransaction,
+      deleteTransaction,
+      notifications,
+      markNotificationAsRead,
+      addNotification,
+      propertyDocuments,
+      addPropertyDocument,
+      updatePropertyDocument,
+      deletePropertyDocument,
+      satelliteData,
+      fetchSatelliteData,
+      fieldPhotos,
+      addFieldPhoto,
+      generateAPIADocument,
       user
     }}>
       {children}

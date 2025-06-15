@@ -22,7 +22,7 @@ const TasksWidget = () => {
   const [lastTaskCount, setLastTaskCount] = useState(tasks.length);
   const [newTask, setNewTask] = useState({
     title: '',
-    field: '',
+    fieldName: '',
     priority: 'medium' as 'high' | 'medium' | 'low',
     date: '',
     time: '',
@@ -69,7 +69,7 @@ const TasksWidget = () => {
   };
 
   const handleAddTask = () => {
-    if (!newTask.title || !newTask.field || !newTask.date) {
+    if (!newTask.title || !newTask.fieldName || !newTask.date) {
       toast({
         title: "Eroare",
         description: "Te rugăm să completezi toate câmpurile obligatorii.",
@@ -78,21 +78,26 @@ const TasksWidget = () => {
       return;
     }
 
-    addTask({
-      title: newTask.title,
-      field: newTask.field,
-      priority: newTask.priority,
-      date: newTask.date,
-      time: newTask.time,
-      status: 'pending',
-      aiSuggested: false,
-      description: newTask.description,
-      estimatedDuration: newTask.estimatedDuration
-    });
+    if (addTask) {
+      addTask({
+        title: newTask.title,
+        fieldName: newTask.fieldName,
+        field: newTask.fieldName,
+        priority: newTask.priority,
+        dueDate: newTask.date,
+        date: newTask.date,
+        time: newTask.time,
+        dueTime: newTask.time,
+        status: 'pending',
+        aiSuggested: false,
+        description: newTask.description,
+        estimatedDuration: newTask.estimatedDuration
+      });
+    }
 
     setNewTask({
       title: '',
-      field: '',
+      fieldName: '',
       priority: 'medium',
       date: '',
       time: '',
@@ -102,34 +107,38 @@ const TasksWidget = () => {
     setIsAddingTask(false);
   };
 
-  const handleCompleteTask = (taskId: number) => {
-    updateTask(taskId, { status: 'completed' });
-    toast({
-      title: "Sarcină completată",
-      description: "Sarcina a fost marcată ca finalizată.",
-    });
+  const handleCompleteTask = (taskId: string) => {
+    if (updateTask) {
+      updateTask(taskId, { status: 'completed' });
+      toast({
+        title: "Sarcină completată",
+        description: "Sarcina a fost marcată ca finalizată.",
+      });
+    }
   };
 
-  const handleDeleteTask = (taskId: number, taskTitle: string) => {
-    deleteTask(taskId);
-    toast({
-      title: "Sarcină ștearsă",
-      description: `"${taskTitle}" a fost ștearsă cu succes.`,
-    });
+  const handleDeleteTask = (taskId: string, taskTitle: string) => {
+    if (deleteTask) {
+      deleteTask(taskId);
+      toast({
+        title: "Sarcină ștearsă",
+        description: `"${taskTitle}" a fost ștearsă cu succes.`,
+      });
+    }
   };
 
   // Filter tasks for today only
   const today = new Date().toISOString().split('T')[0];
   const todayPendingTasks = tasks.filter(task => 
-    task.status === 'pending' && task.date === today
+    task.status === 'pending' && (task.date === today || task.dueDate === today)
   );
   const completedTasks = tasks.filter(task => task.status === 'completed');
 
   const renderTaskTooltip = (task: any) => (
     <div className="space-y-2 text-sm">
       <div><strong>Titlu:</strong> {task.title}</div>
-      <div><strong>Teren:</strong> {task.field}</div>
-      <div><strong>Data:</strong> {task.date}</div>
+      <div><strong>Teren:</strong> {task.fieldName || task.field}</div>
+      <div><strong>Data:</strong> {task.date || task.dueDate}</div>
       {task.time && <div><strong>Ora:</strong> {task.time}</div>}
       <div><strong>Prioritate:</strong> {task.priority === 'high' ? 'Înaltă' : task.priority === 'medium' ? 'Medie' : 'Scăzută'}</div>
       {task.estimatedDuration && <div><strong>Durată:</strong> {task.estimatedDuration}</div>}
@@ -165,7 +174,7 @@ const TasksWidget = () => {
                 </div>
                 <div>
                   <Label htmlFor="field">Teren *</Label>
-                  <Select value={newTask.field} onValueChange={(value) => setNewTask({...newTask, field: value})}>
+                  <Select value={newTask.fieldName} onValueChange={(value) => setNewTask({...newTask, fieldName: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selectează terenul" />
                     </SelectTrigger>
@@ -264,7 +273,7 @@ const TasksWidget = () => {
                               )}
                               <div>
                                 <p className="font-medium text-gray-900">{task.title}</p>
-                                <p className="text-sm text-gray-600">{task.field} • {task.time}</p>
+                                <p className="text-sm text-gray-600">{task.fieldName || task.field} • {task.time}</p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -322,7 +331,7 @@ const TasksWidget = () => {
                               </div>
                               <div>
                                 <p className="font-medium text-gray-900">{task.title}</p>
-                                <p className="text-sm text-gray-600">{task.field} • {task.date}</p>
+                                <p className="text-sm text-gray-600">{task.fieldName || task.field} • {task.date || task.dueDate}</p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">

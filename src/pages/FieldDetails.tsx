@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -33,7 +34,7 @@ const FieldDetails = () => {
     (task.field === field?.name || task.fieldName === field?.name) && task.status === 'completed'
   ).map(task => ({
     id: task.id,
-    date: task.dueDate || new Date().toISOString().split('T')[0],
+    date: task.dueDate || task.date || new Date().toISOString().split('T')[0],
     activity: task.title,
     details: task.description || 'Activitate completată',
     cost: 0,

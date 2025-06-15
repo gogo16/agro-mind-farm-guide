@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 
 interface AddPhotoDialogProps {
-  fieldId: number;
+  fieldId: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   trigger: React.ReactNode;
