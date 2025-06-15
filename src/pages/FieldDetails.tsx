@@ -31,8 +31,9 @@ const FieldDetails = () => {
   // Get completed tasks for this field
   const completedActivities = tasks.filter(task => 
     (task.field === field?.name || task.fieldName === field?.name) && task.status === 'completed'
-  ).map(task => ({
-    id: task.id, // Keep original ID type
+  ).map((task, index) => ({
+    id: index, // Use index as number for key prop
+    originalId: task.id, // Keep original ID for reference
     date: task.dueDate || task.date || new Date().toISOString().split('T')[0],
     activity: task.title,
     details: task.description || 'Activitate completată',
