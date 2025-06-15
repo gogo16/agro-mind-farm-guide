@@ -174,12 +174,63 @@ export type Database = {
         }
         Relationships: []
       }
+      weather_data: {
+        Row: {
+          created_at: string
+          data_type: string
+          extraction_datetime: string
+          id: string
+          latitude: number
+          longitude: number
+          precipitation_mm: number | null
+          relative_humidity_percent: number | null
+          temperature_celsius: number | null
+          timestamp: string
+          user_id: string
+          weather_code: number | null
+          wind_speed_kph: number | null
+        }
+        Insert: {
+          created_at?: string
+          data_type: string
+          extraction_datetime?: string
+          id?: string
+          latitude: number
+          longitude: number
+          precipitation_mm?: number | null
+          relative_humidity_percent?: number | null
+          temperature_celsius?: number | null
+          timestamp: string
+          user_id: string
+          weather_code?: number | null
+          wind_speed_kph?: number | null
+        }
+        Update: {
+          created_at?: string
+          data_type?: string
+          extraction_datetime?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          precipitation_mm?: number | null
+          relative_humidity_percent?: number | null
+          temperature_celsius?: number | null
+          timestamp?: string
+          user_id?: string
+          weather_code?: number | null
+          wind_speed_kph?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_old_weather_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
