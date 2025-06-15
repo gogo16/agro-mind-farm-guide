@@ -18,6 +18,48 @@ export interface Field {
   lastActivity?: string;
   notes?: string;
   photos?: string[];
+  // Add missing properties that other components expect
+  parcelCode?: string;
+  size?: number;
+  status?: string;
+  color?: string;
+  plantingDate?: string;
+  harvestDate?: string;
+  weather?: {
+    temperature?: number;
+    condition?: string;
+    humidity?: number;
+    windSpeed?: number;
+  };
+}
+
+interface Transaction {
+  id: string;
+  type: 'income' | 'expense';
+  amount: number;
+  description: string;
+  date: string;
+  category: string;
+}
+
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  fieldName?: string;
+  dueDate?: string;
+  date?: string;
+  status: 'pending' | 'completed';
+  priority: 'low' | 'medium' | 'high';
+}
+
+interface InventoryItem {
+  id: string;
+  name: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  location?: string;
 }
 
 interface AppContextType {
@@ -26,6 +68,32 @@ interface AppContextType {
   updateField: (id: string, field: Partial<Field>) => void;
   deleteField: (id: string) => void;
   getField: (id: string) => Field | undefined;
+  // Add missing properties for compatibility
+  transactions: Transaction[];
+  tasks: Task[];
+  inventory: InventoryItem[];
+  currentSeason: string;
+  generateReport: (type: string) => any;
+  addTask?: (task: Omit<Task, 'id'>) => void;
+  updateTask?: (id: string, task: Partial<Task>) => void;
+  deleteTask?: (id: string) => void;
+  addInventoryItem?: (item: Omit<InventoryItem, 'id'>) => void;
+  updateInventoryItem?: (id: string, item: Partial<InventoryItem>) => void;
+  deleteInventoryItem?: (id: string) => void;
+  addTransaction?: (transaction: Omit<Transaction, 'id'>) => void;
+  notifications?: any[];
+  markNotificationAsRead?: (id: string) => void;
+  addNotification?: (notification: any) => void;
+  propertyDocuments?: any[];
+  addPropertyDocument?: (doc: any) => void;
+  updatePropertyDocument?: (id: string, doc: any) => void;
+  deletePropertyDocument?: (id: string) => void;
+  satelliteData?: any[];
+  fetchSatelliteData?: (fieldId: string) => void;
+  fieldPhotos?: any[];
+  addFieldPhoto?: (fieldId: string, photo: any) => void;
+  generateAPIADocument?: (fieldId: string) => any;
+  user?: any;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -55,7 +123,20 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       soilType: 'Cernoziom',
       lastActivity: 'Semănat - 15 Oct 2024',
       notes: 'Teren cu productivitate ridicată, necesită atenție specială la irigare în perioada de vară.',
-      photos: []
+      photos: [],
+      // Add missing properties with default values
+      parcelCode: 'PN-001',
+      size: 12.5,
+      status: 'healthy',
+      color: '#22c55e',
+      plantingDate: '2024-10-15',
+      harvestDate: '2025-07-15',
+      weather: {
+        temperature: 22,
+        condition: 'sunny',
+        humidity: 65,
+        windSpeed: 12
+      }
     },
     {
       id: '2',
@@ -70,7 +151,19 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       soilType: 'Luto-argilos',
       lastActivity: 'Fertilizat - 20 Mar 2024',
       notes: 'Zonă cu drenaj moderat, potrivită pentru culturile de vară.',
-      photos: []
+      photos: [],
+      parcelCode: 'PS-002',
+      size: 8.3,
+      status: 'excellent',
+      color: '#f59e0b',
+      plantingDate: '2024-04-15',
+      harvestDate: '2024-09-20',
+      weather: {
+        temperature: 24,
+        condition: 'cloudy',
+        humidity: 70,
+        windSpeed: 8
+      }
     },
     {
       id: '3',
@@ -85,9 +178,66 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       soilType: 'Aluvionar',
       lastActivity: 'Recoltat - 05 Sep 2024',
       notes: 'Teren nou achiziționat, în proces de optimizare a fertilității solului.',
-      photos: []
+      photos: [],
+      parcelCode: 'PE-003',
+      size: 15.2,
+      status: 'attention',
+      color: '#ef4444',
+      plantingDate: '2024-03-20',
+      harvestDate: '2024-09-05',
+      weather: {
+        temperature: 20,
+        condition: 'rainy',
+        humidity: 80,
+        windSpeed: 15
+      }
     }
   ]);
+
+  // Add default data for compatibility
+  const [transactions] = useState<Transaction[]>([
+    {
+      id: '1',
+      type: 'income',
+      amount: 15000,
+      description: 'Vânzare grâu',
+      date: '2024-07-15',
+      category: 'Venituri din vânzări'
+    },
+    {
+      id: '2',
+      type: 'expense',
+      amount: 3500,
+      description: 'Semințe porumb',
+      date: '2024-04-10',
+      category: 'Semințe'
+    }
+  ]);
+
+  const [tasks] = useState<Task[]>([
+    {
+      id: '1',
+      title: 'Verificare sistem irigare',
+      description: 'Verificarea și întreținerea sistemului de irigare pentru parcela nord',
+      fieldName: 'Parcela Nord',
+      dueDate: new Date().toISOString().split('T')[0],
+      status: 'pending',
+      priority: 'high'
+    }
+  ]);
+
+  const [inventory] = useState<InventoryItem[]>([
+    {
+      id: '1',
+      name: 'Îngrășământ NPK',
+      category: 'Fertilizatori',
+      quantity: 500,
+      unit: 'kg',
+      location: 'Depozit principal'
+    }
+  ]);
+
+  const currentSeason = 'Vară';
 
   // Auto-sync weather data for existing fields when user logs in
   useEffect(() => {
@@ -112,6 +262,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const newField: Field = {
       ...fieldData,
       id: Date.now().toString(),
+      size: fieldData.area, // Map area to size for compatibility
+      parcelCode: `P-${Date.now()}`,
+      status: 'healthy',
+      color: '#22c55e'
     };
     
     setFields(prev => [...prev, newField]);
@@ -142,7 +296,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const updateField = (id: string, fieldData: Partial<Field>) => {
     setFields(prev => prev.map(field => 
-      field.id === id ? { ...field, ...fieldData } : field
+      field.id === id ? { 
+        ...field, 
+        ...fieldData,
+        size: fieldData.area || field.size // Keep size in sync with area
+      } : field
     ));
     
     toast({
@@ -164,13 +322,48 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     return fields.find(field => field.id === id);
   };
 
+  const generateReport = (type: string) => {
+    switch (type) {
+      case 'productivity':
+        return {
+          totalFields: fields.length,
+          totalArea: fields.reduce((sum, field) => sum + field.area, 0),
+          avgProductivity: 4.2,
+          topPerformingField: fields[0]
+        };
+      case 'financial':
+        const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+        const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+        return {
+          totalIncome,
+          totalExpenses,
+          profit: totalIncome - totalExpenses,
+          roi: totalExpenses > 0 ? ((totalIncome - totalExpenses) / totalExpenses * 100).toFixed(1) : '0'
+        };
+      case 'seasonal':
+        return {
+          currentSeason,
+          completedTasks: tasks.filter(t => t.status === 'completed').length,
+          pendingTasks: tasks.filter(t => t.status === 'pending').length
+        };
+      default:
+        return {};
+    }
+  };
+
   return (
     <AppContext.Provider value={{
       fields,
       addField,
       updateField,
       deleteField,
-      getField
+      getField,
+      transactions,
+      tasks,
+      inventory,
+      currentSeason,
+      generateReport,
+      user
     }}>
       {children}
     </AppContext.Provider>
