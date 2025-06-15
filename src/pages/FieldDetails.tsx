@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -33,7 +32,7 @@ const FieldDetails = () => {
   const completedActivities = tasks.filter(task => 
     (task.field === field?.name || task.fieldName === field?.name) && task.status === 'completed'
   ).map(task => ({
-    id: task.id.toString(), // Ensure ID is string
+    id: task.id, // Keep original ID type
     date: task.dueDate || task.date || new Date().toISOString().split('T')[0],
     activity: task.title,
     details: task.description || 'Activitate completată',
