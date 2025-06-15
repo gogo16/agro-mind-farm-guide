@@ -64,16 +64,19 @@ export function useWeatherData(latitude?: number, longitude?: number) {
       const now = new Date();
       const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-      const current = data.find(item => 
+      // Type assertion to ensure data_type is properly typed
+      const typedData = data as WeatherData[];
+
+      const current = typedData.find(item => 
         item.data_type === 'current' || 
         (item.data_type === 'forecast' && new Date(item.timestamp) <= now && new Date(item.timestamp) >= twentyFourHoursAgo)
       ) || null;
 
-      const forecast = data
+      const forecast = typedData
         .filter(item => item.data_type === 'forecast' && new Date(item.timestamp) > now)
         .slice(0, 16 * 24); // Max 16 days of hourly data
 
-      const historical = data
+      const historical = typedData
         .filter(item => item.data_type === 'historical')
         .slice(0, 365 * 24); // Max 365 days of hourly data
 

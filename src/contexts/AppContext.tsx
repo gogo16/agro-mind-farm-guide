@@ -25,6 +25,11 @@ export interface Field {
   color?: string;
   plantingDate?: string;
   harvestDate?: string;
+  workType?: string;
+  inputs?: string;
+  variety?: string;
+  costs?: number;
+  roi?: number;
   weather?: {
     temperature?: number;
     condition?: string;
@@ -40,6 +45,7 @@ interface Transaction {
   description: string;
   date: string;
   category: string;
+  field?: string;
 }
 
 interface Task {
@@ -47,16 +53,20 @@ interface Task {
   title: string;
   description: string;
   fieldName?: string;
+  field?: string;
   dueDate?: string;
   date?: string;
   status: 'pending' | 'completed';
   priority: 'low' | 'medium' | 'high';
+  time?: string;
+  aiSuggested?: boolean;
 }
 
 interface InventoryItem {
   id: string;
   name: string;
   category: string;
+  type?: string;
   quantity: number;
   unit: string;
   location?: string;
@@ -131,6 +141,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       color: '#22c55e',
       plantingDate: '2024-10-15',
       harvestDate: '2025-07-15',
+      workType: 'Arătură conventională',
+      inputs: 'NPK 16:16:16',
+      variety: 'Antonius',
+      costs: 2500,
+      roi: 15,
       weather: {
         temperature: 22,
         condition: 'sunny',
@@ -158,6 +173,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       color: '#f59e0b',
       plantingDate: '2024-04-15',
       harvestDate: '2024-09-20',
+      workType: 'No-till',
+      inputs: 'Uree',
+      variety: 'Pioneer',
+      costs: 1800,
+      roi: 20,
       weather: {
         temperature: 24,
         condition: 'cloudy',
@@ -185,6 +205,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       color: '#ef4444',
       plantingDate: '2024-03-20',
       harvestDate: '2024-09-05',
+      workType: 'Cultivare minimă',
+      inputs: 'NPK 20:20:0',
+      variety: 'Limagrain',
+      costs: 3200,
+      roi: 12,
       weather: {
         temperature: 20,
         condition: 'rainy',
@@ -202,7 +227,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       amount: 15000,
       description: 'Vânzare grâu',
       date: '2024-07-15',
-      category: 'Venituri din vânzări'
+      category: 'Venituri din vânzări',
+      field: 'Parcela Nord'
     },
     {
       id: '2',
@@ -210,7 +236,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       amount: 3500,
       description: 'Semințe porumb',
       date: '2024-04-10',
-      category: 'Semințe'
+      category: 'Semințe',
+      field: 'Parcela Sud'
     }
   ]);
 
@@ -220,9 +247,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       title: 'Verificare sistem irigare',
       description: 'Verificarea și întreținerea sistemului de irigare pentru parcela nord',
       fieldName: 'Parcela Nord',
+      field: 'Parcela Nord',
       dueDate: new Date().toISOString().split('T')[0],
       status: 'pending',
-      priority: 'high'
+      priority: 'high',
+      time: '09:00',
+      aiSuggested: false
     }
   ]);
 
@@ -231,6 +261,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       id: '1',
       name: 'Îngrășământ NPK',
       category: 'Fertilizatori',
+      type: 'solid',
       quantity: 500,
       unit: 'kg',
       location: 'Depozit principal'
@@ -263,9 +294,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       ...fieldData,
       id: Date.now().toString(),
       size: fieldData.area, // Map area to size for compatibility
-      parcelCode: `P-${Date.now()}`,
-      status: 'healthy',
-      color: '#22c55e'
+      parcelCode: fieldData.parcelCode || `P-${Date.now()}`,
+      status: fieldData.status || 'healthy',
+      color: fieldData.color || '#22c55e'
     };
     
     setFields(prev => [...prev, newField]);

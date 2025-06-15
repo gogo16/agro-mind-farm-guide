@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,7 +44,7 @@ const FieldListItem = ({ field }: FieldListItemProps) => {
     }
   };
 
-  const handleDeleteField = (fieldId: number, fieldName: string) => {
+  const handleDeleteField = (fieldId: string, fieldName: string) => {
     deleteField(fieldId);
     toast({
       title: "Teren șters",

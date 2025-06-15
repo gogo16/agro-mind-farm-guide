@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 
 interface Field {
-  id: number;
+  id: string; // Changed from number to string
   name: string;
   parcelCode: string;
   size: number;
@@ -125,9 +125,10 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
       return;
     }
 
-    updateField(field.id, {
+    updateField(field.id, { // field.id is now string
       name: editedField.name,
       parcelCode: editedField.parcelCode,
+      area: parseFloat(editedField.size), // Add area property
       size: parseFloat(editedField.size),
       crop: editedField.crop || 'Necunoscută',
       coordinates: coordValidation.coordinates,
