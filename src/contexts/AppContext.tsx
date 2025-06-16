@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -193,37 +194,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return null;
   };
 
-  // Improved weather sync with better daily control and user tracking
-  const shouldSyncWeather = () => {
-    const today = new Date().toDateString();
-    const lastSyncDate = localStorage.getItem('weather_last_sync_date');
-    const lastSyncUserId = localStorage.getItem('weather_last_sync_user');
-    
-    // Only sync if it's a new day AND same user (prevent constant syncing)
-    const isDifferentDay = lastSyncDate !== today;
-    const isSameUser = lastSyncUserId === user?.id;
-    
-    console.log('Weather sync check:', {
-      today,
-      lastSyncDate,
-      isDifferentDay,
-      isSameUser,
-      shouldSync: isDifferentDay && isSameUser
-    });
-    
-    // Sync only if different day but same user (prevent popup spam)
-    return isDifferentDay && isSameUser;
-  };
-
-  const markWeatherSynced = () => {
-    if (user) {
-      const today = new Date().toDateString();
-      localStorage.setItem('weather_last_sync_date', today);
-      localStorage.setItem('weather_last_sync_user', user.id);
-      console.log('Weather sync marked for today:', today, 'user:', user.id);
-    }
-  };
-
   // Fetch fields from database
   const loadFields = async () => {
     if (!user) {
@@ -233,8 +203,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      await debugFieldCoordinates(user.id);
-
       const { data, error } = await supabase
         .from('fields')
         .select('*')
@@ -311,47 +279,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
 
       console.log('Formatted fields for frontend:', formattedFields);
-      const fieldsWithCoords = formattedFields.filter(f => f.coordinates);
-      console.log('Fields with valid coordinates:', fieldsWithCoords);
       setFields(formattedFields);
-
-      // Only sync weather if needed AND user is present - with better logic
-      if (shouldSyncWeather() && fieldsWithCoords.length > 0) {
-        console.log('Starting weather sync - daily check passed for same user');
-        
-        const firstField = fieldsWithCoords[0];
-        if (firstField.coordinates) {
-          try {
-            console.log(`Syncing weather for field ${firstField.name} at coordinates:`, firstField.coordinates);
-            const result = await WeatherSyncService.syncForUser(user.id, firstField.coordinates);
-            if (result.success) {
-              console.log(`Weather data synced successfully`);
-              markWeatherSynced();
-              // Show toast only for daily sync, not on every page load
-              toast({
-                title: "Date meteo sincronizate",
-                description: `Datele meteo au fost actualizate pentru astăzi`,
-              });
-            } else {
-              console.log(`Weather sync failed:`, result.error);
-            }
-          } catch (error) {
-            console.error(`Failed to sync weather:`, error);
-          }
-        }
-      } else {
-        console.log('Weather sync skipped - already done today for this user or no fields with coordinates');
-      }
     } catch (error) {
       console.error('Error in loadFields:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const syncWeatherForAllFields = async () => {
-    // This function is now only called manually, not automatically
-    console.log('Manual weather sync initiated');
   };
 
   const addField = async (fieldData: Omit<Field, 'id'>) => {
@@ -407,30 +340,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       console.log('Field added successfully:', data);
       await loadFields();
 
-      // Force weather sync for new field with coordinates (this should show popup)
-      if (fieldData.coordinates) {
-        try {
-          await WeatherSyncService.syncForUser(user.id, fieldData.coordinates);
-          // Mark as synced today for the user
-          markWeatherSynced();
-          toast({
-            title: "Teren adăugat",
-            description: "Datele meteo au fost sincronizate automat pentru noul teren.",
-          });
-        } catch (error) {
-          console.error('Failed to sync weather for new field:', error);
-          toast({
-            title: "Teren adăugat",
-            description: "Terenul a fost adăugat, dar sincronizarea meteo a eșuat.",
-            variant: "destructive"
-          });
-        }
-      } else {
-        toast({
-          title: "Teren adăugat",
-          description: "Terenul a fost adăugat cu succes.",
-        });
-      }
+      toast({
+        title: "Teren adăugat",
+        description: "Terenul a fost adăugat cu succes.",
+      });
     } catch (error) {
       console.error('Error in addField:', error);
       toast({
@@ -656,9 +569,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (user) {
       loadFields();
-      loadTasks();
-      loadTransactions();
-      loadInventory();
     }
   }, [user]);
 
