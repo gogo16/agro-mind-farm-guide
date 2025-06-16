@@ -94,7 +94,7 @@ interface InventoryItem {
   updated_at: string;
   user_id: string;
   name: string;
-  type: 'seed' | 'fertilizer' | 'pesticide' | 'equipment' | 'other';
+  type: 'equipment' | 'chemical' | 'seeds' | 'fuel' | 'other';
   quantity: string;
   unit: string;
   purchase_date: string;
@@ -266,7 +266,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           console.error("Error fetching fields:", fieldsError);
           toast({ title: "Eroare", description: "Failed to load fields.", variant: "destructive" });
         } else {
-          setFields(fieldsData || []);
+          // Ensure all fields have required properties
+          const formattedFields = (fieldsData || []).map(field => ({
+            ...field,
+            notes: field.notes || '',
+          }));
+          setFields(formattedFields);
         }
 
         const { data: tasksData, error: tasksError } = await supabase
@@ -311,7 +316,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (notificationsError) {
           console.error("Error fetching notifications:", notificationsError);
         } else {
-          setNotifications(notificationsData || []);
+          // Add missing 'read' property to notifications
+          const formattedNotifications = (notificationsData || []).map(notification => ({
+            ...notification,
+            read: notification.is_read || false,
+          }));
+          setNotifications(formattedNotifications);
         }
 
         const { data: inventoryData, error: inventoryError } = await supabase
@@ -322,7 +332,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (inventoryError) {
           console.error("Error fetching inventory:", inventoryError);
         } else {
-          setInventory(inventoryData || []);
+          // Ensure all inventory items have required properties
+          const formattedInventory = (inventoryData || []).map(item => ({
+            ...item,
+            purchase_date: item.purchase_date || '',
+            expiry_date: item.expiry_date || item.expiration_date || '',
+            cost_per_unit: item.cost_per_unit || 0,
+            notes: item.notes || '',
+          }));
+          setInventory(formattedInventory);
         }
 
         const { data: propertyDocumentsData, error: propertyDocumentsError } = await supabase
@@ -361,7 +379,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    setFields(prev => [...prev, data]);
+    // Ensure the new field has all required properties
+    const formattedField = {
+      ...data,
+      notes: data.notes || '',
+    };
+    setFields(prev => [...prev, formattedField]);
   };
 
   const updateField = async (id: string, updates: Partial<Field>) => {
@@ -399,7 +422,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const { data, error } = await supabase
       .from('tasks')
-      .insert([{ ...taskData, user_id: user.id }])
+      .insert({ ...taskData, user_id: user.id })
       .select()
       .single();
 

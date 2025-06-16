@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,7 +32,11 @@ const InventorySystem = () => {
     purpose: '',
     stock_level: 'normal' as 'low' | 'normal' | 'high',
     purchase_cost: '',
-    current_value: ''
+    current_value: '',
+    notes: '',
+    purchase_date: '',
+    expiry_date: '',
+    cost_per_unit: ''
   });
 
   const categories = [
@@ -63,18 +66,20 @@ const InventorySystem = () => {
       name: newItem.name,
       type: newItem.type,
       quantity: newItem.quantity,
-      unit: newItem.unit || undefined,
-      condition: newItem.condition || undefined,
-      location: newItem.location || undefined,
-      last_used: undefined,
-      next_maintenance: undefined,
-      expiration_date: newItem.expiration_date || undefined,
-      purpose: newItem.purpose || undefined,
+      unit: newItem.unit || '',
+      condition: newItem.condition || '',
+      location: newItem.location || '',
+      last_used: '',
+      next_maintenance: '',
+      expiration_date: newItem.expiration_date || '',
+      purpose: newItem.purpose || '',
       stock_level: newItem.stock_level,
       purchase_cost: newItem.purchase_cost ? parseFloat(newItem.purchase_cost) : 0,
       current_value: newItem.current_value ? parseFloat(newItem.current_value) : 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      notes: newItem.notes || '',
+      purchase_date: newItem.purchase_date || '',
+      expiry_date: newItem.expiry_date || newItem.expiration_date || '',
+      cost_per_unit: newItem.cost_per_unit ? parseFloat(newItem.cost_per_unit) : 0
     };
 
     if (editingItem) {
@@ -95,9 +100,7 @@ const InventorySystem = () => {
           description: `Achiziție: ${newItem.name}`,
           category: 'inventory',
           date: new Date().toISOString().split('T')[0],
-          field_id: undefined,
-          roi_impact: 0,
-          budget_category: undefined
+          field_id: ''
         });
       }
 
@@ -123,7 +126,11 @@ const InventorySystem = () => {
       purpose: '',
       stock_level: 'normal',
       purchase_cost: '',
-      current_value: ''
+      current_value: '',
+      notes: '',
+      purchase_date: '',
+      expiry_date: '',
+      cost_per_unit: ''
     });
   };
 
@@ -139,7 +146,11 @@ const InventorySystem = () => {
       purpose: item.purpose || '',
       stock_level: item.stock_level,
       purchase_cost: item.purchase_cost?.toString() || '',
-      current_value: item.current_value?.toString() || ''
+      current_value: item.current_value?.toString() || '',
+      notes: item.notes || '',
+      purchase_date: item.purchase_date || '',
+      expiry_date: item.expiry_date || '',
+      cost_per_unit: item.cost_per_unit?.toString() || ''
     });
     setEditingItem(item.id);
     setIsAddingItem(true);
@@ -329,6 +340,40 @@ const InventorySystem = () => {
                     placeholder="0.00"
                   />
                 </div>
+              </div>
+              <div>
+                <Label>Notă</Label>
+                <Textarea
+                  value={newItem.notes}
+                  onChange={(e) => setNewItem({...newItem, notes: e.target.value})}
+                  placeholder="Descriere notă..."
+                />
+              </div>
+              <div>
+                <Label>Data achiziției</Label>
+                <Input
+                  type="date"
+                  value={newItem.purchase_date}
+                  onChange={(e) => setNewItem({...newItem, purchase_date: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Data expirării</Label>
+                <Input
+                  type="date"
+                  value={newItem.expiry_date}
+                  onChange={(e) => setNewItem({...newItem, expiry_date: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Cost per unitate (RON)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={newItem.cost_per_unit}
+                  onChange={(e) => setNewItem({...newItem, cost_per_unit: e.target.value})}
+                  placeholder="0.00"
+                />
               </div>
               <div className="flex space-x-2">
                 <Button 
