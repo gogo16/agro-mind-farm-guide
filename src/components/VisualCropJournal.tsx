@@ -16,6 +16,19 @@ interface VisualCropJournalProps {
   fieldId?: string;
 }
 
+// Type for combined photos (database + mock)
+type CombinedPhoto = {
+  id: string | number;
+  date: string;
+  field_name?: string;
+  field_id?: string;
+  activity: string;
+  crop_stage: string;
+  weather_conditions: string;
+  notes: string;
+  image_url: string;
+};
+
 const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
   const { toast } = useToast();
   const { fields, fieldPhotos } = useAppContext();
@@ -90,7 +103,10 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
   };
 
   // Combină pozele default cu cele adăugate de utilizator
-  const allPhotos = [...photos, ...displayedPhotos];
+  const allPhotos: CombinedPhoto[] = [
+    ...photos.map(p => ({ ...p, id: p.id.toString() })),
+    ...displayedPhotos.map((p: any) => ({ ...p, field_name: getFieldName(p.field_id) }))
+  ];
 
   return (
     <Card className="bg-white border-green-200">

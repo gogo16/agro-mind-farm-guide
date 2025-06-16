@@ -80,7 +80,7 @@ interface Notification {
   id: string;
   created_at: string;
   user_id: string;
-  type: string;
+  type: 'inventory' | 'task' | 'weather' | 'ai' | 'financial' | 'system';
   title: string;
   message: string;
   read: boolean;
@@ -267,10 +267,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           console.error("Error fetching fields:", fieldsError);
           toast({ title: "Eroare", description: "Failed to load fields.", variant: "destructive" });
         } else {
-          // Ensure all fields have required properties
           const formattedFields = (fieldsData || []).map(field => ({
             ...field,
-            notes: field.notes || '',
+            notes: field.inputs || '',
           }));
           setFields(formattedFields);
         }
@@ -317,7 +316,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (notificationsError) {
           console.error("Error fetching notifications:", notificationsError);
         } else {
-          // Add missing 'read' property to notifications
           const formattedNotifications = (notificationsData || []).map(notification => ({
             ...notification,
             read: notification.is_read || false,
@@ -333,13 +331,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         if (inventoryError) {
           console.error("Error fetching inventory:", inventoryError);
         } else {
-          // Ensure all inventory items have required properties
           const formattedInventory = (inventoryData || []).map(item => ({
             ...item,
-            purchase_date: item.purchase_date || '',
-            expiry_date: item.expiry_date || item.expiration_date || '',
-            cost_per_unit: item.cost_per_unit || 0,
-            notes: item.notes || '',
+            purchase_date: '',
+            expiry_date: item.expiration_date || '',
+            cost_per_unit: 0,
+            notes: '',
           }));
           setInventory(formattedInventory);
         }
@@ -380,10 +377,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Ensure the new field has all required properties
     const formattedField = {
       ...data,
-      notes: data.notes || '',
+      notes: data.inputs || '',
     };
     setFields(prev => [...prev, formattedField]);
   };
@@ -583,7 +579,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     const { data, error } = await supabase
       .from('notifications')
-      .insert([{ ...notificationData, user_id: user.id }])
+      .insert([{ 
+        ...notificationData, 
+        user_id: user.id,
+        type: notificationData.type as 'inventory' | 'task' | 'weather' | 'ai' | 'financial' | 'system'
+      }])
       .select()
       .single();
 
@@ -592,7 +592,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    setNotifications(prev => [...prev, data]);
+    const formattedNotification = {
+      ...data,
+      read: data.is_read || false,
+    };
+    setNotifications(prev => [...prev, formattedNotification]);
   };
 
   const markNotificationAsRead = async (id: string) => {
@@ -614,9 +618,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    const dbItem = {
+      name: itemData.name,
+      type: itemData.type,
+      quantity: itemData.quantity,
+      unit: itemData.unit || '',
+      condition: itemData.condition || '',
+      location: itemData.location || '',
+      last_used: itemData.last_used || null,
+      next_maintenance: itemData.next_maintenance || null,
+      expiration_date: itemData.expiry_date || null,
+      purchase_cost: itemData.purchase_cost || 0,
+      current_value: itemData.current_value || 0,
+      purpose: itemData.purpose || '',
+      user_id: user.id
+    };
+
     const { data, error } = await supabase
       .from('inventory')
-      .insert([{ ...itemData, user_id: user.id }])
+      .insert([dbItem])
       .select()
       .single();
 
@@ -625,7 +645,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    setInventory(prev => [...prev, data]);
+    const formattedItem = {
+      ...data,
+      purchase_date: '',
+      expiry_date: data.expiration_date || '',
+      cost_per_unit: 0,
+      notes: '',
+    };
+    setInventory(prev => [...prev, formattedItem]);
   };
 
   const updateInventoryItem = async (id: string, updates: Partial<InventoryItem>) => {
