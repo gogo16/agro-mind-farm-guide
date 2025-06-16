@@ -223,19 +223,8 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
 
         console.log(`Map loaded successfully with ${newPolygons.length} polygons`);
 
-        // Show appropriate success message
-        if (fields.length === 0) {
-          toast({
-            title: "Hartă încărcată",
-            description: "Adăugați terenuri pentru a le vedea pe hartă.",
-          });
-        } else if (fieldsWithCoordinates.length === 0) {
-          toast({
-            title: "Hartă încărcată",
-            description: `Aveți ${fields.length} terenuri, dar nu au coordonate GPS. Editați terenurile pentru a adăuga coordonate.`,
-            variant: "destructive"
-          });
-        } else {
+        // Show toast only when fields are displayed
+        if (fieldsWithCoordinates.length > 0) {
           toast({
             title: "Hartă încărcată",
             description: `${newPolygons.length} din ${fieldsWithCoordinates.length} terenuri afișate pe hartă.`,

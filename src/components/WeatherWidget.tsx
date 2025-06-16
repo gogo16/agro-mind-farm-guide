@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -96,8 +97,12 @@ const WeatherWidget = () => {
       if (item.wind_speed_kph) dayData.windSpeed.push(item.wind_speed_kph);
     });
 
-    // Sort by date and return next 7 days
+    // Sort by date and return next 7 days from today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     const sortedDays = Array.from(dailyData.values())
+      .filter(dayData => dayData.dateObj >= today) // Only future days
       .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
       .slice(0, 7);
 
@@ -128,7 +133,7 @@ const WeatherWidget = () => {
     const forecast = weatherData.forecast;
     if (!forecast.length) return [];
 
-    // Group by day for 14-day forecast
+    // Group by day for 16-day forecast
     const dailyData = new Map();
     
     forecast.forEach(item => {
@@ -153,9 +158,14 @@ const WeatherWidget = () => {
       if (item.weather_code) dayData.weatherCodes.push(item.weather_code);
     });
 
+    // Filter and sort for future days only
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     return Array.from(dailyData.values())
+      .filter(dayData => dayData.dateObj >= today) // Only future days
       .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
-      .slice(0, 14)
+      .slice(0, 16)
       .map(dayData => {
         const avgTemp = dayData.temperatures.length > 0 
           ? Math.round(dayData.temperatures.reduce((a: number, b: number) => a + b, 0) / dayData.temperatures.length)
@@ -237,7 +247,6 @@ const WeatherWidget = () => {
   const currentWeather = getCurrentWeather();
   const forecast = getDailyForecast();
   const extendedForecast = getExtendedForecast();
-  const recentHistory = getRecentHistory();
 
   if (!latitude || !longitude) {
     console.log('WeatherWidget - No valid coordinates available from fields');
@@ -299,7 +308,7 @@ const WeatherWidget = () => {
             </TabsTrigger>
             <TabsTrigger value="forecast" className="text-white data-[state=active]:bg-white/20">
               <Calendar className="h-4 w-4 mr-1" />
-              14 Zile
+              16 Zile
             </TabsTrigger>
             <TabsTrigger value="history" className="text-white data-[state=active]:bg-white/20">
               <History className="h-4 w-4 mr-1" />
