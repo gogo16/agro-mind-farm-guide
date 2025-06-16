@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 
 const APIADocumentGenerator = () => {
-  const { generateAPIADocument, user } = useAppContext();
+  const { generateAPIADocument, user, fields } = useAppContext();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);

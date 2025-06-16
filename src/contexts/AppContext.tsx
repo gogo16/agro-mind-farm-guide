@@ -100,7 +100,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           fetchTransactions(),
           fetchPropertyDocuments(),
           fetchNotifications(),
-          fetchSatelliteData()
+          fetchSatelliteDataList()
         ]);
       }
     } catch (error) {
@@ -144,7 +144,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (data) setNotifications(data);
   };
 
-  const fetchSatelliteData = async () => {
+  const fetchSatelliteDataList = async () => {
     const { data } = await supabase.from('satellite_monitoring').select('*');
     if (data) setSatelliteData(data);
   };
@@ -276,7 +276,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     if (data) setNotifications(prev => prev.map(n => n.id === id ? data[0] : n));
   };
 
-  // Satellite operations
+  // Satellite operations - renamed to avoid conflict
   const fetchSatelliteData = async (fieldId: string) => {
     // Simulate satellite data fetching
     const mockData: Omit<SatelliteData, 'id'> = {
