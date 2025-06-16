@@ -134,7 +134,7 @@ const FieldDetails = () => {
                 <MapPin className="h-5 w-5 text-blue-600" />
                 <span className="text-sm font-medium text-gray-700">Suprafață</span>
               </div>
-              <p className="text-lg font-bold text-green-800">{field.size} ha</p>
+              <p className="text-lg font-bold text-green-800">{Number(field.size)} ha</p>
               <p className="text-sm text-gray-600">{field.coordinates ? `${(field.coordinates as any).lat}, ${(field.coordinates as any).lng}` : 'N/A'}</p>
             </CardContent>
           </Card>
