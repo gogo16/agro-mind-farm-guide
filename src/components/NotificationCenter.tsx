@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +5,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { useAppContext } from '@/contexts/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { Bell, AlertTriangle, CheckCircle, Brain, TrendingDown } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const NotificationCenter = () => {
   const { notifications, markNotificationAsRead, tasks, addNotification } = useAppContext();
@@ -98,6 +98,31 @@ const NotificationCenter = () => {
         break;
       default:
         navigate('/');
+    }
+  };
+
+  const addTestNotification = async () => {
+    const testNotification = {
+      type: "task" as const,
+      title: "Sarcină nouă",
+      message: "Ai o sarcină programată pentru astăzi",
+      priority: "medium" as const,
+      is_read: false,
+      read_at: '',
+    };
+
+    try {
+      await addNotification(testNotification);
+      toast({
+        title: "Notificare adăugată",
+        description: "Notificarea de test a fost adăugată."
+      });
+    } catch (error) {
+      toast({
+        title: "Eroare",
+        description: "A apărut o eroare la adăugarea notificării.",
+        variant: "destructive"
+      });
     }
   };
 

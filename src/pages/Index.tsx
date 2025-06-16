@@ -1,12 +1,11 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import Navigation from '@/components/Navigation';
 import FieldCard from '@/components/FieldCard';
 import TasksWidget from '@/components/TasksWidget';
 import WeatherWidget from '@/components/WeatherWidget';
 import TaskBadges from '@/components/TaskBadges';
 import NotificationCenter from '@/components/NotificationCenter';
-import AIInsights from '@/components/AIInsights';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
@@ -17,7 +16,6 @@ const Index = () => {
     fields, 
     tasks, 
     transactions, 
-    generateReport, 
     currentSeason 
   } = useAppContext();
 
@@ -125,8 +123,21 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            {/* AI Insights */}
-            <AIInsights />
+            {/* AI Insights Placeholder */}
+            <Card className="bg-white/80 backdrop-blur-sm border-green-200">
+              <CardHeader>
+                <CardTitle className="text-green-800">Recomandări AI</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-gray-500">
+                  <div className="h-16 w-16 mx-auto mb-4 bg-purple-100 rounded-full flex items-center justify-center">
+                    🤖
+                  </div>
+                  <p>Sistemul AI analizează datele fermei tale</p>
+                  <p className="text-sm">Recomandări personalizate vor fi disponibile în curând</p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Right Column - Widgets */}
@@ -149,7 +160,7 @@ const Index = () => {
             </Card>
 
             {/* Task Badges */}
-            <TaskBadges />
+            <TaskBadges fieldName="" tasks={tasks} />
 
             {/* Tasks Widget */}
             <TasksWidget />

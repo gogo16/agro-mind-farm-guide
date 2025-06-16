@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -68,38 +67,54 @@ const TasksWidget = () => {
     }
   };
 
-  const handleAddTask = () => {
-    if (!newTask.title || !newTask.field_name || !newTask.date) {
+  const handleAddTask = async () => {
+    if (!newTask.title || !newTask.field_name) return;
+    
+    try {
+      const taskData = {
+        title: newTask.title,
+        field_name: newTask.field_name,
+        priority: newTask.priority as "high" | "low" | "medium",
+        date: newTask.date,
+        due_date: newTask.date,
+        due_time: newTask.time,
+        status: "pending" as const,
+        ai_suggested: false,
+        description: newTask.description,
+        estimated_duration: newTask.estimated_duration,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        user_id: '',
+        category: 'general',
+        completed_at: '',
+        duration: 0,
+        requirements: '',
+        location: '',
+        equipment_needed: '',
+      };
+
+      await addTask(taskData);
+      toast({
+        title: "Sarcină adăugată",
+        description: "Sarcina a fost adăugată cu succes."
+      });
+      
+      setNewTask({
+        title: '',
+        field_name: '',
+        priority: 'medium',
+        date: new Date().toISOString().split('T')[0],
+        time: '',
+        description: '',
+        estimated_duration: ''
+      });
+    } catch (error) {
       toast({
         title: "Eroare",
-        description: "Te rugăm să completezi toate câmpurile obligatorii.",
+        description: "A apărut o eroare la adăugarea sarcinii.",
         variant: "destructive"
       });
-      return;
     }
-
-    addTask({
-      title: newTask.title,
-      field_name: newTask.field_name,
-      priority: newTask.priority,
-      date: newTask.date,
-      time: newTask.time,
-      status: 'pending',
-      ai_suggested: false,
-      description: newTask.description,
-      estimated_duration: newTask.estimated_duration
-    });
-
-    setNewTask({
-      title: '',
-      field_name: '',
-      priority: 'medium',
-      date: '',
-      time: '',
-      description: '',
-      estimated_duration: ''
-    });
-    setIsAddingTask(false);
   };
 
   const handleCompleteTask = (taskId: string) => {

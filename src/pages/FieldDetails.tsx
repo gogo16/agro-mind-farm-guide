@@ -1,50 +1,26 @@
-
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { useParams } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { MapPin, Sprout, Calendar, ArrowLeft, Edit, History, Camera } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
+import WeatherWidget from '@/components/WeatherWidget';
 import VisualCropJournal from '@/components/VisualCropJournal';
-import EditFieldDialog from '@/components/EditFieldDialog';
 import AddPhotoDialog from '@/components/AddPhotoDialog';
-import SoilSection from '@/components/SoilSection';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { useAppContext } from '@/contexts/AppContext';
-import { useAIRecommendations } from '@/hooks/useAIRecommendations';
 
 const FieldDetails = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { fields, tasks } = useAppContext();
-  const { getFieldProgress, getFieldStatus } = useAIRecommendations();
-  const [isEditingField, setIsEditingField] = useState(false);
-  const [isAddingPhoto, setIsAddingPhoto] = useState(false);
+  const { id } = useParams<{ id: string }>();
+  const { fields, tasks, fieldPhotos } = useAppContext();
+  
+  const field = fields.find(f => f.id === id);
+  const fieldTasks = tasks.filter(task => task.field_name === field?.name);
+  const fieldTasksToday = fieldTasks.filter(task => {
+    const taskDate = task.due_date || task.date;
+    return taskDate === new Date().toISOString().split('T')[0];
+  });
 
-  const field = id ? fields.find(f => f.id === id) : null;
-
-  // Get AI-powered field status and progress
-  const fieldStatus = field ? getFieldStatus(field.id) : { status: 'Necunoscut', description: 'Date indisponibile', color: 'gray' };
-  const fieldProgress = field ? getFieldProgress(field.id) : { developmentProgress: 0, daysToHarvest: 0 };
-
-  // Get completed tasks for this field
-  const completedActivities = tasks.filter(task => 
-    task.field_name === field?.name && task.status === 'completed'
-  ).map(task => ({
-    id: task.id,
-    date: task.due_date || new Date().toISOString().split('T')[0],
-    activity: task.title,
-    details: task.description || 'Activitate completată',
-    cost: 0,
-    weather: 'N/A'
-  }));
-
-  // Get the last completed task for work type
-  const lastCompletedTask = tasks
-    .filter(task => task.field_name === field?.name && task.status === 'completed')
-    .sort((a, b) => new Date(b.due_date || b.date).getTime() - new Date(a.due_date || a.date).getTime())[0];
+  const photos = fieldPhotos.filter(photo => photo.field_id === id);
 
   if (!field) {
     return (
@@ -52,25 +28,27 @@ const FieldDetails = () => {
         <Navigation />
         <div className="container mx-auto px-4 py-6">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-800 mb-4">Parcela nu a fost găsită</h1>
-            <Button onClick={() => navigate('/')} className="bg-green-600 hover:bg-green-700">
-              Înapoi la Dashboard
-            </Button>
+            <h1 className="text-2xl font-bold text-gray-800">Teren nu a fost găsit</h1>
+            <p className="text-gray-600">Terenul solicitat nu există.</p>
           </div>
         </div>
       </div>
     );
   }
 
-  const getStatusColor = (color: string) => {
-    switch (color) {
-      case 'green': return 'bg-green-100 text-green-800';
-      case 'yellow': return 'bg-yellow-100 text-yellow-800';
-      case 'red': return 'bg-red-100 text-red-800';
-      case 'blue': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+  // Parse coordinates safely
+  let coordinates = null;
+  try {
+    if (typeof field.coordinates === 'string') {
+      coordinates = JSON.parse(field.coordinates);
+    } else if (typeof field.coordinates === 'object' && field.coordinates !== null) {
+      coordinates = field.coordinates;
     }
-  };
+  } catch (error) {
+    console.error('Error parsing coordinates:', error);
+  }
+
+  const hasCoordinates = coordinates && typeof coordinates === 'object' && 'lat' in coordinates && 'lng' in coordinates;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
@@ -78,196 +56,130 @@ const FieldDetails = () => {
       
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => navigate('/')} className="text-green-700 hover:text-green-800">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Înapoi
-            </Button>
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-green-800">{field.name}</h1>
-              <p className="text-green-600">{field.crop} • {field.size} ha • {field.parcel_code}</p>
+              <p className="text-green-600">Cod Parcelă: {field.parcel_code}</p>
             </div>
-          </div>
-          <div className="flex space-x-2">
-            <AddPhotoDialog 
-              fieldId={field.id} 
-              isOpen={isAddingPhoto} 
-              onOpenChange={setIsAddingPhoto} 
-              trigger={
-                <Button variant="outline">
-                  <Camera className="h-4 w-4 mr-2" />
-                  Adaugă poză
-                </Button>
-              } 
-            />
-            <EditFieldDialog 
-              field={field} 
-              isOpen={isEditingField} 
-              onOpenChange={setIsEditingField} 
-              trigger={
-                <Button className="bg-green-600 hover:bg-green-700">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editează
-                </Button>
-              } 
-            />
+            <div className="flex items-center space-x-4">
+              <Badge 
+                variant={field.status === 'activ' ? 'default' : 'secondary'}
+                className="text-sm"
+              >
+                {field.status}
+              </Badge>
+              <AddPhotoDialog fieldId={field.id} />
+            </div>
           </div>
         </div>
 
-        {/* Quick Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-white/80 backdrop-blur-sm border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <Sprout className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium text-gray-700">Cultură</span>
-              </div>
-              <p className="text-lg font-bold text-green-800">{field.crop}</p>
-              <p className="text-sm text-gray-600">{field.parcel_code}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 backdrop-blur-sm border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <MapPin className="h-5 w-5 text-blue-600" />
-                <span className="text-sm font-medium text-gray-700">Suprafață</span>
-              </div>
-              <p className="text-lg font-bold text-green-800">{field.size} ha</p>
-              <p className="text-sm text-gray-600">{field.coordinates ? `${field.coordinates.lat}, ${field.coordinates.lng}` : 'N/A'}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 backdrop-blur-sm border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <Calendar className="h-5 w-5 text-purple-600" />
-                <span className="text-sm font-medium text-gray-700">Plantat</span>
-              </div>
-              <p className="text-lg font-bold text-green-800">{field.planting_date || 'N/A'}</p>
-              <p className="text-sm text-gray-600">Data însămânțare</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 backdrop-blur-sm border-green-200" data-ai-zone="ai-field-status">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2 mb-2">
-                <div className={`w-5 h-5 rounded-full ${fieldStatus.color === 'green' ? 'bg-green-500' : fieldStatus.color === 'yellow' ? 'bg-yellow-500' : fieldStatus.color === 'red' ? 'bg-red-500' : fieldStatus.color === 'blue' ? 'bg-blue-500' : 'bg-gray-500'}`}></div>
-                <span className="text-sm font-medium text-gray-700">Status</span>
-              </div>
-              <Badge className={getStatusColor(fieldStatus.color)}>{fieldStatus.status}</Badge>
-              <p className="text-sm text-gray-600 mt-1">{fieldStatus.description}</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Detailed Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-[480px] bg-white/80 backdrop-blur-sm">
-            <TabsTrigger value="overview">Prezentare</TabsTrigger>
-            <TabsTrigger value="activities">Istoric Activități</TabsTrigger>
-            <TabsTrigger value="journal">Jurnal Foto</TabsTrigger>
-            <TabsTrigger value="soil">Sol</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="bg-white border-green-200">
-                <CardHeader>
-                  <CardTitle className="text-green-800">Informații Generale</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-600">Cod parcelă</p>
-                      <p className="font-medium">{field.parcel_code}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Tip lucrare</p>
-                      <p className="font-medium">{lastCompletedTask?.title || field.work_type || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Istoric îngrășăminte/chimicale</p>
-                      <p className="font-medium">{field.inputs || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">ROI</p>
-                      <p className="font-medium text-green-600">{field.roi ? `${field.roi}%` : 'N/A'}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white border-green-200" data-ai-zone="ai-season-progress">
-                <CardHeader>
-                  <CardTitle className="text-green-800">Progres Sezon</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Progres dezvoltare</span>
-                        <span>{fieldProgress.developmentProgress}%</span>
-                      </div>
-                      <Progress value={fieldProgress.developmentProgress} className="h-2" />
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Zile până la recoltare</span>
-                        <span>{fieldProgress.daysToHarvest} zile</span>
-                      </div>
-                      <Progress 
-                        value={Math.max(0, 100 - (fieldProgress.daysToHarvest / 120) * 100)} 
-                        className="h-2" 
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="activities" className="space-y-6">
-            <Card className="bg-white border-green-200">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-green-800 flex items-center space-x-2">
-                  <History className="h-5 w-5" />
-                  <span>Istoric Activități</span>
-                </CardTitle>
+        {/* Field Info Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Field Details */}
+          <div className="lg:col-span-2">
+            <Card className="bg-white/80 backdrop-blur-sm border-green-200">
+              <CardHeader>
+                <CardTitle className="text-green-800">Detalii Teren</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {completedActivities.length > 0 ? completedActivities.map(activity => (
-                  <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-semibold text-gray-900">{activity.activity}</h4>
-                      <Badge variant="secondary" className="text-xs">{activity.date}</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-2">{activity.details}</p>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-500">Sarcină completată</span>
-                      <span className="font-medium text-green-600">Finalizat</span>
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Suprafață</Label>
+                    <p className="text-lg font-semibold">{field.size} ha</p>
                   </div>
-                )) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <History className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p>Nu există activități completate pentru acest teren</p>
-                    <p className="text-sm">Activitățile completate vor apărea aici</p>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Cultură</Label>
+                    <p className="text-lg font-semibold">{field.crop}</p>
                   </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Varietate</Label>
+                    <p className="text-lg font-semibold">{field.variety || 'Nespecificată'}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Tip Lucrare</Label>
+                    <p className="text-lg font-semibold">{field.work_type || 'Nespecificat'}</p>
+                  </div>
+                </div>
+                
+                {field.planting_date && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Data Plantării</Label>
+                    <p className="text-lg font-semibold">{new Date(field.planting_date).toLocaleDateString('ro-RO')}</p>
+                  </div>
+                )}
+                
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Locație</Label>
+                  <p className="text-lg font-semibold">{field.location}</p>
+                  {hasCoordinates && (
+                    <p className="text-sm text-gray-500">
+                      Coordonate: {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Tasks Section */}
+            <Card className="bg-white/80 backdrop-blur-sm border-green-200 mt-6">
+              <CardHeader>
+                <CardTitle className="text-green-800">Sarcini pentru Acest Teren</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {fieldTasksToday.length > 0 ? (
+                  <div className="space-y-3">
+                    {fieldTasksToday.map((task) => (
+                      <div key={task.id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">{task.title}</p>
+                          <p className="text-sm text-gray-600">{task.description}</p>
+                        </div>
+                        <Badge variant={task.priority === 'high' ? 'destructive' : task.priority === 'medium' ? 'default' : 'secondary'}>
+                          {task.priority}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">Nu există sarcini programate pentru astăzi</p>
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
 
-          <TabsContent value="journal" className="space-y-6">
-            <VisualCropJournal fieldId={field.id} />
-          </TabsContent>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Quick Stats */}
+            <Card className="bg-white/80 backdrop-blur-sm border-green-200">
+              <CardHeader>
+                <CardTitle className="text-green-800">Statistici Rapide</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Sarcini Active</span>
+                    <span className="font-semibold">{fieldTasks.filter(t => t.status === 'pending').length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Fotografii</span>
+                    <span className="font-semibold">{photos.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Productivitate</span>
+                    <span className="font-semibold">{field.productivity || 'N/A'}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-          <TabsContent value="soil" className="space-y-6">
-            <SoilSection fieldId={field.id} />
-          </TabsContent>
-        </Tabs>
+            {/* Weather Widget */}
+            <WeatherWidget />
+          </div>
+        </div>
+
+        {/* Visual Crop Journal */}
+        <VisualCropJournal fieldId={field.id} />
       </div>
     </div>
   );
