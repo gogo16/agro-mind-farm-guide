@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 
 interface VisualCropJournalProps {
-  fieldId?: string;
+  fieldId?: number;
 }
 
 const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
@@ -24,7 +24,7 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
   
   // Filtrează pozele pentru terenul specific dacă este specificat fieldId
   const displayedPhotos = fieldId 
-    ? (fieldPhotos || []).filter((photo: any) => photo.field_id === fieldId)
+    ? (fieldPhotos || []).filter((photo: any) => photo.fieldId === fieldId)
     : (fieldPhotos || []);
 
   const [photos] = useState([
@@ -78,23 +78,8 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
     setIsAddingPhoto(false);
   };
 
-  // Pentru fotografiile din baza de date, construim un obiect compatibil
-  const databasePhotos = displayedPhotos.map((photo: any) => {
-    const field = fields.find(f => f.id === photo.field_id);
-    return {
-      id: photo.id,
-      date: photo.date,
-      fieldName: field?.name || 'Teren necunoscut',
-      activity: photo.activity || 'Monitorizare',
-      cropStage: photo.crop_stage || 'Necunoscut',
-      weather: photo.weather_conditions || 'Necunoscut',
-      notes: photo.notes || '',
-      imageUrl: photo.image_url
-    };
-  });
-
   // Combină pozele default cu cele adăugate de utilizator
-  const allPhotos = [...photos, ...databasePhotos];
+  const allPhotos = [...photos, ...displayedPhotos];
 
   return (
     <Card className="bg-white border-green-200">
@@ -124,7 +109,7 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
                     </SelectTrigger>
                     <SelectContent>
                       {fields.map(field => (
-                        <SelectItem key={field.id} value={field.id}>{field.name}</SelectItem>
+                        <SelectItem key={field.id} value={field.id.toString()}>{field.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

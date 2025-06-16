@@ -11,13 +11,13 @@ import { useToast } from '@/hooks/use-toast';
 const SatelliteMonitoring = () => {
   const { fields, satelliteData, fetchSatelliteData } = useAppContext();
   const { toast } = useToast();
-  const [selectedParcel, setSelectedParcel] = useState<string | null>(null);
+  const [selectedParcel, setSelectedParcel] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'comparison' | 'overlay'>('comparison');
 
-  const handleFetchSatelliteData = (fieldId: string) => {
+  const handleFetchSatelliteData = (parcelId: number) => {
     setIsLoading(true);
-    fetchSatelliteData(fieldId);
+    fetchSatelliteData(parcelId);
     
     setTimeout(() => {
       setIsLoading(false);
@@ -28,13 +28,13 @@ const SatelliteMonitoring = () => {
     }, 2000);
   };
 
-  const selectedParcelData = selectedParcel ? satelliteData.find(d => d.field_id === selectedParcel) : null;
+  const selectedParcelData = selectedParcel ? satelliteData.find(d => d.parcelId === selectedParcel) : null;
   const selectedField = selectedParcel ? fields.find(f => f.id === selectedParcel) : null;
 
   useEffect(() => {
     // Auto-fetch satellite data for all parcels on component mount
     fields.forEach(field => {
-      if (!satelliteData.find(d => d.field_id === field.id)) {
+      if (!satelliteData.find(d => d.parcelId === field.id)) {
         fetchSatelliteData(field.id);
       }
     });
@@ -52,14 +52,14 @@ const SatelliteMonitoring = () => {
         <div className="grid grid-cols-1 gap-4">
           <div>
             <label className="text-sm font-medium text-gray-700 mb-2 block">Selectează parcela</label>
-            <Select onValueChange={(value) => setSelectedParcel(value)}>
+            <Select onValueChange={(value) => setSelectedParcel(parseInt(value))}>
               <SelectTrigger>
                 <SelectValue placeholder="Alege parcela pentru monitorizare..." />
               </SelectTrigger>
               <SelectContent>
                 {fields.map((field) => (
-                  <SelectItem key={field.id} value={field.id}>
-                    {field.name} ({field.parcel_code}) - {field.size} ha
+                  <SelectItem key={field.id} value={field.id.toString()}>
+                    {field.name} ({field.parcelCode}) - {field.size} ha
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -96,13 +96,13 @@ const SatelliteMonitoring = () => {
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-medium text-gray-900">{selectedField?.name}</p>
-                      <p className="text-sm text-gray-600">Cod: {selectedField?.parcel_code}</p>
+                      <p className="text-sm text-gray-600">Cod: {selectedField?.parcelCode}</p>
                       <p className="text-xs text-gray-500">
-                        Ultima actualizare: {new Date(selectedParcelData.analysis_date).toLocaleDateString('ro-RO')}
+                        Ultima actualizare: {new Date(selectedParcelData.lastUpdated).toLocaleDateString('ro-RO')}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">
-                      {selectedParcelData.change_detected ? (
+                      {selectedParcelData.changeDetected ? (
                         <Badge className="bg-red-100 text-red-800 border-red-200">
                           <AlertTriangle className="h-3 w-3 mr-1" />
                           Modificări detectate
@@ -147,9 +147,9 @@ const SatelliteMonitoring = () => {
                         <div className="text-center">
                           <Eye className="h-8 w-8 text-purple-600 mx-auto mb-2" />
                           <p className="text-sm text-purple-700 font-medium">Analiza modificărilor</p>
-                          {selectedParcelData.change_detected && (
+                          {selectedParcelData.changeDetected && (
                             <p className="text-xs text-orange-600 mt-1">
-                              {selectedParcelData.change_percentage?.toFixed(1)}% din suprafață modificată
+                              {selectedParcelData.changePercentage.toFixed(1)}% din suprafață modificată
                             </p>
                           )}
                         </div>

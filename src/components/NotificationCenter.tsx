@@ -6,11 +6,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { useAppContext } from '@/contexts/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { Bell, AlertTriangle, CheckCircle, Brain, TrendingDown } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 const NotificationCenter = () => {
   const { notifications, markNotificationAsRead, tasks, addNotification } = useAppContext();
-  const { toast } = useToast();
   const navigate = useNavigate();
   
   // Add today's tasks as notifications
@@ -34,9 +32,7 @@ const NotificationCenter = () => {
           type: 'task',
           title: 'Sarcină programată astăzi',
           message: `"${task.title}" este programată pentru astăzi pe ${task.field_name}`,
-          priority: task.priority,
-          is_read: false,
-          read_at: null
+          priority: task.priority
         });
       }
     });
@@ -102,31 +98,6 @@ const NotificationCenter = () => {
         break;
       default:
         navigate('/');
-    }
-  };
-
-  const addTestNotification = async () => {
-    const testNotification = {
-      type: "task" as const,
-      title: "Sarcină nouă",
-      message: "Ai o sarcină programată pentru astăzi",
-      priority: "medium" as const,
-      is_read: false,
-      read_at: null,
-    };
-
-    try {
-      await addNotification(testNotification);
-      toast({
-        title: "Notificare adăugată",
-        description: "Notificarea de test a fost adăugată."
-      });
-    } catch (error) {
-      toast({
-        title: "Eroare",
-        description: "A apărut o eroare la adăugarea notificării.",
-        variant: "destructive"
-      });
     }
   };
 
