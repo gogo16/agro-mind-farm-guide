@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +20,6 @@ interface Field {
   harvest_date: string;
   costs: number;
   inputs: string;
-  notes: string;
   roi: number;
   color: string;
   work_type: string;
@@ -98,16 +96,12 @@ interface InventoryItem {
   type: 'equipment' | 'chemical' | 'seeds' | 'fuel' | 'other';
   quantity: string;
   unit: string;
-  purchase_date: string;
-  expiry_date: string;
-  cost_per_unit: number;
-  notes: string;
   condition: string;
   location: string;
   last_used: string;
   next_maintenance: string;
   expiration_date: string;
-  stock_level: string;
+  stock_level: 'low' | 'normal' | 'high';
   purchase_cost: number;
   current_value: number;
   purpose: string;
@@ -580,9 +574,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const { data, error } = await supabase
       .from('notifications')
       .insert([{ 
-        ...notificationData, 
-        user_id: user.id,
-        type: notificationData.type as 'inventory' | 'task' | 'weather' | 'ai' | 'financial' | 'system'
+        title: notificationData.title,
+        message: notificationData.message,
+        type: notificationData.type,
+        priority: notificationData.priority,
+        is_read: notificationData.read,
+        read_at: notificationData.read_at,
+        user_id: user.id
       }])
       .select()
       .single();
@@ -627,7 +625,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       location: itemData.location || '',
       last_used: itemData.last_used || null,
       next_maintenance: itemData.next_maintenance || null,
-      expiration_date: itemData.expiry_date || null,
+      expiration_date: itemData.expiration_date || null,
+      stock_level: (itemData.stock_level || 'normal') as 'low' | 'normal' | 'high',
       purchase_cost: itemData.purchase_cost || 0,
       current_value: itemData.current_value || 0,
       purpose: itemData.purpose || '',
@@ -645,20 +644,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const formattedItem = {
-      ...data,
-      purchase_date: '',
-      expiry_date: data.expiration_date || '',
-      cost_per_unit: 0,
-      notes: '',
-    };
-    setInventory(prev => [...prev, formattedItem]);
+    setInventory(prev => [...prev, data]);
   };
 
   const updateInventoryItem = async (id: string, updates: Partial<InventoryItem>) => {
+    const dbUpdates: any = { ...updates };
+    if (updates.stock_level) {
+      dbUpdates.stock_level = updates.stock_level as 'low' | 'normal' | 'high';
+    }
+
     const { error } = await supabase
       .from('inventory')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', id);
 
     if (error) {

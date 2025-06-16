@@ -274,8 +274,8 @@ export const useAIRecommendations = () => {
     const currentField = fields[0]; // In real implementation, this would be passed as parameter
     if (!currentField) return [];
 
-    const daysSincePlanting = currentField.plantingDate ? 
-      Math.floor((new Date().getTime() - new Date(currentField.plantingDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    const daysSincePlanting = currentField.planting_date ? 
+      Math.floor((new Date().getTime() - new Date(currentField.planting_date).getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
     let healthStatus = 'Sănătos';
     let developmentStage = 'Dezvoltare normală';
@@ -288,15 +288,6 @@ export const useAIRecommendations = () => {
       developmentStage = 'Dezvoltare activă';
     } else if (daysSincePlanting > 30) {
       developmentStage = 'Creștere timpurie';
-    }
-
-    // Weather impact
-    if (currentField.weather?.condition === 'rainy') {
-      healthStatus = 'Risc umiditate';
-      priority = 'high';
-    } else if (currentField.weather?.temperature && currentField.weather.temperature > 35) {
-      healthStatus = 'Stres termic';
-      priority = 'high';
     }
 
     return [
@@ -315,8 +306,8 @@ export const useAIRecommendations = () => {
     const currentField = fields[0];
     if (!currentField) return [];
 
-    const plantingDate = currentField.plantingDate ? new Date(currentField.plantingDate) : new Date();
-    const harvestDate = currentField.harvestDate ? new Date(currentField.harvestDate) : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+    const plantingDate = currentField.planting_date ? new Date(currentField.planting_date) : new Date();
+    const harvestDate = currentField.harvest_date ? new Date(currentField.harvest_date) : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
     
     const totalDays = Math.floor((harvestDate.getTime() - plantingDate.getTime()) / (1000 * 60 * 60 * 24));
     const daysSincePlanting = Math.floor((new Date().getTime() - plantingDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -533,7 +524,7 @@ export const useAIRecommendations = () => {
     ];
   };
 
-  const generateFieldRecommendations = (field: Field): string[] => {
+  const generateFieldRecommendations = (field: any): string[] => {
     const recommendations: string[] = [];
     const today = new Date();
     
