@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -64,7 +65,7 @@ const FieldDetails = () => {
             </div>
             <div className="flex items-center space-x-4">
               <Badge 
-                variant={field.status === 'activ' ? 'default' : 'secondary'}
+                variant={field.status === 'active' ? 'default' : 'secondary'}
                 className="text-sm"
               >
                 {field.status}
@@ -91,10 +92,6 @@ const FieldDetails = () => {
                   <div>
                     <Label className="text-sm font-medium text-gray-600">Cultură</Label>
                     <p className="text-lg font-semibold">{field.crop}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-600">Varietate</Label>
-                    <p className="text-lg font-semibold">{field.variety || 'Nespecificată'}</p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-gray-600">Tip Lucrare</Label>
@@ -166,8 +163,8 @@ const FieldDetails = () => {
                     <span className="font-semibold">{photos.length}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Productivitate</span>
-                    <span className="font-semibold">{field.productivity || 'N/A'}</span>
+                    <span className="text-gray-600">Costuri</span>
+                    <span className="font-semibold">{field.costs || 0} RON</span>
                   </div>
                 </div>
               </CardContent>

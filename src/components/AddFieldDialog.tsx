@@ -22,8 +22,8 @@ import { useAppContext } from '@/contexts/AppContext';
 import { Plus } from 'lucide-react';
 
 interface AddFieldDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
@@ -35,14 +35,14 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
     size: '',
     crop: '',
     variety: '',
-    status: 'activ',
+    status: 'active',
     location: '',
     coordinates: '',
     coordinatesType: 'gps',
     plantingDate: undefined,
     harvestDate: undefined,
     workType: '',
-    color: '#000000',
+    color: '#22c55e',
     costs: '',
     productivity: '',
     inputs: '',
@@ -56,14 +56,14 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
       size: '',
       crop: '',
       variety: '',
-      status: 'activ',
+      status: 'active',
       location: '',
       coordinates: '',
       coordinatesType: 'gps',
       plantingDate: undefined,
       harvestDate: undefined,
       workType: '',
-      color: '#000000',
+      color: '#22c55e',
       costs: '',
       productivity: '',
       inputs: '',
@@ -99,23 +99,22 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
       const fieldData = {
         name: formData.name,
         parcel_code: formData.parcelCode,
-        size: formData.size,
+        size: parseFloat(formData.size) || 0,
         crop: formData.crop,
-        variety: formData.variety,
         status: formData.status,
         location: formData.location,
-        coordinates: formData.coordinates,
-        coordinate_type: formData.coordinatesType,
-        planting_date: formData.plantingDate,
-        harvest_date: formData.harvestDate,
+        coordinates: formData.coordinates ? JSON.parse(`{"lat": 0, "lng": 0}`) : null,
+        planting_date: formData.plantingDate ? formData.plantingDate.toISOString().split('T')[0] : null,
+        harvest_date: formData.harvestDate ? formData.harvestDate.toISOString().split('T')[0] : null,
         work_type: formData.workType,
         color: formData.color,
-        costs: formData.costs,
-        productivity: formData.productivity,
+        costs: parseFloat(formData.costs) || 0,
         inputs: formData.inputs,
-        notes: formData.notes,
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         user_id: '', // Will be set by the addField function
+        roi: 0,
+        soil_data: {}
       };
 
       await addField(fieldData);
@@ -123,7 +122,7 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
         title: "Teren adăugat",
         description: "Terenul a fost adăugat cu succes."
       });
-      onOpenChange(false);
+      onOpenChange?.(false);
       resetForm();
     } catch (error) {
       toast({
@@ -238,7 +237,7 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="right">
+              <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={formData.plantingDate}
@@ -271,7 +270,7 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="right">
+              <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
                   selected={formData.harvestDate}
@@ -327,7 +326,7 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
               Anulează
             </Button>
           </DialogClose>
-          <Button type="submit">Adaugă</Button>
+          <Button type="submit" onClick={handleSubmit}>Adaugă</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

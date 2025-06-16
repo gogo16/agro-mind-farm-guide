@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -5,10 +6,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { useAppContext } from '@/contexts/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { Bell, AlertTriangle, CheckCircle, Brain, TrendingDown } from 'lucide-react';
-import { toast } from 'react-toastify';
+import { useToast } from '@/hooks/use-toast';
 
 const NotificationCenter = () => {
   const { notifications, markNotificationAsRead, tasks, addNotification } = useAppContext();
+  const { toast } = useToast();
   const navigate = useNavigate();
   
   // Add today's tasks as notifications
@@ -32,7 +34,9 @@ const NotificationCenter = () => {
           type: 'task',
           title: 'Sarcină programată astăzi',
           message: `"${task.title}" este programată pentru astăzi pe ${task.field_name}`,
-          priority: task.priority
+          priority: task.priority,
+          is_read: false,
+          read_at: null
         });
       }
     });
@@ -108,7 +112,7 @@ const NotificationCenter = () => {
       message: "Ai o sarcină programată pentru astăzi",
       priority: "medium" as const,
       is_read: false,
-      read_at: '',
+      read_at: null,
     };
 
     try {

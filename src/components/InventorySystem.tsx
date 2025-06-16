@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ListBullet, Plus, PackagePlus } from 'lucide-react';
+import { List, Plus, PackagePlus } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -55,15 +55,15 @@ const InventorySystem = () => {
         unit: newItem.unit,
         condition: newItem.condition,
         location: newItem.location,
-        expiration_date: newItem.expiration_date,
+        expiration_date: newItem.expiration_date || null,
         purpose: newItem.purpose,
         stock_level: newItem.stock_level as "high" | "low" | "normal",
         purchase_cost: parseFloat(newItem.purchase_cost) || 0,
         current_value: parseFloat(newItem.current_value) || 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        last_used: '',
-        next_maintenance: '',
+        last_used: null,
+        next_maintenance: null,
       };
 
       await addInventoryItem(itemData);
@@ -251,11 +251,11 @@ const InventorySystem = () => {
         {/* Inventory List */}
         <div className="mt-6">
           <h3 className="text-lg font-semibold text-gray-800 flex items-center space-x-2">
-            <ListBullet className="h-5 w-5 text-gray-600" />
+            <List className="h-5 w-5 text-gray-600" />
             <span>Inventar</span>
           </h3>
           <div className="mt-2 space-y-2">
-            {inventory.map((item: InventoryItem) => (
+            {inventory.map((item) => (
               <Card key={item.id} className="bg-green-50 border border-green-200">
                 <CardContent className="p-3">
                   <div className="flex items-center justify-between">

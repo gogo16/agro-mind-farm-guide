@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppContext } from '@/contexts/AppContext';
 import AddFieldDialog from './AddFieldDialog';
@@ -12,13 +12,14 @@ interface FieldsOverviewProps {
 
 const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
   const { fields } = useAppContext();
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   if (!detailed) {
     return (
       <Card className="bg-white/80 backdrop-blur-sm border-green-200">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-green-800">Terenurile tale</CardTitle>
-          <AddFieldDialog />
+          <AddFieldDialog open={dialogOpen} onOpenChange={setDialogOpen} />
         </CardHeader>
         <CardContent className="space-y-4">
           {fields.map(field => (
@@ -33,7 +34,7 @@ const FieldsOverview = ({ detailed = false }: FieldsOverviewProps) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-green-800">Gestionarea Terenurilor</h2>
-        <AddFieldDialog />
+        <AddFieldDialog open={dialogOpen} onOpenChange={setDialogOpen} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
