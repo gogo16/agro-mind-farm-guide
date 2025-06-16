@@ -10,7 +10,7 @@ const TaskBadges = ({ fieldName, tasks }: TaskBadgesProps) => {
   const getTodayTaskStats = (fieldName: string) => {
     const today = new Date().toISOString().split('T')[0];
     const fieldTasks = tasks.filter(task => 
-      task.field === fieldName && 
+      task.field_name === fieldName && 
       task.date === today && 
       task.status === 'pending'
     );

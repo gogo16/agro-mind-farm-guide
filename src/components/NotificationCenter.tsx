@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +15,7 @@ const NotificationCenter = () => {
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
     const todayTasks = tasks.filter(task => {
-      const taskDate = task.dueDate || task.date;
+      const taskDate = task.due_date || task.date;
       return taskDate === today && task.status === 'pending';
     });
 
@@ -23,23 +24,21 @@ const NotificationCenter = () => {
       const notificationExists = notifications.some(n => 
         n.type === 'task' && 
         n.message.includes(task.title) && 
-        n.date === today
+        n.created_at.split('T')[0] === today
       );
       
       if (!notificationExists) {
         addNotification({
           type: 'task',
           title: 'Sarcină programată astăzi',
-          message: `"${task.title}" este programată pentru astăzi pe ${task.field}`,
-          date: today,
-          isRead: false,
+          message: `"${task.title}" este programată pentru astăzi pe ${task.field_name}`,
           priority: task.priority
         });
       }
     });
   }, [tasks, notifications, addNotification]);
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -72,7 +71,7 @@ const NotificationCenter = () => {
   };
 
   const handleNotificationClick = (notification: any) => {
-    if (!notification.isRead) {
+    if (!notification.is_read) {
       markNotificationAsRead(notification.id);
     }
 
@@ -125,8 +124,8 @@ const NotificationCenter = () => {
             notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`p-4 border-l-4 ${getPriorityColor(notification.priority)} bg-gray-50 rounded-r-lg cursor-pointer hover:bg-gray-100 transition-colors ${
-                  !notification.isRead ? 'bg-blue-50 hover:bg-blue-100' : ''
+                className={`p-4 border-l-4 ${getPriorityColor(notification.priority || 'medium')} bg-gray-50 rounded-r-lg cursor-pointer hover:bg-gray-100 transition-colors ${
+                  !notification.is_read ? 'bg-blue-50 hover:bg-blue-100' : ''
                 }`}
                 onClick={() => handleNotificationClick(notification)}
               >
@@ -134,16 +133,16 @@ const NotificationCenter = () => {
                   {getNotificationIcon(notification.type)}
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
-                      <h4 className={`font-medium text-sm ${!notification.isRead ? 'text-blue-900' : 'text-gray-900'}`}>
+                      <h4 className={`font-medium text-sm ${!notification.is_read ? 'text-blue-900' : 'text-gray-900'}`}>
                         {notification.title}
                       </h4>
-                      {!notification.isRead && (
+                      {!notification.is_read && (
                         <Badge className="bg-blue-100 text-blue-800 text-xs">Nou</Badge>
                       )}
                     </div>
                     <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
                     <div className="flex items-center justify-between">
-                      <p className="text-xs text-gray-500">{notification.date}</p>
+                      <p className="text-xs text-gray-500">{new Date(notification.created_at).toLocaleDateString('ro-RO')}</p>
                       <span className="text-xs text-blue-600 hover:text-blue-800">Click pentru a vedea detalii →</span>
                     </div>
                   </div>
@@ -157,7 +156,7 @@ const NotificationCenter = () => {
             <Button 
               className="w-full" 
               variant="outline"
-              onClick={() => notifications.filter(n => !n.isRead).forEach(n => markNotificationAsRead(n.id))}
+              onClick={() => notifications.filter(n => !n.is_read).forEach(n => markNotificationAsRead(n.id))}
             >
               Marchează toate ca citite
             </Button>
