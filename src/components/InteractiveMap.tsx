@@ -1,7 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
-import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface InteractiveMapProps {
@@ -13,127 +12,14 @@ interface InteractiveMapProps {
 const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: InteractiveMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const polygonsRef = useRef<google.maps.Polygon[]>([]);
-  const { fields } = useAppContext();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
 
   const GOOGLE_MAPS_API_KEY = "AIzaSyDloS4Jj3CMvgpmdrWUECSOKs12A8wX1io";
 
-  // Parse coordinates from field data
-  const parseCoordinates = (field: any) => {
-    console.log('Parsing coordinates for field:', field.name);
-    
-    // Check if field has simple coordinates
-    if (field.coordinates && typeof field.coordinates === 'object' && 
-        field.coordinates.lat && field.coordinates.lng) {
-      const coords = {
-        lat: Number(field.coordinates.lat),
-        lng: Number(field.coordinates.lng)
-      };
-      console.log('Found valid point coordinates for field:', field.name, coords);
-      return [coords];
-    }
-
-    console.log('No valid coordinates found for field:', field.name);
-    return null;
-  };
-
-  // Create polygon for a field
-  const createFieldPolygon = (field: any, map: google.maps.Map) => {
-    const coordinates = parseCoordinates(field);
-    if (!coordinates) return null;
-
-    let path: google.maps.LatLng[];
-
-    // For a single point, create a small circular polygon
-    const center = coordinates[0];
-    const radius = 0.002; // approximately 200m
-    path = [];
-    for (let i = 0; i < 8; i++) {
-      const angle = (i * Math.PI) / 4;
-      path.push(new google.maps.LatLng(
-        center.lat + radius * Math.cos(angle),
-        center.lng + radius * Math.sin(angle)
-      ));
-    }
-
-    const polygon = new google.maps.Polygon({
-      paths: path,
-      strokeColor: field.color || '#22c55e',
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: field.color || '#22c55e',
-      fillOpacity: 0.5,
-      editable: false,
-      draggable: false
-    });
-
-    polygon.setMap(map);
-
-    // Add click listener
-    polygon.addListener('click', () => {
-      if (onFieldSelect) {
-        onFieldSelect(field);
-      }
-      
-      toast({
-        title: field.name,
-        description: `${field.crop} • ${field.size} ha • ${field.parcelCode}`,
-      });
-    });
-
-    // Add hover tooltip
-    const infoWindow = new google.maps.InfoWindow({
-      content: `
-        <div class="p-2">
-          <h3 class="font-semibold text-green-800">${field.name}</h3>
-          <p class="text-sm text-gray-600">${field.parcelCode}</p>
-          <p class="text-sm">${field.crop} • ${field.size} ha</p>
-        </div>
-      `
-    });
-
-    polygon.addListener('mouseover', (event: google.maps.PolyMouseEvent) => {
-      if (event.latLng) {
-        infoWindow.setPosition(event.latLng);
-        infoWindow.open(map);
-      }
-    });
-
-    polygon.addListener('mouseout', () => {
-      infoWindow.close();
-    });
-
-    return polygon;
-  };
-
-  // Calculate map bounds for all fields
-  const calculateMapBounds = () => {
-    const bounds = new google.maps.LatLngBounds();
-    let hasCoordinates = false;
-
-    fields.forEach(field => {
-      const coordinates = parseCoordinates(field);
-      if (coordinates) {
-        coordinates.forEach(coord => {
-          bounds.extend(new google.maps.LatLng(coord.lat, coord.lng));
-          hasCoordinates = true;
-        });
-      }
-    });
-
-    if (!hasCoordinates) {
-      // Default coordinates for Romania (center of Romania)
-      return {
-        center: { lat: 45.9432, lng: 24.9668 },
-        zoom: 7
-      };
-    }
-
-    return bounds;
-  };
+  // Romanian coordinates - center of Romania
+  const ROMANIA_CENTER = { lat: 45.9432, lng: 24.9668 };
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -158,23 +44,107 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
         await loader.load();
         console.log('Google Maps API loaded successfully');
 
-        const bounds = calculateMapBounds();
         const mapOptions: google.maps.MapOptions = {
+          center: ROMANIA_CENTER,
+          zoom: 7,
           mapTypeId: mapType as google.maps.MapTypeId,
           streetViewControl: false,
           fullscreenControl: true,
           mapTypeControl: true,
-          zoomControl: true
+          zoomControl: true,
+          styles: [
+            {
+              featureType: "all",
+              elementType: "geometry.fill",
+              stylers: [{ weight: "2.00" }]
+            },
+            {
+              featureType: "all",
+              elementType: "geometry.stroke",
+              stylers: [{ color: "#9c9c9c" }]
+            },
+            {
+              featureType: "all",
+              elementType: "labels.text",
+              stylers: [{ visibility: "on" }]
+            },
+            {
+              featureType: "landscape",
+              elementType: "all",
+              stylers: [{ color: "#f2f2f2" }]
+            },
+            {
+              featureType: "landscape",
+              elementType: "geometry.fill",
+              stylers: [{ color: "#ffffff" }]
+            },
+            {
+              featureType: "landscape.man_made",
+              elementType: "geometry.fill",
+              stylers: [{ color: "#ffffff" }]
+            },
+            {
+              featureType: "poi",
+              elementType: "all",
+              stylers: [{ visibility: "off" }]
+            },
+            {
+              featureType: "road",
+              elementType: "all",
+              stylers: [{ saturation: -100 }, { lightness: 45 }]
+            },
+            {
+              featureType: "road",
+              elementType: "geometry.fill",
+              stylers: [{ color: "#eeeeee" }]
+            },
+            {
+              featureType: "road",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#7b7b7b" }]
+            },
+            {
+              featureType: "road",
+              elementType: "labels.text.stroke",
+              stylers: [{ color: "#ffffff" }]
+            },
+            {
+              featureType: "road.highway",
+              elementType: "all",
+              stylers: [{ visibility: "simplified" }]
+            },
+            {
+              featureType: "road.arterial",
+              elementType: "labels.icon",
+              stylers: [{ visibility: "off" }]
+            },
+            {
+              featureType: "transit",
+              elementType: "all",
+              stylers: [{ visibility: "off" }]
+            },
+            {
+              featureType: "water",
+              elementType: "all",
+              stylers: [{ color: "#46bcec" }, { visibility: "on" }]
+            },
+            {
+              featureType: "water",
+              elementType: "geometry.fill",
+              stylers: [{ color: "#c8d7d4" }]
+            },
+            {
+              featureType: "water",
+              elementType: "labels.text.fill",
+              stylers: [{ color: "#070707" }]
+            },
+            {
+              featureType: "water",
+              elementType: "labels.text.stroke",
+              stylers: [{ color: "#ffffff" }]
+            }
+          ]
         };
-
-        // Set center and zoom
-        if (bounds instanceof google.maps.LatLngBounds) {
-          mapOptions.center = bounds.getCenter().toJSON();
-          mapOptions.zoom = 12;
-        } else {
-          mapOptions.center = bounds.center;
-          mapOptions.zoom = bounds.zoom;
-        }
 
         console.log('Creating map with options:', mapOptions);
         const map = new google.maps.Map(mapRef.current!, mapOptions);
@@ -189,47 +159,8 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
           });
         }
 
-        // Adjust view to include all fields
-        if (bounds instanceof google.maps.LatLngBounds && fields.length > 0) {
-          map.fitBounds(bounds);
-          
-          // Limit maximum zoom
-          const listener = google.maps.event.addListener(map, 'idle', () => {
-            if (map.getZoom()! > 16) map.setZoom(16);
-            google.maps.event.removeListener(listener);
-          });
-        }
-
-        // Create polygons for fields with coordinates
-        const newPolygons: google.maps.Polygon[] = [];
-        const fieldsWithCoordinates = fields.filter(field => {
-          const coords = parseCoordinates(field);
-          return coords !== null;
-        });
-        
-        console.log(`Processing ${fieldsWithCoordinates.length} fields with coordinates out of ${fields.length} total fields`);
-        
-        fieldsWithCoordinates.forEach(field => {
-          console.log('Processing field for map:', field.name);
-          const polygon = createFieldPolygon(field, map);
-          if (polygon) {
-            newPolygons.push(polygon);
-            console.log('Created polygon for field:', field.name);
-          }
-        });
-
-        polygonsRef.current = newPolygons;
         setIsLoading(false);
-
-        console.log(`Map loaded successfully with ${newPolygons.length} polygons`);
-
-        // Show toast only when fields are displayed
-        if (fieldsWithCoordinates.length > 0) {
-          toast({
-            title: "Hartă încărcată",
-            description: `${newPolygons.length} din ${fieldsWithCoordinates.length} terenuri afișate pe hartă.`,
-          });
-        }
+        console.log(`Beautiful map loaded successfully, centered on Romania`);
 
       } catch (error) {
         console.error('Error loading Google Maps:', error);
@@ -245,15 +176,7 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
     };
 
     initMap();
-
-    // Cleanup
-    return () => {
-      polygonsRef.current.forEach(polygon => {
-        polygon.setMap(null);
-      });
-      polygonsRef.current = [];
-    };
-  }, [fields, mapType, onMapClick]);
+  }, [mapType, onMapClick]);
 
   // Update map type
   useEffect(() => {

@@ -1,10 +1,7 @@
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
-import { WeatherSyncService } from '@/utils/weatherSync';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { debugFieldCoordinates } from '@/utils/debugCoordinates';
+import { useToast } from '@/hooks/use-toast';
 
 export interface Field {
   id: string;
@@ -112,17 +109,9 @@ interface AppContextType {
   loading: boolean;
 }
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+const AppContext = createContext<AppContextType | null>(null);
 
-export const useAppContext = () => {
-  const context = useContext(AppContext);
-  if (!context) {
-    throw new Error('useAppContext must be used within an AppProvider');
-  }
-  return context;
-};
-
-export const AppProvider = ({ children }: { children: React.ReactNode }) => {
+export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [fields, setFields] = useState<Field[]>([]);
@@ -236,7 +225,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   // Fetch fields from database
-  const fetchFields = async () => {
+  const loadFields = async () => {
     if (!user) {
       setFields([]);
       setLoading(false);
@@ -354,15 +343,16 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('Weather sync skipped - already done today for this user or no fields with coordinates');
       }
     } catch (error) {
-      console.error('Error in fetchFields:', error);
+      console.error('Error in loadFields:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchFields();
-  }, [user]);
+  const syncWeatherForAllFields = async () => {
+    // This function is now only called manually, not automatically
+    console.log('Manual weather sync initiated');
+  };
 
   const addField = async (fieldData: Omit<Field, 'id'>) => {
     if (!user) {
@@ -415,7 +405,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       console.log('Field added successfully:', data);
-      await fetchFields();
+      await loadFields();
 
       // Force weather sync for new field with coordinates (this should show popup)
       if (fieldData.coordinates) {
@@ -492,7 +482,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       // Refresh fields list
-      await fetchFields();
+      await loadFields();
       
       toast({
         title: "Teren actualizat",
@@ -524,7 +514,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       // Refresh fields list
-      await fetchFields();
+      await loadFields();
       
       toast({
         title: "Teren șters",
@@ -663,6 +653,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  useEffect(() => {
+    if (user) {
+      loadFields();
+      loadTasks();
+      loadTransactions();
+      loadInventory();
+    }
+  }, [user]);
+
   return (
     <AppContext.Provider value={{
       fields,
@@ -702,4 +701,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       {children}
     </AppContext.Provider>
   );
+};
+
+export const useAppContext = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useAppContext must be used within an AppProvider');
+  }
+  return context;
 };

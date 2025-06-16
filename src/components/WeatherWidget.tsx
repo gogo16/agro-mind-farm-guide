@@ -4,140 +4,129 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Cloud, Sun, CloudRain, Wind, Thermometer, Droplets, Calendar, History, RefreshCw } from 'lucide-react';
-import { useWeatherData } from '@/hooks/useWeatherData';
-import { useAppContext } from '@/contexts/AppContext';
+import { Cloud, Sun, CloudRain, Wind, Thermometer, Droplets, Calendar, RefreshCw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface WeatherDataPoint {
+  time: string;
+  temperature_2m: number;
+  precipitation: number;
+  relative_humidity_2m: number;
+  wind_speed_10m: number;
+  weather_code: number;
+}
+
+interface WeatherResponse {
+  hourly: {
+    time: string[];
+    temperature_2m: number[];
+    precipitation: number[];
+    relative_humidity_2m: number[];
+    wind_speed_10m: number[];
+    weather_code: number[];
+  };
+}
 
 const WeatherWidget = () => {
-  const { fields } = useAppContext();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('current');
+  const [weatherData, setWeatherData] = useState<WeatherDataPoint[]>([]);
+  const [loading, setLoading] = useState(false);
   
-  console.log('WeatherWidget - Available fields:', fields);
-  console.log('WeatherWidget - Fields with coordinates:', fields.filter(f => f.coordinates));
-  
-  // Use coordinates from the first field with valid simple coordinates
-  const firstFieldWithCoords = fields.find(field => 
-    field.coordinates && 
-    typeof field.coordinates === 'object' &&
-    typeof field.coordinates.lat === 'number' && 
-    typeof field.coordinates.lng === 'number' &&
-    !isNaN(field.coordinates.lat) && 
-    !isNaN(field.coordinates.lng)
-  );
-  
-  const latitude = firstFieldWithCoords?.coordinates?.lat;
-  const longitude = firstFieldWithCoords?.coordinates?.lng;
-  
-  console.log('WeatherWidget - Using coordinates:', { 
-    latitude, 
-    longitude, 
-    fromField: firstFieldWithCoords?.name,
-    totalFields: fields.length,
-    fieldsWithCoords: fields.filter(f => f.coordinates).length
-  });
-  
-  const { weatherData, loading, syncWeatherData, getWeatherDescription } = useWeatherData(latitude, longitude);
+  // Romanian coordinates (Craiova region as example)
+  const ROMANIA_LAT = 44.5642;
+  const ROMANIA_LNG = 23.8822;
 
-  // Auto-sync forecast data on component mount (only if no data exists)
-  useEffect(() => {
-    if (latitude && longitude && weatherData.forecast.length === 0 && weatherData.current === null) {
-      console.log('Auto-syncing weather data for coordinates:', { latitude, longitude });
-      syncWeatherData('forecast');
+  const fetchWeatherData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${ROMANIA_LAT}&longitude=${ROMANIA_LNG}&hourly=temperature_2m,precipitation,relative_humidity_2m,wind_speed_10m,weather_code&forecast_days=16&timezone=Europe%2FBucharest`
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch weather data');
+      }
+      
+      const data: WeatherResponse = await response.json();
+      
+      // Convert API response to our format
+      const processedData: WeatherDataPoint[] = data.hourly.time.map((time, index) => ({
+        time,
+        temperature_2m: data.hourly.temperature_2m[index],
+        precipitation: data.hourly.precipitation[index],
+        relative_humidity_2m: data.hourly.relative_humidity_2m[index],
+        wind_speed_10m: data.hourly.wind_speed_10m[index],
+        weather_code: data.hourly.weather_code[index]
+      }));
+      
+      setWeatherData(processedData);
+      
+      toast({
+        title: "Date meteo actualizate",
+        description: `Prognoză pe 16 zile încărcată cu succes pentru România.`,
+      });
+      
+    } catch (error) {
+      console.error('Error fetching weather:', error);
+      toast({
+        title: "Eroare weather",
+        description: "Nu s-au putut încărca datele meteo.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  }, [latitude, longitude]);
+  };
 
-  const getWeatherIcon = (weatherCode: number | null) => {
-    if (!weatherCode) return Sun;
-    
+  useEffect(() => {
+    fetchWeatherData();
+  }, []);
+
+  const getWeatherIcon = (weatherCode: number) => {
     if (weatherCode === 0) return Sun;
     if (weatherCode >= 1 && weatherCode <= 3) return Cloud;
     if (weatherCode >= 51 && weatherCode <= 99) return CloudRain;
     return Cloud;
   };
 
-  const getCurrentWeather = () => {
-    const current = weatherData.current;
-    if (!current) return null;
-
-    return {
-      temperature: current.temperature_celsius || 0,
-      condition: getWeatherDescription(current.weather_code),
-      humidity: current.relative_humidity_percent || 0,
-      windSpeed: current.wind_speed_kph || 0,
-      precipitation: 0 // We'll calculate this from forecast
+  const getWeatherDescription = (weatherCode: number): string => {
+    const weatherCodes: Record<number, string> = {
+      0: 'Cer senin',
+      1: 'Parțial înnorat',
+      2: 'Parțial înnorat',
+      3: 'Înnorat',
+      45: 'Ceață',
+      48: 'Ceață cu gheață',
+      51: 'Burniță ușoară',
+      53: 'Burniță moderată',
+      55: 'Burniță densă',
+      61: 'Ploaie ușoară',
+      63: 'Ploaie moderată',
+      65: 'Ploaie torențială',
+      71: 'Ninsoare ușoară',
+      73: 'Ninsoare moderată',
+      75: 'Ninsoare abundentă',
+      95: 'Furtună',
+      96: 'Furtună cu grindină',
+      99: 'Furtună severă cu grindină'
     };
+    return weatherCodes[weatherCode] || 'Condiții meteo necunoscute';
+  };
+
+  const getCurrentWeather = () => {
+    if (!weatherData.length) return null;
+    return weatherData[0]; // First entry is current weather
   };
 
   const getDailyForecast = () => {
-    const forecast = weatherData.forecast;
-    if (!forecast.length) return [];
+    if (!weatherData.length) return [];
 
-    // Group hourly data by day and get daily aggregates
+    // Group by day and get daily averages
     const dailyData = new Map();
     
-    forecast.forEach(item => {
-      const date = new Date(item.timestamp);
-      const dateKey = date.toISOString().split('T')[0]; // Use YYYY-MM-DD format for proper sorting
-      
-      if (!dailyData.has(dateKey)) {
-        dailyData.set(dateKey, {
-          date: dateKey,
-          dateObj: date,
-          temperatures: [],
-          weatherCodes: [],
-          humidity: [],
-          windSpeed: []
-        });
-      }
-      
-      const dayData = dailyData.get(dateKey);
-      if (item.temperature_celsius) dayData.temperatures.push(item.temperature_celsius);
-      if (item.weather_code) dayData.weatherCodes.push(item.weather_code);
-      if (item.relative_humidity_percent) dayData.humidity.push(item.relative_humidity_percent);
-      if (item.wind_speed_kph) dayData.windSpeed.push(item.wind_speed_kph);
-    });
-
-    // Sort by date and return next 7 days from today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const sortedDays = Array.from(dailyData.values())
-      .filter(dayData => dayData.dateObj >= today) // Only future days
-      .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
-      .slice(0, 7);
-
-    return sortedDays.map(dayData => {
-      const avgTemp = dayData.temperatures.length > 0 
-        ? Math.round(dayData.temperatures.reduce((a: number, b: number) => a + b, 0) / dayData.temperatures.length)
-        : 0;
-      
-      const mostCommonWeatherCode = dayData.weatherCodes.length > 0 
-        ? dayData.weatherCodes.sort((a: number, b: number) => 
-            dayData.weatherCodes.filter((v: number) => v === a).length - dayData.weatherCodes.filter((v: number) => v === b).length
-          ).pop()
-        : 0;
-
-      const dayName = dayData.dateObj.toLocaleDateString('ro-RO', { weekday: 'short', day: 'numeric' });
-      
-      return {
-        day: dayName,
-        temp: `${avgTemp}°`,
-        icon: getWeatherIcon(mostCommonWeatherCode),
-        condition: getWeatherDescription(mostCommonWeatherCode),
-        fullDate: dayData.dateObj
-      };
-    });
-  };
-
-  const getExtendedForecast = () => {
-    const forecast = weatherData.forecast;
-    if (!forecast.length) return [];
-
-    // Group by day for 16-day forecast
-    const dailyData = new Map();
-    
-    forecast.forEach(item => {
-      const date = new Date(item.timestamp);
+    weatherData.forEach(item => {
+      const date = new Date(item.time);
       const dateKey = date.toISOString().split('T')[0];
       
       if (!dailyData.has(dateKey)) {
@@ -145,136 +134,34 @@ const WeatherWidget = () => {
           date: dateKey,
           dateObj: date,
           temperatures: [],
-          humidity: [],
-          windSpeed: [],
           weatherCodes: []
         });
       }
       
       const dayData = dailyData.get(dateKey);
-      if (item.temperature_celsius) dayData.temperatures.push(item.temperature_celsius);
-      if (item.relative_humidity_percent) dayData.humidity.push(item.relative_humidity_percent);
-      if (item.wind_speed_kph) dayData.windSpeed.push(item.wind_speed_kph);
-      if (item.weather_code) dayData.weatherCodes.push(item.weather_code);
+      dayData.temperatures.push(item.temperature_2m);
+      dayData.weatherCodes.push(item.weather_code);
     });
 
-    // Filter and sort for future days only
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     return Array.from(dailyData.values())
-      .filter(dayData => dayData.dateObj >= today) // Only future days
-      .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
-      .slice(0, 16)
+      .slice(0, 16) // Show 16 days
       .map(dayData => {
-        const avgTemp = dayData.temperatures.length > 0 
-          ? Math.round(dayData.temperatures.reduce((a: number, b: number) => a + b, 0) / dayData.temperatures.length)
-          : 0;
-        
-        const avgHumidity = dayData.humidity.length > 0 
-          ? Math.round(dayData.humidity.reduce((a: number, b: number) => a + b, 0) / dayData.humidity.length)
-          : 0;
+        const avgTemp = Math.round(dayData.temperatures.reduce((a: number, b: number) => a + b, 0) / dayData.temperatures.length);
+        const mostCommonWeatherCode = dayData.weatherCodes[0]; // Simplified
 
-        const avgWind = dayData.windSpeed.length > 0 
-          ? Math.round(dayData.windSpeed.reduce((a: number, b: number) => a + b, 0) / dayData.windSpeed.length)
-          : 0;
-        
-        const mostCommonWeatherCode = dayData.weatherCodes.length > 0 
-          ? dayData.weatherCodes.sort((a: number, b: number) => 
-              dayData.weatherCodes.filter((v: number) => v === a).length - dayData.weatherCodes.filter((v: number) => v === b).length
-            ).pop()
-          : 0;
+        const dayName = dayData.dateObj.toLocaleDateString('ro-RO', { weekday: 'short', day: 'numeric' });
         
         return {
-          date: dayData.dateObj.toLocaleDateString('ro-RO', { weekday: 'short', day: 'numeric', month: 'short' }),
+          day: dayName,
           temp: `${avgTemp}°`,
           icon: getWeatherIcon(mostCommonWeatherCode),
-          condition: getWeatherDescription(mostCommonWeatherCode),
-          humidity: avgHumidity,
-          wind: avgWind
+          condition: getWeatherDescription(mostCommonWeatherCode)
         };
       });
   };
 
-  const getRecentHistory = () => {
-    const historical = weatherData.historical;
-    if (!historical.length) return [];
-
-    // Group by day for last 30 days
-    const dailyData = new Map();
-    
-    historical.forEach(item => {
-      const date = new Date(item.timestamp).toDateString();
-      if (!dailyData.has(date)) {
-        dailyData.set(date, {
-          date: item.timestamp,
-          temperatures: [],
-          humidity: [],
-          precipitation: []
-        });
-      }
-      
-      const dayData = dailyData.get(date);
-      if (item.temperature_celsius) dayData.temperatures.push(item.temperature_celsius);
-      if (item.relative_humidity_percent) dayData.humidity.push(item.relative_humidity_percent);
-      if (item.precipitation_mm) dayData.precipitation.push(item.precipitation_mm);
-    });
-
-    return Array.from(dailyData.values()).slice(-30).map(dayData => {
-      const avgTemp = dayData.temperatures.length > 0 
-        ? Math.round(dayData.temperatures.reduce((a: number, b: number) => a + b, 0) / dayData.temperatures.length)
-        : 0;
-      
-      const avgHumidity = dayData.humidity.length > 0 
-        ? Math.round(dayData.humidity.reduce((a: number, b: number) => a + b, 0) / dayData.humidity.length)
-        : 0;
-
-      const totalPrecipitation = dayData.precipitation.length > 0 
-        ? Math.round(dayData.precipitation.reduce((a: number, b: number) => a + b, 0))
-        : 0;
-
-      const date = new Date(dayData.date);
-      
-      return {
-        date: date.toLocaleDateString('ro-RO'),
-        temperature: avgTemp,
-        humidity: avgHumidity,
-        precipitation: totalPrecipitation
-      };
-    });
-  };
-
   const currentWeather = getCurrentWeather();
   const forecast = getDailyForecast();
-  const extendedForecast = getExtendedForecast();
-
-  if (!latitude || !longitude) {
-    console.log('WeatherWidget - No valid coordinates available from fields');
-    const fieldsWithCoordinates = fields.filter(f => f.coordinates);
-    const totalFields = fields.length;
-    
-    return (
-      <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
-        <CardContent className="p-6">
-          <div className="text-center text-blue-100">
-            {totalFields === 0 ? (
-              <p>Adăugați un teren pentru a vedea datele meteo</p>
-            ) : fieldsWithCoordinates.length === 0 ? (
-              <div>
-                <p className="mb-2">Aveți {totalFields} terenuri dar niciunul nu are coordonate GPS</p>
-                <p className="text-sm">Editați terenurile și adăugați coordonate GPS pentru a vedea datele meteo</p>
-              </div>
-            ) : (
-              <div>
-                <p className="mb-2">Coordonate GPS detectate dar nevalide</p>
-                <p className="text-sm">Verificați formatul coordonatelor GPS ale terenurilor</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
@@ -285,24 +172,21 @@ const WeatherWidget = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                console.log('Manual weather sync requested for coordinates:', { latitude, longitude });
-                syncWeatherData('forecast');
-              }}
+              onClick={fetchWeatherData}
               disabled={loading}
               className="text-white hover:bg-white/20"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
             <Badge variant="secondary" className="bg-white/20 text-white border-0">
-              {firstFieldWithCoords?.name || 'Coordonate nevalide'}
+              România
             </Badge>
           </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-white/10">
+          <TabsList className="grid w-full grid-cols-2 bg-white/10">
             <TabsTrigger value="current" className="text-white data-[state=active]:bg-white/20">
               Actuală
             </TabsTrigger>
@@ -310,50 +194,32 @@ const WeatherWidget = () => {
               <Calendar className="h-4 w-4 mr-1" />
               16 Zile
             </TabsTrigger>
-            <TabsTrigger value="history" className="text-white data-[state=active]:bg-white/20">
-              <History className="h-4 w-4 mr-1" />
-              Istoric
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="current" className="space-y-4">
-            {weatherData.current || weatherData.forecast.length > 0 ? (
+            {currentWeather ? (
               <>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <Sun className="h-12 w-12" />
                     <div>
-                      <p className="text-3xl font-bold">
-                        {weatherData.current?.temperature_celsius || 
-                         (weatherData.forecast[0]?.temperature_celsius ? Math.round(weatherData.forecast[0].temperature_celsius) : 22)}°C
-                      </p>
-                      <p className="text-blue-100">
-                        {getWeatherDescription(weatherData.current?.weather_code || weatherData.forecast[0]?.weather_code || 0)}
-                      </p>
+                      <p className="text-3xl font-bold">{Math.round(currentWeather.temperature_2m)}°C</p>
+                      <p className="text-blue-100">{getWeatherDescription(currentWeather.weather_code)}</p>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div className="flex flex-col items-center">
                       <Droplets className="h-4 w-4 mb-1" />
-                      <span className="text-sm">
-                        {weatherData.current?.relative_humidity_percent || 
-                         weatherData.forecast[0]?.relative_humidity_percent || 65}%
-                      </span>
+                      <span className="text-sm">{currentWeather.relative_humidity_2m}%</span>
                     </div>
                     <div className="flex flex-col items-center">
                       <Wind className="h-4 w-4 mb-1" />
-                      <span className="text-sm">
-                        {weatherData.current?.wind_speed_kph || 
-                         weatherData.forecast[0]?.wind_speed_kph || 12} km/h
-                      </span>
+                      <span className="text-sm">{Math.round(currentWeather.wind_speed_10m)} km/h</span>
                     </div>
                     <div className="flex flex-col items-center">
                       <CloudRain className="h-4 w-4 mb-1" />
-                      <span className="text-sm">
-                        {weatherData.current?.precipitation_mm || 
-                         weatherData.forecast[0]?.precipitation_mm || 0}mm
-                      </span>
+                      <span className="text-sm">{currentWeather.precipitation}mm</span>
                     </div>
                   </div>
                 </div>
@@ -361,7 +227,7 @@ const WeatherWidget = () => {
                 {/* Show 7-day forecast */}
                 {forecast.length > 0 && (
                   <div className="grid grid-cols-7 gap-1">
-                    {forecast.map((day, index) => {
+                    {forecast.slice(0, 7).map((day, index) => {
                       const Icon = day.icon;
                       return (
                         <div key={index} className="bg-white/10 rounded-lg p-2 text-center">
@@ -376,38 +242,35 @@ const WeatherWidget = () => {
               </>
             ) : (
               <div className="text-center py-8">
-                <p className="text-blue-100 mb-4">Nu sunt disponibile date meteo curente</p>
+                <p className="text-blue-100 mb-4">Se încarcă datele meteo...</p>
                 <Button 
-                  onClick={() => syncWeatherData('forecast')}
+                  onClick={fetchWeatherData}
                   disabled={loading}
                   className="bg-white/20 text-white hover:bg-white/30"
                 >
-                  {loading ? 'Se încarcă...' : 'Actualizează datele'}
+                  {loading ? 'Se încarcă...' : 'Reîncarcă datele'}
                 </Button>
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="forecast" className="space-y-4">
-            {extendedForecast.length > 0 ? (
+            {forecast.length > 0 ? (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {extendedForecast.map((day, index) => {
+                <p className="text-sm text-blue-100 mb-3">Prognoza pe 16 zile</p>
+                {forecast.map((day, index) => {
                   const Icon = day.icon;
                   return (
                     <div key={index} className="bg-white/10 rounded-lg p-3 flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <Icon className="h-5 w-5" />
                         <div>
-                          <p className="text-sm font-medium">{day.date}</p>
+                          <p className="text-sm font-medium">{day.day}</p>
                           <p className="text-xs text-blue-100">{day.condition}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold">{day.temp}</p>
-                        <div className="flex space-x-3 text-xs">
-                          <span>{day.humidity}%</span>
-                          <span>{day.wind} km/h</span>
-                        </div>
                       </div>
                     </div>
                   );
@@ -417,62 +280,11 @@ const WeatherWidget = () => {
               <div className="text-center py-8">
                 <p className="text-blue-100 mb-4">Nu sunt disponibile prognoze</p>
                 <Button 
-                  onClick={() => syncWeatherData('forecast')}
+                  onClick={fetchWeatherData}
                   disabled={loading}
                   className="bg-white/20 text-white hover:bg-white/30"
                 >
                   {loading ? 'Se încarcă...' : 'Descarcă prognoza'}
-                </Button>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="history" className="space-y-4">
-            {weatherData.historical.length > 0 ? (
-              <>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  <p className="text-sm text-blue-100 mb-3">Ultimele 30 de zile</p>
-                  {weatherData.historical.slice(-30).map((item, index) => {
-                    const date = new Date(item.timestamp);
-                    const dateStr = date.toLocaleDateString('ro-RO');
-                    
-                    return (
-                      <div key={index} className="bg-white/10 rounded-lg p-3 flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium">{dateStr}</p>
-                        </div>
-                        <div className="flex space-x-4 text-sm">
-                          <span className="flex items-center">
-                            <Thermometer className="h-3 w-3 mr-1" />
-                            {item.temperature_celsius ? Math.round(item.temperature_celsius) : '--'}°C
-                          </span>
-                          <span className="flex items-center">
-                            <Droplets className="h-3 w-3 mr-1" />
-                            {item.relative_humidity_percent || '--'}%
-                          </span>
-                          <span className="flex items-center">
-                            <CloudRain className="h-3 w-3 mr-1" />
-                            {item.precipitation_mm || 0}mm
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-blue-100 mb-4">Nu sunt disponibile date istorice</p>
-                <Button 
-                  onClick={() => {
-                    const endDate = new Date().toISOString().split('T')[0];
-                    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-                    syncWeatherData('historical', { startDate, endDate });
-                  }}
-                  disabled={loading}
-                  className="bg-white/20 text-white hover:bg-white/30"
-                >
-                  {loading ? 'Se încarcă...' : 'Descarcă istoricul (365 zile)'}
                 </Button>
               </div>
             )}
@@ -483,10 +295,7 @@ const WeatherWidget = () => {
         <div className="bg-amber-500/20 border border-amber-300/30 rounded-lg p-3">
           <p className="text-sm font-medium mb-1">🌾 Recomandare AI</p>
           <p className="text-sm text-blue-100">
-            {weatherData.current || weatherData.forecast.length > 0 ? 
-              `Condițiile meteo sunt monitorizate pentru terenul ${firstFieldWithCoords?.name}.` :
-              'Sincronizați datele meteo pentru recomandări personalizate AI.'
-            }
+            Condițiile meteo sunt monitorizate pentru România. Prognoza pe 16 zile este disponibilă.
           </p>
         </div>
       </CardContent>
