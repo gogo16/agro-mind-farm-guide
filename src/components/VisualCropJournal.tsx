@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 
 interface VisualCropJournalProps {
-  fieldId?: number;
+  fieldId?: string;
 }
 
 const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
@@ -24,39 +24,39 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
   
   // Filtrează pozele pentru terenul specific dacă este specificat fieldId
   const displayedPhotos = fieldId 
-    ? (fieldPhotos || []).filter((photo: any) => photo.fieldId === fieldId)
+    ? (fieldPhotos || []).filter((photo: any) => photo.field_id === fieldId)
     : (fieldPhotos || []);
 
   const [photos] = useState([
     {
       id: 1,
       date: '2024-06-01',
-      fieldName: 'Parcela Nord',
+      field_name: 'Parcela Nord',
       activity: 'Semănat',
-      cropStage: 'Pregătire sol',
-      weather: 'Însorit, 22°C',
+      crop_stage: 'Pregătire sol',
+      weather_conditions: 'Însorit, 22°C',
       notes: 'Sol în condiții optime pentru semănat',
-      imageUrl: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=400'
+      image_url: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=400'
     },
     {
       id: 2,
       date: '2024-05-15',
-      fieldName: 'Câmp Sud',
+      field_name: 'Câmp Sud',
       activity: 'Tratament fitosanitar',
-      cropStage: 'Creștere',
-      weather: 'Noros, 18°C',
+      crop_stage: 'Creștere',
+      weather_conditions: 'Noros, 18°C',
       notes: 'Aplicat fungicid preventiv',
-      imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400'
+      image_url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400'
     },
     {
       id: 3,
       date: '2024-05-01',
-      fieldName: 'Livada Est',
+      field_name: 'Livada Est',
       activity: 'Fertilizare',
-      cropStage: 'Dezvoltare',
-      weather: 'Ploios, 15°C',
+      crop_stage: 'Dezvoltare',
+      weather_conditions: 'Ploios, 15°C',
       notes: 'Îngrășământ NPK aplicat înainte de ploaie',
-      imageUrl: 'https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?w=400'
+      image_url: 'https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?w=400'
     }
   ]);
 
@@ -177,13 +177,13 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
               <div key={photo.id} className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="aspect-video bg-gray-100 relative">
                   <img 
-                    src={photo.imageUrl} 
-                    alt={`${photo.activity} - ${photo.fieldName}`}
+                    src={photo.image_url} 
+                    alt={`${photo.activity} - ${photo.field_name}`}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-2 left-2">
                     <Badge className="bg-white/90 text-gray-800">
-                      {photo.fieldName}
+                      {photo.field_name}
                     </Badge>
                   </div>
                 </div>
@@ -198,12 +198,12 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
                   <div className="flex items-center space-x-4 mb-2">
                     <div className="flex items-center space-x-1">
                       <Sprout className="h-3 w-3 text-green-600" />
-                      <span className="text-xs text-gray-600">{photo.cropStage}</span>
+                      <span className="text-xs text-gray-600">{photo.crop_stage}</span>
                     </div>
-                    {photo.weather && (
+                    {photo.weather_conditions && (
                       <div className="flex items-center space-x-1">
                         <Cloud className="h-3 w-3 text-blue-600" />
-                        <span className="text-xs text-gray-600">{photo.weather}</span>
+                        <span className="text-xs text-gray-600">{photo.weather_conditions}</span>
                       </div>
                     )}
                   </div>

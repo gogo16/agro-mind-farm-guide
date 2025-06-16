@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
@@ -110,20 +109,6 @@ interface Notification {
   created_at: string;
 }
 
-interface SatelliteData {
-  id: string;
-  user_id: string;
-  field_id: string;
-  current_image_url?: string;
-  previous_image_url?: string;
-  comparison_image_url?: string;
-  change_detected?: boolean;
-  change_percentage?: number;
-  analysis_date: string;
-  next_analysis_date?: string;
-  ai_insights?: any;
-}
-
 interface AppContextType {
   fields: Field[];
   tasks: Task[];
@@ -132,7 +117,6 @@ interface AppContextType {
   inventory: InventoryItem[];
   propertyDocuments: PropertyDocument[];
   notifications: Notification[];
-  satelliteData: SatelliteData[];
   loading: boolean;
   user: any;
   addField: (field: Omit<Field, 'id'>) => Promise<void>;
@@ -151,7 +135,6 @@ interface AppContextType {
   deletePropertyDocument: (id: string) => Promise<void>;
   addNotification: (notification: Omit<Notification, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
   markNotificationAsRead: (id: string) => Promise<void>;
-  fetchSatelliteData: (fieldId: string) => Promise<void>;
   generateAPIADocument: (templateId: string, data: any) => any;
   refetchData: () => Promise<void>;
 }
@@ -168,7 +151,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [propertyDocuments, setPropertyDocuments] = useState<PropertyDocument[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [satelliteData, setSatelliteData] = useState<SatelliteData[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
@@ -236,14 +218,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (notificationsError) throw notificationsError;
 
-      // Fetch satellite data
-      const { data: satelliteDataResult, error: satelliteError } = await supabase
-        .from('satellite_monitoring')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (satelliteError) throw satelliteError;
-
       setFields(fieldsData || []);
       setTasks(tasksData || []);
       setFieldPhotos(photosData || []);
@@ -251,7 +225,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setInventory(inventoryData || []);
       setPropertyDocuments(documentsData || []);
       setNotifications(notificationsData || []);
-      setSatelliteData(satelliteDataResult || []);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -275,7 +248,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setInventory([]);
       setPropertyDocuments([]);
       setNotifications([]);
-      setSatelliteData([]);
       setLoading(false);
     }
   }, [user]);
@@ -671,24 +643,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const fetchSatelliteData = async (fieldId: string) => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('satellite_monitoring')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('field_id', fieldId);
-
-      if (error) throw error;
-
-      setSatelliteData(prev => [...prev.filter(s => s.field_id !== fieldId), ...(data || [])]);
-    } catch (error) {
-      console.error('Error fetching satellite data:', error);
-    }
-  };
-
   const generateAPIADocument = (templateId: string, data: any) => {
     // Mock implementation for document generation
     const baseData = {
@@ -700,7 +654,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       totalArea: fields.reduce((sum, field) => sum + field.size, 0),
       parcels: fields.map(field => ({
         name: field.name,
-        parcelCode: field.parcel_code,
+        parcel_code: field.parcel_code,
         crop: field.crop,
         size: field.size,
         plantingDate: field.planting_date,
@@ -757,7 +711,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       inventory,
       propertyDocuments,
       notifications,
-      satelliteData,
       loading,
       user,
       addField,
@@ -776,7 +729,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       deletePropertyDocument,
       addNotification,
       markNotificationAsRead,
-      fetchSatelliteData,
       generateAPIADocument,
       refetchData
     }}>

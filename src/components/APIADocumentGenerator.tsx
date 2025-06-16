@@ -86,7 +86,7 @@ const APIADocumentGenerator = () => {
               <div key={index} className="bg-blue-50 p-3 rounded border">
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <p><strong>Nume:</strong> {parcel.name}</p>
-                  <p><strong>Cod parcelă:</strong> {parcel.parcelCode}</p>
+                  <p><strong>Cod parcelă:</strong> {parcel.parcel_code}</p>
                   <p><strong>Cultură:</strong> {parcel.crop}</p>
                   <p><strong>Suprafață:</strong> {parcel.size} ha</p>
                   <p><strong>Data însămânțare:</strong> {parcel.plantingDate || 'N/A'}</p>
@@ -112,7 +112,7 @@ const APIADocumentGenerator = () => {
             <h5 className="font-medium">Parcele incluse:</h5>
             {fields.map((parcel, index) => (
               <div key={index} className="bg-blue-50 p-2 rounded text-sm">
-                <p><strong>{parcel.name}</strong> ({parcel.parcelCode}) - {parcel.size} ha - {parcel.crop}</p>
+                <p><strong>{parcel.name}</strong> ({parcel.parcel_code}) - {parcel.size} ha - {parcel.crop}</p>
               </div>
             ))}
             <div className="bg-green-50 p-3 rounded border">

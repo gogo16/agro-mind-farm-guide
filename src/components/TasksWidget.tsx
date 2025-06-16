@@ -94,10 +94,7 @@ const TasksWidget = () => {
       description: newTask.description || undefined,
       estimated_duration: newTask.estimated_duration || undefined,
       duration: undefined,
-      category: undefined,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      completed_at: undefined
+      category: undefined
     });
 
     setNewTask({
@@ -114,9 +111,7 @@ const TasksWidget = () => {
 
   const handleCompleteTask = (taskId: string) => {
     updateTask(taskId, { 
-      status: 'completed',
-      completed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      status: 'completed'
     });
     toast({
       title: "Sarcină completată",
