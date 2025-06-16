@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -107,7 +105,11 @@ const FieldDetails = () => {
               } 
             />
             <EditFieldDialog 
-              field={{ ...field, size: fieldSize }} 
+              field={{ 
+                ...field, 
+                size: fieldSize,
+                roi: fieldRoi || 0
+              }} 
               isOpen={isEditingField} 
               onOpenChange={setIsEditingField} 
               trigger={
@@ -279,4 +281,3 @@ const FieldDetails = () => {
 };
 
 export default FieldDetails;
-
