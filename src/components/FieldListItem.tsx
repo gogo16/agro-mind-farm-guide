@@ -23,7 +23,7 @@ const FieldListItem = ({ field }: FieldListItemProps) => {
     switch (status) {
       case 'excellent':
         return <Badge className="bg-green-100 text-green-800 border-green-200">Excelent</Badge>;
-      case 'healthy':
+      case 'active':
         return null;
       case 'attention':
         return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Atenție</Badge>;
@@ -45,12 +45,8 @@ const FieldListItem = ({ field }: FieldListItemProps) => {
     }
   };
 
-  const handleDeleteField = (fieldId: number, fieldName: string) => {
-    deleteField(fieldId);
-    toast({
-      title: "Teren șters",
-      description: `Terenul "${fieldName}" a fost șters cu succes.`
-    });
+  const handleDeleteField = async (fieldId: string, fieldName: string) => {
+    await deleteField(fieldId);
     setIsDeleting(false);
   };
 
@@ -64,22 +60,18 @@ const FieldListItem = ({ field }: FieldListItemProps) => {
         </div>
         <div className="flex-1">
           <p className="font-medium text-gray-900">{field.name}</p>
-          <p className="text-sm text-gray-600">{field.crop} • {field.size} ha • {field.parcelCode}</p>
+          <p className="text-sm text-gray-600">
+            {field.crop} • {field.size} ha • {field.parcel_code || 'N/A'}
+          </p>
           
-          {/* Weather Information */}
+          {/* Weather Information - placeholder data */}
           <div className="flex items-center space-x-3 mt-1">
             <div className="flex items-center space-x-1">
-              {getWeatherIcon(field.weather?.condition || 'sunny')}
-              <span className="text-xs text-gray-600">
-                {field.weather?.temperature || '22'}°C
-              </span>
+              {getWeatherIcon('sunny')}
+              <span className="text-xs text-gray-600">22°C</span>
             </div>
-            <div className="text-xs text-gray-500">
-              Umiditate: {field.weather?.humidity || '65'}%
-            </div>
-            <div className="text-xs text-gray-500">
-              Vânt: {field.weather?.windSpeed || '12'} km/h
-            </div>
+            <div className="text-xs text-gray-500">Umiditate: 65%</div>
+            <div className="text-xs text-gray-500">Vânt: 12 km/h</div>
           </div>
         </div>
       </div>

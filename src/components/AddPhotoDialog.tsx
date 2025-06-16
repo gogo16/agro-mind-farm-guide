@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 
 interface AddPhotoDialogProps {
-  fieldId: number;
+  fieldId: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   trigger: React.ReactNode;
@@ -21,8 +21,8 @@ const AddPhotoDialog = ({ fieldId, isOpen, onOpenChange, trigger }: AddPhotoDial
   const { fields, addFieldPhoto } = useAppContext();
   const [photoData, setPhotoData] = useState({
     activity: '',
-    cropStage: '',
-    weather: '',
+    crop_stage: '',
+    weather_conditions: '',
     notes: '',
     imageFile: null as File | null
   });
@@ -39,8 +39,8 @@ const AddPhotoDialog = ({ fieldId, isOpen, onOpenChange, trigger }: AddPhotoDial
     'Dezvoltare', 'Înflorire', 'Maturare', 'Recoltare'
   ];
 
-  const handleAddPhoto = () => {
-    if (!photoData.activity || !photoData.cropStage || !photoData.imageFile) {
+  const handleAddPhoto = async () => {
+    if (!photoData.activity || !photoData.crop_stage || !photoData.imageFile) {
       toast({
         title: "Eroare",
         description: "Te rugăm să completezi toate câmpurile obligatorii și să adaugi o imagine.",
@@ -49,34 +49,26 @@ const AddPhotoDialog = ({ fieldId, isOpen, onOpenChange, trigger }: AddPhotoDial
       return;
     }
 
-    // Simulez adăugarea pozei - în realitate ar fi upload la server
+    // For now, create a local URL for the image
+    // In production, this would be uploaded to Supabase Storage
     const photoUrl = URL.createObjectURL(photoData.imageFile);
 
     const newPhoto = {
-      id: Date.now(),
-      fieldId: fieldId,
-      fieldName: field?.name || '',
-      date: new Date().toLocaleDateString('ro-RO'),
+      field_id: fieldId,
+      date: new Date().toISOString().split('T')[0],
       activity: photoData.activity,
-      cropStage: photoData.cropStage,
-      weather: photoData.weather,
+      crop_stage: photoData.crop_stage,
+      weather_conditions: photoData.weather_conditions,
       notes: photoData.notes,
-      imageUrl: photoUrl
+      image_url: photoUrl
     };
 
-    if (addFieldPhoto) {
-      addFieldPhoto(newPhoto);
-    }
-
-    toast({
-      title: "Succes",
-      description: "Fotografia a fost adăugată cu succes în jurnalul vizual.",
-    });
+    await addFieldPhoto(newPhoto);
 
     setPhotoData({
       activity: '',
-      cropStage: '',
-      weather: '',
+      crop_stage: '',
+      weather_conditions: '',
       notes: '',
       imageFile: null
     });
@@ -115,7 +107,7 @@ const AddPhotoDialog = ({ fieldId, isOpen, onOpenChange, trigger }: AddPhotoDial
           </div>
           <div>
             <Label>Stadiu cultură *</Label>
-            <Select value={photoData.cropStage} onValueChange={(value) => setPhotoData({...photoData, cropStage: value})}>
+            <Select value={photoData.crop_stage} onValueChange={(value) => setPhotoData({...photoData, crop_stage: value})}>
               <SelectTrigger>
                 <SelectValue placeholder="Selectează stadiul" />
               </SelectTrigger>
@@ -129,8 +121,8 @@ const AddPhotoDialog = ({ fieldId, isOpen, onOpenChange, trigger }: AddPhotoDial
           <div>
             <Label>Condiții meteo</Label>
             <Input 
-              value={photoData.weather}
-              onChange={(e) => setPhotoData({...photoData, weather: e.target.value})}
+              value={photoData.weather_conditions}
+              onChange={(e) => setPhotoData({...photoData, weather_conditions: e.target.value})}
               placeholder="ex: Însorit, 22°C" 
             />
           </div>

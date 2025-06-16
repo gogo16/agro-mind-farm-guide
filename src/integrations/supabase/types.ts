@@ -9,6 +9,47 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      apia_documents: {
+        Row: {
+          document_data: Json
+          document_type: string
+          file_url: string | null
+          generated_at: string
+          id: string
+          status: string | null
+          submission_date: string | null
+          user_id: string
+        }
+        Insert: {
+          document_data?: Json
+          document_type: string
+          file_url?: string | null
+          generated_at?: string
+          id?: string
+          status?: string | null
+          submission_date?: string | null
+          user_id: string
+        }
+        Update: {
+          document_data?: Json
+          document_type?: string
+          file_url?: string | null
+          generated_at?: string
+          id?: string
+          status?: string | null
+          submission_date?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apia_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       eu_market_prices: {
         Row: {
           begin_date: string
@@ -71,6 +112,303 @@ export type Database = {
           week_number?: number | null
         }
         Relationships: []
+      }
+      field_photos: {
+        Row: {
+          activity: string | null
+          created_at: string
+          crop_stage: string | null
+          date: string
+          field_id: string
+          id: string
+          image_url: string
+          notes: string | null
+          user_id: string
+          weather_conditions: string | null
+        }
+        Insert: {
+          activity?: string | null
+          created_at?: string
+          crop_stage?: string | null
+          date: string
+          field_id: string
+          id?: string
+          image_url: string
+          notes?: string | null
+          user_id: string
+          weather_conditions?: string | null
+        }
+        Update: {
+          activity?: string | null
+          created_at?: string
+          crop_stage?: string | null
+          date?: string
+          field_id?: string
+          id?: string
+          image_url?: string
+          notes?: string | null
+          user_id?: string
+          weather_conditions?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_photos_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_photos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fields: {
+        Row: {
+          color: string | null
+          coordinates: Json | null
+          costs: number | null
+          created_at: string
+          crop: string | null
+          harvest_date: string | null
+          id: string
+          inputs: string | null
+          location: string | null
+          name: string
+          parcel_code: string | null
+          planting_date: string | null
+          roi: number | null
+          size: number
+          soil_data: Json | null
+          status: string | null
+          updated_at: string
+          user_id: string
+          work_type: string | null
+        }
+        Insert: {
+          color?: string | null
+          coordinates?: Json | null
+          costs?: number | null
+          created_at?: string
+          crop?: string | null
+          harvest_date?: string | null
+          id?: string
+          inputs?: string | null
+          location?: string | null
+          name: string
+          parcel_code?: string | null
+          planting_date?: string | null
+          roi?: number | null
+          size: number
+          soil_data?: Json | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+          work_type?: string | null
+        }
+        Update: {
+          color?: string | null
+          coordinates?: Json | null
+          costs?: number | null
+          created_at?: string
+          crop?: string | null
+          harvest_date?: string | null
+          id?: string
+          inputs?: string | null
+          location?: string | null
+          name?: string
+          parcel_code?: string | null
+          planting_date?: string | null
+          roi?: number | null
+          size?: number
+          soil_data?: Json | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+          work_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fields_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_transactions: {
+        Row: {
+          amount: number
+          budget_category: string | null
+          category: string | null
+          created_at: string
+          date: string
+          description: string
+          field_id: string | null
+          id: string
+          roi_impact: number | null
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          budget_category?: string | null
+          category?: string | null
+          created_at?: string
+          date: string
+          description: string
+          field_id?: string | null
+          id?: string
+          roi_impact?: number | null
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          budget_category?: string | null
+          category?: string | null
+          created_at?: string
+          date?: string
+          description?: string
+          field_id?: string | null
+          id?: string
+          roi_impact?: number | null
+          type?: Database["public"]["Enums"]["transaction_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory: {
+        Row: {
+          condition: string | null
+          created_at: string
+          current_value: number | null
+          expiration_date: string | null
+          id: string
+          last_used: string | null
+          location: string | null
+          name: string
+          next_maintenance: string | null
+          purchase_cost: number | null
+          purpose: string | null
+          quantity: string
+          stock_level: Database["public"]["Enums"]["stock_level"] | null
+          type: Database["public"]["Enums"]["inventory_type"]
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          condition?: string | null
+          created_at?: string
+          current_value?: number | null
+          expiration_date?: string | null
+          id?: string
+          last_used?: string | null
+          location?: string | null
+          name: string
+          next_maintenance?: string | null
+          purchase_cost?: number | null
+          purpose?: string | null
+          quantity: string
+          stock_level?: Database["public"]["Enums"]["stock_level"] | null
+          type: Database["public"]["Enums"]["inventory_type"]
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          condition?: string | null
+          created_at?: string
+          current_value?: number | null
+          expiration_date?: string | null
+          id?: string
+          last_used?: string | null
+          location?: string | null
+          name?: string
+          next_maintenance?: string | null
+          purchase_cost?: number | null
+          purpose?: string | null
+          quantity?: string
+          stock_level?: Database["public"]["Enums"]["stock_level"] | null
+          type?: Database["public"]["Enums"]["inventory_type"]
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          priority: Database["public"]["Enums"]["notification_priority"] | null
+          read_at: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          priority?: Database["public"]["Enums"]["notification_priority"] | null
+          read_at?: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          priority?: Database["public"]["Enums"]["notification_priority"] | null
+          read_at?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       price_history: {
         Row: {
@@ -174,6 +512,358 @@ export type Database = {
         }
         Relationships: []
       }
+      property_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          field_id: string | null
+          file_name: string | null
+          file_url: string | null
+          id: string
+          issue_date: string | null
+          name: string
+          notes: string | null
+          status: Database["public"]["Enums"]["document_status"] | null
+          upload_date: string | null
+          user_id: string
+          valid_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          field_id?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          issue_date?: string | null
+          name: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["document_status"] | null
+          upload_date?: string | null
+          user_id: string
+          valid_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          field_id?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          issue_date?: string | null
+          name?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["document_status"] | null
+          upload_date?: string | null
+          user_id?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_documents_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports_analytics: {
+        Row: {
+          file_url: string | null
+          generated_at: string
+          id: string
+          parameters: Json | null
+          report_data: Json
+          report_name: string
+          report_type: string
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          file_url?: string | null
+          generated_at?: string
+          id?: string
+          parameters?: Json | null
+          report_data?: Json
+          report_name: string
+          report_type: string
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          file_url?: string | null
+          generated_at?: string
+          id?: string
+          parameters?: Json | null
+          report_data?: Json
+          report_name?: string
+          report_type?: string
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_analytics_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      satellite_monitoring: {
+        Row: {
+          ai_insights: Json | null
+          analysis_date: string
+          change_detected: boolean | null
+          change_percentage: number | null
+          comparison_image_url: string | null
+          created_at: string
+          current_image_url: string | null
+          field_id: string
+          id: string
+          next_analysis_date: string | null
+          previous_image_url: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_insights?: Json | null
+          analysis_date?: string
+          change_detected?: boolean | null
+          change_percentage?: number | null
+          comparison_image_url?: string | null
+          created_at?: string
+          current_image_url?: string | null
+          field_id: string
+          id?: string
+          next_analysis_date?: string | null
+          previous_image_url?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_insights?: Json | null
+          analysis_date?: string
+          change_detected?: boolean | null
+          change_percentage?: number | null
+          comparison_image_url?: string | null
+          created_at?: string
+          current_image_url?: string | null
+          field_id?: string
+          id?: string
+          next_analysis_date?: string | null
+          previous_image_url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "satellite_monitoring_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "satellite_monitoring_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          ai_suggested: boolean | null
+          category: string | null
+          completed_at: string | null
+          created_at: string
+          date: string
+          description: string | null
+          due_date: string | null
+          due_time: string | null
+          duration: number | null
+          estimated_duration: string | null
+          field_id: string | null
+          field_name: string | null
+          id: string
+          priority: Database["public"]["Enums"]["task_priority"] | null
+          status: Database["public"]["Enums"]["task_status"] | null
+          time: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_suggested?: boolean | null
+          category?: string | null
+          completed_at?: string | null
+          created_at?: string
+          date: string
+          description?: string | null
+          due_date?: string | null
+          due_time?: string | null
+          duration?: number | null
+          estimated_duration?: string | null
+          field_id?: string | null
+          field_name?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["task_priority"] | null
+          status?: Database["public"]["Enums"]["task_status"] | null
+          time?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_suggested?: boolean | null
+          category?: string | null
+          completed_at?: string | null
+          created_at?: string
+          date?: string
+          description?: string | null
+          due_date?: string | null
+          due_time?: string | null
+          duration?: number | null
+          estimated_duration?: string | null
+          field_id?: string | null
+          field_name?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["task_priority"] | null
+          status?: Database["public"]["Enums"]["task_status"] | null
+          time?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_preferences: {
+        Row: {
+          ai_suggestions_enabled: boolean | null
+          created_at: string
+          dashboard_layout: Json | null
+          id: string
+          notification_preferences: Json | null
+          updated_at: string
+          user_id: string
+          weather_sync_frequency:
+            | Database["public"]["Enums"]["sync_frequency"]
+            | null
+        }
+        Insert: {
+          ai_suggestions_enabled?: boolean | null
+          created_at?: string
+          dashboard_layout?: Json | null
+          id?: string
+          notification_preferences?: Json | null
+          updated_at?: string
+          user_id: string
+          weather_sync_frequency?:
+            | Database["public"]["Enums"]["sync_frequency"]
+            | null
+        }
+        Update: {
+          ai_suggestions_enabled?: boolean | null
+          created_at?: string
+          dashboard_layout?: Json | null
+          id?: string
+          notification_preferences?: Json | null
+          updated_at?: string
+          user_id?: string
+          weather_sync_frequency?:
+            | Database["public"]["Enums"]["sync_frequency"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_history: {
+        Row: {
+          cost: number | null
+          created_at: string
+          date: string
+          description: string | null
+          duration: number | null
+          field_id: string
+          id: string
+          user_id: string
+          weather_conditions: string | null
+          work_type: string
+          worker: string | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          date: string
+          description?: string | null
+          duration?: number | null
+          field_id: string
+          id?: string
+          user_id: string
+          weather_conditions?: string | null
+          work_type: string
+          worker?: string | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          date?: string
+          description?: string | null
+          duration?: number | null
+          field_id?: string
+          id?: string
+          user_id?: string
+          weather_conditions?: string | null
+          work_type?: string
+          worker?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_history_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -182,7 +872,21 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      document_status: "verified" | "missing" | "expired" | "complete"
+      inventory_type: "equipment" | "chemical" | "seeds" | "fuel" | "other"
+      notification_priority: "high" | "medium" | "low"
+      notification_type:
+        | "task"
+        | "weather"
+        | "inventory"
+        | "ai"
+        | "financial"
+        | "system"
+      stock_level: "low" | "normal" | "high"
+      sync_frequency: "daily" | "weekly" | "manual"
+      task_priority: "high" | "medium" | "low"
+      task_status: "pending" | "completed" | "in_progress"
+      transaction_type: "income" | "expense"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -297,6 +1001,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      document_status: ["verified", "missing", "expired", "complete"],
+      inventory_type: ["equipment", "chemical", "seeds", "fuel", "other"],
+      notification_priority: ["high", "medium", "low"],
+      notification_type: [
+        "task",
+        "weather",
+        "inventory",
+        "ai",
+        "financial",
+        "system",
+      ],
+      stock_level: ["low", "normal", "high"],
+      sync_frequency: ["daily", "weekly", "manual"],
+      task_priority: ["high", "medium", "low"],
+      task_status: ["pending", "completed", "in_progress"],
+      transaction_type: ["income", "expense"],
+    },
   },
 } as const
