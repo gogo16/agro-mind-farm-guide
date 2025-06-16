@@ -24,15 +24,15 @@ const PropertyDocuments = () => {
   const { toast } = useToast();
 
   const [isAddingDoc, setIsAddingDoc] = useState(false);
-  const [editingDoc, setEditingDoc] = useState<number | null>(null);
+  const [editingDoc, setEditingDoc] = useState<string | null>(null);
 
   const [newDoc, setNewDoc] = useState({
-    parcelId: '',
-    type: '',
+    field_id: '',
+    document_type: '',
     name: '',
-    fileName: '',
-    issueDate: '',
-    validUntil: '',
+    file_name: '',
+    issue_date: '',
+    valid_until: '',
     status: 'complete' as 'verified' | 'missing' | 'expired' | 'complete',
     notes: ''
   });
@@ -68,10 +68,10 @@ const PropertyDocuments = () => {
   };
 
   // Funcție pentru obținerea culorii terenului cu transparență
-  const getFieldColor = (parcelId?: number) => {
-    if (!parcelId) return 'rgba(0, 0, 0, 0)'; // Transparent pentru documente generale
+  const getFieldColor = (fieldId?: string) => {
+    if (!fieldId) return 'rgba(0, 0, 0, 0)'; // Transparent pentru documente generale
     
-    const field = fields.find(f => f.id === parcelId);
+    const field = fields.find(f => f.id === fieldId);
     if (!field?.color) return 'rgba(0, 0, 0, 0)';
     
     // Convertim culoarea hex la rgba cu 60% transparență
@@ -84,7 +84,7 @@ const PropertyDocuments = () => {
   };
 
   const handleAddDocument = () => {
-    if (!newDoc.type || !newDoc.name) {
+    if (!newDoc.document_type || !newDoc.name) {
       toast({
         title: "Eroare",
         description: "Te rugăm să completezi tipul și numele documentului.",
@@ -94,13 +94,13 @@ const PropertyDocuments = () => {
     }
 
     const docData = {
-      parcelId: newDoc.parcelId && newDoc.parcelId !== 'general' ? parseInt(newDoc.parcelId) : undefined,
-      type: newDoc.type,
+      field_id: newDoc.field_id && newDoc.field_id !== 'general' ? newDoc.field_id : undefined,
+      document_type: newDoc.document_type,
       name: newDoc.name,
-      fileName: newDoc.fileName || `${newDoc.name}.pdf`,
-      uploadDate: new Date().toISOString().split('T')[0],
-      issueDate: newDoc.issueDate || undefined,
-      validUntil: newDoc.validUntil || undefined,
+      file_name: newDoc.file_name || `${newDoc.name}.pdf`,
+      upload_date: new Date().toISOString().split('T')[0],
+      issue_date: newDoc.issue_date || undefined,
+      valid_until: newDoc.valid_until || undefined,
       status: newDoc.status,
       notes: newDoc.notes || undefined
     };
@@ -120,18 +120,18 @@ const PropertyDocuments = () => {
       });
     }
 
-    setNewDoc({ parcelId: '', type: '', name: '', fileName: '', issueDate: '', validUntil: '', status: 'complete', notes: '' });
+    setNewDoc({ field_id: '', document_type: '', name: '', file_name: '', issue_date: '', valid_until: '', status: 'complete', notes: '' });
     setIsAddingDoc(false);
   };
 
   const handleEditDocument = (doc: any) => {
     setNewDoc({
-      parcelId: doc.parcelId?.toString() || '',
-      type: doc.type,
+      field_id: doc.field_id || '',
+      document_type: doc.document_type,
       name: doc.name,
-      fileName: doc.fileName,
-      issueDate: doc.issueDate || '',
-      validUntil: doc.validUntil || '',
+      file_name: doc.file_name,
+      issue_date: doc.issue_date || '',
+      valid_until: doc.valid_until || '',
       status: doc.status,
       notes: doc.notes || ''
     });
@@ -154,16 +154,16 @@ const PropertyDocuments = () => {
     }
   };
 
-  const getFieldName = (parcelId?: number) => {
-    if (!parcelId) return 'General';
-    const field = fields.find(f => f.id === parcelId);
-    return field ? `${field.name} (${field.parcelCode})` : 'Teren necunoscut';
+  const getFieldName = (fieldId?: string) => {
+    if (!fieldId) return 'General';
+    const field = fields.find(f => f.id === fieldId);
+    return field ? `${field.name} (${field.parcel_code})` : 'Teren necunoscut';
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      setNewDoc({...newDoc, fileName: file.name});
+      setNewDoc({...newDoc, file_name: file.name});
       toast({
         title: "Fișier selectat",
         description: `Fișierul ${file.name} a fost selectat pentru încărcare.`
@@ -194,7 +194,7 @@ const PropertyDocuments = () => {
             <div className="space-y-4">
               <div>
                 <Label>Tip document *</Label>
-                <Select onValueChange={(value) => setNewDoc({...newDoc, type: value})} value={newDoc.type}>
+                <Select onValueChange={(value) => setNewDoc({...newDoc, document_type: value})} value={newDoc.document_type}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selectează tipul documentului" />
                   </SelectTrigger>
@@ -215,15 +215,15 @@ const PropertyDocuments = () => {
               </div>
               <div>
                 <Label>Parcelă asociată</Label>
-                <Select onValueChange={(value) => setNewDoc({...newDoc, parcelId: value})} value={newDoc.parcelId}>
+                <Select onValueChange={(value) => setNewDoc({...newDoc, field_id: value})} value={newDoc.field_id}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selectează parcela (opțional)" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="general">General (nu se aplică unei parcele)</SelectItem>
                     {fields.map(field => (
-                      <SelectItem key={field.id} value={field.id.toString()}>
-                        {field.name} ({field.parcelCode})
+                      <SelectItem key={field.id} value={field.id}>
+                        {field.name} ({field.parcel_code})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -240,8 +240,8 @@ const PropertyDocuments = () => {
                   />
                   <Upload className="h-4 w-4 text-gray-400" />
                 </div>
-                {newDoc.fileName && (
-                  <p className="text-sm text-gray-600 mt-1">Fișier: {newDoc.fileName}</p>
+                {newDoc.file_name && (
+                  <p className="text-sm text-gray-600 mt-1">Fișier: {newDoc.file_name}</p>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -249,16 +249,16 @@ const PropertyDocuments = () => {
                   <Label>Data emiterii</Label>
                   <Input
                     type="date"
-                    value={newDoc.issueDate}
-                    onChange={(e) => setNewDoc({...newDoc, issueDate: e.target.value})}
+                    value={newDoc.issue_date}
+                    onChange={(e) => setNewDoc({...newDoc, issue_date: e.target.value})}
                   />
                 </div>
                 <div>
                   <Label>Valabil până la</Label>
                   <Input
                     type="date"
-                    value={newDoc.validUntil}
-                    onChange={(e) => setNewDoc({...newDoc, validUntil: e.target.value})}
+                    value={newDoc.valid_until}
+                    onChange={(e) => setNewDoc({...newDoc, valid_until: e.target.value})}
                   />
                 </div>
               </div>
@@ -289,7 +289,7 @@ const PropertyDocuments = () => {
                   onClick={() => {
                     setIsAddingDoc(false);
                     setEditingDoc(null);
-                    setNewDoc({ parcelId: '', type: '', name: '', fileName: '', issueDate: '', validUntil: '', status: 'complete', notes: '' });
+                    setNewDoc({ field_id: '', document_type: '', name: '', file_name: '', issue_date: '', valid_until: '', status: 'complete', notes: '' });
                   }} 
                   variant="outline" 
                   className="flex-1"
@@ -308,8 +308,8 @@ const PropertyDocuments = () => {
       {/* Documents Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {propertyDocuments.map((doc) => {
-          const expirationStatus = getExpirationStatus(doc.validUntil);
-          const fieldColor = getFieldColor(doc.parcelId);
+          const expirationStatus = getExpirationStatus(doc.valid_until);
+          const fieldColor = getFieldColor(doc.field_id);
           
           return (
             <Card 
@@ -324,8 +324,8 @@ const PropertyDocuments = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <CardTitle className="text-lg">{doc.name}</CardTitle>
-                    <p className="text-sm text-gray-600">{doc.type}</p>
-                    <p className="text-xs text-gray-500">{getFieldName(doc.parcelId)}</p>
+                    <p className="text-sm text-gray-600">{doc.document_type}</p>
+                    <p className="text-xs text-gray-500">{getFieldName(doc.field_id)}</p>
                   </div>
                   <div className="flex flex-col space-y-1">
                     {getStatusBadge(doc.status)}
@@ -341,18 +341,18 @@ const PropertyDocuments = () => {
               <CardContent className="space-y-3">
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <FileText className="h-4 w-4" />
-                  <span>{doc.fileName}</span>
+                  <span>{doc.file_name}</span>
                 </div>
                 
-                {doc.issueDate && (
+                {doc.issue_date && (
                   <div className="text-xs text-gray-500">
-                    Emis: {doc.issueDate}
+                    Emis: {doc.issue_date}
                   </div>
                 )}
                 
-                {doc.validUntil && (
+                {doc.valid_until && (
                   <div className="text-xs text-gray-500">
-                    Valabil până: {doc.validUntil}
+                    Valabil până: {doc.valid_until}
                   </div>
                 )}
 

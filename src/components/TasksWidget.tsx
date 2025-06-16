@@ -22,12 +22,12 @@ const TasksWidget = () => {
   const [lastTaskCount, setLastTaskCount] = useState(tasks.length);
   const [newTask, setNewTask] = useState({
     title: '',
-    field: '',
+    field_name: '',
     priority: 'medium' as 'high' | 'medium' | 'low',
     date: '',
     time: '',
     description: '',
-    estimatedDuration: ''
+    estimated_duration: ''
   });
 
   // Check for new tasks and show notification
@@ -69,7 +69,7 @@ const TasksWidget = () => {
   };
 
   const handleAddTask = () => {
-    if (!newTask.title || !newTask.field || !newTask.date) {
+    if (!newTask.title || !newTask.field_name || !newTask.date) {
       toast({
         title: "Eroare",
         description: "Te rugăm să completezi toate câmpurile obligatorii.",
@@ -80,29 +80,29 @@ const TasksWidget = () => {
 
     addTask({
       title: newTask.title,
-      field: newTask.field,
+      field_name: newTask.field_name,
       priority: newTask.priority,
       date: newTask.date,
       time: newTask.time,
       status: 'pending',
-      aiSuggested: false,
+      ai_suggested: false,
       description: newTask.description,
-      estimatedDuration: newTask.estimatedDuration
+      estimated_duration: newTask.estimated_duration
     });
 
     setNewTask({
       title: '',
-      field: '',
+      field_name: '',
       priority: 'medium',
       date: '',
       time: '',
       description: '',
-      estimatedDuration: ''
+      estimated_duration: ''
     });
     setIsAddingTask(false);
   };
 
-  const handleCompleteTask = (taskId: number) => {
+  const handleCompleteTask = (taskId: string) => {
     updateTask(taskId, { status: 'completed' });
     toast({
       title: "Sarcină completată",
@@ -110,7 +110,7 @@ const TasksWidget = () => {
     });
   };
 
-  const handleDeleteTask = (taskId: number, taskTitle: string) => {
+  const handleDeleteTask = (taskId: string, taskTitle: string) => {
     deleteTask(taskId);
     toast({
       title: "Sarcină ștearsă",
@@ -128,11 +128,11 @@ const TasksWidget = () => {
   const renderTaskTooltip = (task: any) => (
     <div className="space-y-2 text-sm">
       <div><strong>Titlu:</strong> {task.title}</div>
-      <div><strong>Teren:</strong> {task.field}</div>
+      <div><strong>Teren:</strong> {task.field_name}</div>
       <div><strong>Data:</strong> {task.date}</div>
       {task.time && <div><strong>Ora:</strong> {task.time}</div>}
       <div><strong>Prioritate:</strong> {task.priority === 'high' ? 'Înaltă' : task.priority === 'medium' ? 'Medie' : 'Scăzută'}</div>
-      {task.estimatedDuration && <div><strong>Durată:</strong> {task.estimatedDuration}</div>}
+      {task.estimated_duration && <div><strong>Durată:</strong> {task.estimated_duration}</div>}
       {task.description && <div><strong>Descriere:</strong> {task.description}</div>}
     </div>
   );
@@ -165,13 +165,13 @@ const TasksWidget = () => {
                 </div>
                 <div>
                   <Label htmlFor="field">Teren *</Label>
-                  <Select value={newTask.field} onValueChange={(value) => setNewTask({...newTask, field: value})}>
+                  <Select value={newTask.field_name} onValueChange={(value) => setNewTask({...newTask, field_name: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selectează terenul" />
                     </SelectTrigger>
                     <SelectContent>
                       {fields.map(field => (
-                        <SelectItem key={field.id} value={field.name}>{field.name} ({field.parcelCode})</SelectItem>
+                        <SelectItem key={field.id} value={field.name}>{field.name} ({field.parcel_code})</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -213,8 +213,8 @@ const TasksWidget = () => {
                   <Label htmlFor="duration">Durată estimată</Label>
                   <Input
                     id="duration"
-                    value={newTask.estimatedDuration}
-                    onChange={(e) => setNewTask({...newTask, estimatedDuration: e.target.value})}
+                    value={newTask.estimated_duration}
+                    onChange={(e) => setNewTask({...newTask, estimated_duration: e.target.value})}
                     placeholder="ex: 2 ore"
                   />
                 </div>
@@ -257,14 +257,14 @@ const TasksWidget = () => {
                         <TooltipTrigger asChild>
                           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                             <div className="flex items-center space-x-3">
-                              {task.aiSuggested && (
+                              {task.ai_suggested && (
                                 <div className="bg-blue-100 p-1 rounded">
                                   <Bot className="h-3 w-3 text-blue-600" />
                                 </div>
                               )}
                               <div>
                                 <p className="font-medium text-gray-900">{task.title}</p>
-                                <p className="text-sm text-gray-600">{task.field} • {task.time}</p>
+                                <p className="text-sm text-gray-600">{task.field_name} • {task.time}</p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -322,7 +322,7 @@ const TasksWidget = () => {
                               </div>
                               <div>
                                 <p className="font-medium text-gray-900">{task.title}</p>
-                                <p className="text-sm text-gray-600">{task.field} • {task.date}</p>
+                                <p className="text-sm text-gray-600">{task.field_name} • {task.date}</p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
