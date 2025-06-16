@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import MarketPricesTab from '@/components/MarketPricesTab';
@@ -109,7 +107,7 @@ const Finance = () => {
       return;
     }
 
-    updateTransaction(editingTransaction.id.toString(), {
+    updateTransaction(editingTransaction.id, {
       ...editingTransaction,
       amount: parseFloat(editingTransaction.amount)
     });
@@ -122,7 +120,7 @@ const Finance = () => {
     setEditingTransaction(null);
   };
 
-  const handleDeleteTransaction = (id: string) => {
+  const handleDeleteTransaction = (id: number) => {
     deleteTransaction(id);
     toast({
       title: "Tranzacție ștersă",
@@ -362,7 +360,7 @@ const Finance = () => {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Anulează</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteTransaction(transaction.id.toString())} className="bg-red-600 hover:bg-red-700">
+                                <AlertDialogAction onClick={() => handleDeleteTransaction(transaction.id)} className="bg-red-600 hover:bg-red-700">
                                   Șterge definitiv
                                 </AlertDialogAction>
                               </AlertDialogFooter>

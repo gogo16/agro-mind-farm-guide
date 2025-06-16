@@ -11,11 +11,11 @@ import { useToast } from '@/hooks/use-toast';
 const SatelliteMonitoring = () => {
   const { fields, satelliteData, fetchSatelliteData } = useAppContext();
   const { toast } = useToast();
-  const [selectedParcel, setSelectedParcel] = useState<string | null>(null);
+  const [selectedParcel, setSelectedParcel] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'comparison' | 'overlay'>('comparison');
 
-  const handleFetchSatelliteData = (parcelId: string) => {
+  const handleFetchSatelliteData = (parcelId: number) => {
     setIsLoading(true);
     fetchSatelliteData(parcelId);
     
@@ -52,13 +52,13 @@ const SatelliteMonitoring = () => {
         <div className="grid grid-cols-1 gap-4">
           <div>
             <label className="text-sm font-medium text-gray-700 mb-2 block">Selectează parcela</label>
-            <Select onValueChange={(value) => setSelectedParcel(value)}>
+            <Select onValueChange={(value) => setSelectedParcel(parseInt(value))}>
               <SelectTrigger>
                 <SelectValue placeholder="Alege parcela pentru monitorizare..." />
               </SelectTrigger>
               <SelectContent>
                 {fields.map((field) => (
-                  <SelectItem key={field.id} value={field.id}>
+                  <SelectItem key={field.id} value={field.id.toString()}>
                     {field.name} ({field.parcelCode}) - {field.size} ha
                   </SelectItem>
                 ))}

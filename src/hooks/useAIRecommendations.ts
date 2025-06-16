@@ -546,7 +546,7 @@ export const useAIRecommendations = () => {
     return aiContent[zoneId] || [];
   };
 
-  const getFieldProgress = (fieldId: string) => {
+  const getFieldProgress = (fieldId: number) => {
     const field = fields.find(f => f.id === fieldId);
     if (!field) return { developmentProgress: 0, daysToHarvest: 0 };
 
@@ -565,7 +565,7 @@ export const useAIRecommendations = () => {
     };
   };
 
-  const getFieldStatus = (fieldId: string) => {
+  const getFieldStatus = (fieldId: number) => {
     const field = fields.find(f => f.id === fieldId);
     if (!field) return { status: 'Necunoscut', description: 'Date indisponibile', color: 'gray' };
 

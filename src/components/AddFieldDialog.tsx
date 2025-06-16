@@ -114,7 +114,6 @@ const AddFieldDialog = () => {
     const fieldData = {
       name: newField.name,
       parcelCode: newField.parcelCode,
-      area: parseFloat(newField.size), // This is the required 'area' property
       size: parseFloat(newField.size),
       crop: newField.crop || 'Necunoscută',
       variety: newField.variety,
@@ -128,16 +127,59 @@ const AddFieldDialog = () => {
       costs: newField.costs ? parseFloat(newField.costs) : undefined,
       inputs: newField.inputs,
       roi: 0,
-      color: newField.color
+      color: newField.color,
+      // Date pentru secțiunile aplicației
+      mapData: {
+        geometry: coordValidation.coordinates,
+        type: coordValidation.type || 'point',
+        color: newField.color,
+        style: {
+          fillColor: newField.color,
+          fillOpacity: 0.3,
+          strokeColor: newField.color,
+          strokeWeight: 2
+        }
+      },
+      // Date pentru inventar
+      inventoryData: {
+        inputs: newField.inputs,
+        costs: newField.costs ? parseFloat(newField.costs) : 0,
+        workType: newField.workType
+      },
+      // Date pentru documente și APIA/AFIR
+      documentData: {
+        parcelCode: newField.parcelCode,
+        size: parseFloat(newField.size),
+        crop: newField.crop || 'Necunoscută',
+        variety: newField.variety,
+        coordinates: coordValidation.coordinates,
+        coordinatesType: coordValidation.type || 'point'
+      },
+      // Date pentru calendar
+      calendarData: {
+        plantingDate: newField.plantingDate,
+        harvestDate: newField.harvestDate,
+        workType: newField.workType,
+        crop: newField.crop || 'Necunoscută'
+      },
+      // Date pentru AI
+      aiData: {
+        crop: newField.crop || 'Necunoscută',
+        variety: newField.variety,
+        size: parseFloat(newField.size),
+        plantingDate: newField.plantingDate,
+        harvestDate: newField.harvestDate,
+        inputs: newField.inputs,
+        soilType: 'unknown',
+        // va fi actualizat ulterior
+        climateZone: 'temperate' // va fi actualizat ulterior
+      }
     };
-
     addField(fieldData);
-    
     toast({
       title: "Succes",
       description: `Terenul "${newField.name}" (${newField.parcelCode}) a fost adăugat cu succes.`
     });
-    
     setNewField({
       name: '',
       parcelCode: '',

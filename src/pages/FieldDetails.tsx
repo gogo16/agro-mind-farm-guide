@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -18,24 +17,24 @@ import { useAIRecommendations } from '@/hooks/useAIRecommendations';
 const FieldDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { fields, tasks, loading } = useAppContext();
+  const { fields, tasks } = useAppContext();
   const { getFieldProgress, getFieldStatus } = useAIRecommendations();
   const [isEditingField, setIsEditingField] = useState(false);
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
 
-  const field = id ? fields.find(f => f.id === id) : null;
+  const fieldId = id ? parseInt(id, 10) : null;
+  const field = fieldId ? fields.find(f => f.id === fieldId) : null;
 
-  // Get AI-powered field status and progress - use string ID
-  const fieldStatus = id ? getFieldStatus(id) : { status: 'Necunoscut', description: 'Date indisponibile', color: 'gray' };
-  const fieldProgress = id ? getFieldProgress(id) : { developmentProgress: 0, daysToHarvest: 0 };
+  // Get AI-powered field status and progress
+  const fieldStatus = fieldId ? getFieldStatus(fieldId) : { status: 'Necunoscut', description: 'Date indisponibile', color: 'gray' };
+  const fieldProgress = fieldId ? getFieldProgress(fieldId) : { developmentProgress: 0, daysToHarvest: 0 };
 
   // Get completed tasks for this field
   const completedActivities = tasks.filter(task => 
-    (task.field === field?.name || task.fieldName === field?.name) && task.status === 'completed'
-  ).map((task, index) => ({
-    id: `activity-${index}`, // Use a string ID to avoid type conflicts
-    originalId: task.id, // Keep original ID for reference
-    date: task.dueDate || task.date || new Date().toISOString().split('T')[0],
+    task.field === field?.name && task.status === 'completed'
+  ).map(task => ({
+    id: task.id,
+    date: task.dueDate || new Date().toISOString().split('T')[0],
     activity: task.title,
     details: task.description || 'Activitate completată',
     cost: 0,
@@ -44,21 +43,8 @@ const FieldDetails = () => {
 
   // Get the last completed task for work type
   const lastCompletedTask = tasks
-    .filter(task => (task.field === field?.name || task.fieldName === field?.name) && task.status === 'completed')
-    .sort((a, b) => new Date(b.dueDate || b.date || '').getTime() - new Date(a.dueDate || a.date || '').getTime())[0];
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
-        <Navigation />
-        <div className="container mx-auto px-4 py-6">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-800 mb-4">Se încarcă...</h1>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    .filter(task => task.field === field?.name && task.status === 'completed')
+    .sort((a, b) => new Date(b.dueDate || b.date).getTime() - new Date(a.dueDate || a.date).getTime())[0];
 
   if (!field) {
     return (
@@ -92,6 +78,8 @@ const FieldDetails = () => {
       
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
+        
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <Button variant="ghost" onClick={() => navigate('/')} className="text-green-700 hover:text-green-800">
@@ -100,7 +88,7 @@ const FieldDetails = () => {
             </Button>
             <div>
               <h1 className="text-3xl font-bold text-green-800">{field.name}</h1>
-              <p className="text-green-600">{field.crop} • {field.area || field.size} ha • {field.parcelCode}</p>
+              <p className="text-green-600">{field.crop} • {field.size} ha • {field.parcelCode}</p>
             </div>
           </div>
           <div className="flex space-x-2">
@@ -130,6 +118,8 @@ const FieldDetails = () => {
         </div>
 
         {/* Quick Info Cards */}
+
+        {/* Quick Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="bg-white/80 backdrop-blur-sm border-green-200">
             <CardContent className="p-4">
@@ -148,7 +138,7 @@ const FieldDetails = () => {
                 <MapPin className="h-5 w-5 text-blue-600" />
                 <span className="text-sm font-medium text-gray-700">Suprafață</span>
               </div>
-              <p className="text-lg font-bold text-green-800">{field.area || field.size} ha</p>
+              <p className="text-lg font-bold text-green-800">{field.size} ha</p>
               <p className="text-sm text-gray-600">{field.coordinates ? `${field.coordinates.lat}, ${field.coordinates.lng}` : 'N/A'}</p>
             </CardContent>
           </Card>
@@ -178,6 +168,8 @@ const FieldDetails = () => {
 
         {/* Detailed Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
+          {/* Tabs list and overview content */}
+          
           <TabsList className="grid w-full grid-cols-4 lg:w-[480px] bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="overview">Prezentare</TabsTrigger>
             <TabsTrigger value="activities">Istoric Activități</TabsTrigger>
@@ -243,6 +235,7 @@ const FieldDetails = () => {
           </TabsContent>
 
           {/* Activities and journal tabs */}
+
           <TabsContent value="activities" className="space-y-6">
             <Card className="bg-white border-green-200">
               <CardHeader className="flex flex-row items-center justify-between">

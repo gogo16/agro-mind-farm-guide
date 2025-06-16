@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,7 +8,6 @@ import FieldsOverview from '@/components/FieldsOverview';
 import TasksWidget from '@/components/TasksWidget';
 import AIAssistant from '@/components/AIAssistant';
 import SeasonalGuidanceAI from '@/components/SeasonalGuidanceAI';
-import SatelliteMonitoring from '@/components/SatelliteMonitoring';
 import Navigation from '@/components/Navigation';
 import { useAppContext } from '@/contexts/AppContext';
 import { MapPin, Sprout, Calendar, Package, Sun, Snowflake, Leaf, CloudRain, TrendingUp, BarChart, FileText, Download } from 'lucide-react';
@@ -311,10 +309,9 @@ const Index = () => {
 
         {/* Main Dashboard Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-[450px] bg-white/80 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-3 lg:w-[350px] bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="overview">Prezentare</TabsTrigger>
             <TabsTrigger value="tasks">Sarcini</TabsTrigger>
-            <TabsTrigger value="satellite">Satelit</TabsTrigger>
             <TabsTrigger value="seasonal">AI Sezonier</TabsTrigger>
           </TabsList>
 
@@ -414,10 +411,6 @@ const Index = () => {
 
           <TabsContent value="tasks">
             <TasksWidget />
-          </TabsContent>
-
-          <TabsContent value="satellite">
-            <SatelliteMonitoring />
           </TabsContent>
 
           <TabsContent value="seasonal" data-ai-zone="ai-seasonal-guidance">

@@ -1,40 +1,158 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
+import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface InteractiveMapProps {
-  mapType?: string;
+  mapType: string;
   onFieldSelect?: (field: any) => void;
-  onMapClick?: (lat: number, lng: number) => void;
 }
 
-const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: InteractiveMapProps) => {
+const InteractiveMap = ({ mapType, onFieldSelect }: InteractiveMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const polygonsRef = useRef<google.maps.Polygon[]>([]);
+  const { fields } = useAppContext();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
-  const [initError, setInitError] = useState<string | null>(null);
 
   const GOOGLE_MAPS_API_KEY = "AIzaSyDloS4Jj3CMvgpmdrWUECSOKs12A8wX1io";
 
-  // Romanian coordinates - center of Romania
-  const ROMANIA_CENTER = { lat: 45.9432, lng: 24.9668 };
+  // Convertește coordonatele din string în format Google Maps
+  const parseCoordinates = (field: any) => {
+    if (!field.coordinates) return null;
+
+    // Dacă sunt coordonate simple (un punct)
+    if (field.coordinates.lat && field.coordinates.lng) {
+      return [{
+        lat: field.coordinates.lat,
+        lng: field.coordinates.lng
+      }];
+    }
+
+    // Dacă sunt coordonate pentru poligon (array)
+    if (Array.isArray(field.coordinates)) {
+      return field.coordinates.map((coord: any) => ({
+        lat: coord.lat,
+        lng: coord.lng
+      }));
+    }
+
+    return null;
+  };
+
+  // Creează un poligon pentru teren
+  const createFieldPolygon = (field: any, map: google.maps.Map) => {
+    const coordinates = parseCoordinates(field);
+    if (!coordinates) return null;
+
+    let path: google.maps.LatLng[];
+
+    if (coordinates.length === 1) {
+      // Pentru un punct, creează un poligon mic circular
+      const center = coordinates[0];
+      const radius = 0.002; // aproximativ 200m
+      path = [];
+      for (let i = 0; i < 8; i++) {
+        const angle = (i * Math.PI) / 4;
+        path.push(new google.maps.LatLng(
+          center.lat + radius * Math.cos(angle),
+          center.lng + radius * Math.sin(angle)
+        ));
+      }
+    } else {
+      // Pentru coordonate multiple, folosește-le direct
+      path = coordinates.map(coord => new google.maps.LatLng(coord.lat, coord.lng));
+      // Închide poligonul dacă nu e deja închis
+      if (coordinates.length > 2 && 
+          (coordinates[0].lat !== coordinates[coordinates.length - 1].lat ||
+           coordinates[0].lng !== coordinates[coordinates.length - 1].lng)) {
+        path.push(path[0]);
+      }
+    }
+
+    const polygon = new google.maps.Polygon({
+      paths: path,
+      strokeColor: field.color || '#22c55e',
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      fillColor: field.color || '#22c55e',
+      fillOpacity: 0.5,
+      editable: false, // Va fi activat ulterior pentru editare
+      draggable: false
+    });
+
+    polygon.setMap(map);
+
+    // Adaugă event listener pentru click
+    polygon.addListener('click', () => {
+      if (onFieldSelect) {
+        onFieldSelect(field);
+      }
+      
+      toast({
+        title: field.name,
+        description: `${field.crop} • ${field.size} ha • ${field.parcelCode}`,
+      });
+    });
+
+    // Adaugă tooltip la hover
+    const infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div class="p-2">
+          <h3 class="font-semibold text-green-800">${field.name}</h3>
+          <p class="text-sm text-gray-600">${field.parcelCode}</p>
+          <p class="text-sm">${field.crop} • ${field.size} ha</p>
+        </div>
+      `
+    });
+
+    polygon.addListener('mouseover', (event: google.maps.PolyMouseEvent) => {
+      if (event.latLng) {
+        infoWindow.setPosition(event.latLng);
+        infoWindow.open(map);
+      }
+    });
+
+    polygon.addListener('mouseout', () => {
+      infoWindow.close();
+    });
+
+    return polygon;
+  };
+
+  // Calculează centrul și zoom pentru a include toate terenurile
+  const calculateMapBounds = () => {
+    const bounds = new google.maps.LatLngBounds();
+    let hasCoordinates = false;
+
+    fields.forEach(field => {
+      const coordinates = parseCoordinates(field);
+      if (coordinates) {
+        coordinates.forEach(coord => {
+          bounds.extend(new google.maps.LatLng(coord.lat, coord.lng));
+          hasCoordinates = true;
+        });
+      }
+    });
+
+    if (!hasCoordinates) {
+      // Coordonate default pentru România (Buzău)
+      return {
+        center: { lat: 45.75, lng: 21.21 },
+        zoom: 10
+      };
+    }
+
+    return bounds;
+  };
 
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !GOOGLE_MAPS_API_KEY) return;
 
     const initMap = async () => {
       try {
-        setIsLoading(true);
-        setInitError(null);
-
-        if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes("YOUR_GOOGLE_MAPS_API_KEY")) {
-          throw new Error("API key not configured");
-        }
-
-        console.log('Initializing Google Maps with API key...');
-
         const loader = new Loader({
           apiKey: GOOGLE_MAPS_API_KEY,
           version: 'weekly',
@@ -42,133 +160,58 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
         });
 
         await loader.load();
-        console.log('Google Maps API loaded successfully');
 
+        const bounds = calculateMapBounds();
         const mapOptions: google.maps.MapOptions = {
-          center: ROMANIA_CENTER,
-          zoom: 7,
           mapTypeId: mapType as google.maps.MapTypeId,
           streetViewControl: false,
           fullscreenControl: true,
           mapTypeControl: true,
-          zoomControl: true,
-          styles: [
-            {
-              featureType: "all",
-              elementType: "geometry.fill",
-              stylers: [{ weight: "2.00" }]
-            },
-            {
-              featureType: "all",
-              elementType: "geometry.stroke",
-              stylers: [{ color: "#9c9c9c" }]
-            },
-            {
-              featureType: "all",
-              elementType: "labels.text",
-              stylers: [{ visibility: "on" }]
-            },
-            {
-              featureType: "landscape",
-              elementType: "all",
-              stylers: [{ color: "#f2f2f2" }]
-            },
-            {
-              featureType: "landscape",
-              elementType: "geometry.fill",
-              stylers: [{ color: "#ffffff" }]
-            },
-            {
-              featureType: "landscape.man_made",
-              elementType: "geometry.fill",
-              stylers: [{ color: "#ffffff" }]
-            },
-            {
-              featureType: "poi",
-              elementType: "all",
-              stylers: [{ visibility: "off" }]
-            },
-            {
-              featureType: "road",
-              elementType: "all",
-              stylers: [{ saturation: -100 }, { lightness: 45 }]
-            },
-            {
-              featureType: "road",
-              elementType: "geometry.fill",
-              stylers: [{ color: "#eeeeee" }]
-            },
-            {
-              featureType: "road",
-              elementType: "labels.text.fill",
-              stylers: [{ color: "#7b7b7b" }]
-            },
-            {
-              featureType: "road",
-              elementType: "labels.text.stroke",
-              stylers: [{ color: "#ffffff" }]
-            },
-            {
-              featureType: "road.highway",
-              elementType: "all",
-              stylers: [{ visibility: "simplified" }]
-            },
-            {
-              featureType: "road.arterial",
-              elementType: "labels.icon",
-              stylers: [{ visibility: "off" }]
-            },
-            {
-              featureType: "transit",
-              elementType: "all",
-              stylers: [{ visibility: "off" }]
-            },
-            {
-              featureType: "water",
-              elementType: "all",
-              stylers: [{ color: "#46bcec" }, { visibility: "on" }]
-            },
-            {
-              featureType: "water",
-              elementType: "geometry.fill",
-              stylers: [{ color: "#c8d7d4" }]
-            },
-            {
-              featureType: "water",
-              elementType: "labels.text.fill",
-              stylers: [{ color: "#070707" }]
-            },
-            {
-              featureType: "water",
-              elementType: "labels.text.stroke",
-              stylers: [{ color: "#ffffff" }]
-            }
-          ]
+          zoomControl: true
         };
 
-        console.log('Creating map with options:', mapOptions);
+        // Setează centrul și zoom
+        if (bounds instanceof google.maps.LatLngBounds) {
+          mapOptions.center = bounds.getCenter().toJSON();
+          mapOptions.zoom = 12;
+        } else {
+          mapOptions.center = bounds.center;
+          mapOptions.zoom = bounds.zoom;
+        }
+
         const map = new google.maps.Map(mapRef.current!, mapOptions);
         mapInstanceRef.current = map;
 
-        // Add map click listener for adding new fields
-        if (onMapClick) {
-          map.addListener('click', (event: google.maps.MapMouseEvent) => {
-            if (event.latLng) {
-              onMapClick(event.latLng.lat(), event.latLng.lng());
-            }
+        // Ajustează view-ul pentru a include toate terenurile
+        if (bounds instanceof google.maps.LatLngBounds && fields.length > 0) {
+          map.fitBounds(bounds);
+          
+          // Limitează zoom-ul maxim pentru a nu fi prea aproape
+          const listener = google.maps.event.addListener(map, 'idle', () => {
+            if (map.getZoom()! > 16) map.setZoom(16);
+            google.maps.event.removeListener(listener);
           });
         }
 
+        // Creează poligoanele pentru terenuri
+        const newPolygons: google.maps.Polygon[] = [];
+        fields.forEach(field => {
+          const polygon = createFieldPolygon(field, map);
+          if (polygon) {
+            newPolygons.push(polygon);
+          }
+        });
+
+        polygonsRef.current = newPolygons;
         setIsLoading(false);
-        console.log(`Beautiful map loaded successfully, centered on Romania`);
+
+        console.log(`Harta încărcată cu ${newPolygons.length} poligoane pentru terenuri`);
 
       } catch (error) {
-        console.error('Error loading Google Maps:', error);
-        setInitError(error instanceof Error ? error.message : 'Unknown error');
-        
+        console.error('Eroare la încărcarea Google Maps:', error);
         toast({
-          title: "Eroare hartă",
-          description: "Nu s-a putut încărca harta Google Maps. Verificați conexiunea la internet.",
+          title: "Eroare",
+          description: "Nu s-a putut încărca harta Google Maps",
           variant: "destructive"
         });
         setIsLoading(false);
@@ -176,14 +219,39 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
     };
 
     initMap();
-  }, [mapType, onMapClick]);
 
-  // Update map type
+    // Cleanup
+    return () => {
+      polygonsRef.current.forEach(polygon => {
+        polygon.setMap(null);
+      });
+      polygonsRef.current = [];
+    };
+  }, [fields, mapType]);
+
+  // Actualizează tipul de hartă
   useEffect(() => {
     if (mapInstanceRef.current) {
       mapInstanceRef.current.setMapTypeId(mapType as google.maps.MapTypeId);
     }
   }, [mapType]);
+
+  // Funcție pentru centrarea pe un teren specific
+  const centerOnField = (field: any) => {
+    if (!mapInstanceRef.current) return;
+
+    const coordinates = parseCoordinates(field);
+    if (coordinates && coordinates.length > 0) {
+      const center = coordinates[0];
+      mapInstanceRef.current.setCenter(center);
+      mapInstanceRef.current.setZoom(16);
+    }
+  };
+
+  // Expune funcția pentru a putea fi apelată din parent
+  useEffect(() => {
+    (window as any).centerMapOnField = centerOnField;
+  }, []);
 
   if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes("YOUR_GOOGLE_MAPS_API_KEY")) {
     return (
@@ -191,23 +259,6 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
         <div className="text-center">
           <div className="text-xl font-semibold text-green-800 mb-2">Google Maps nu este configurat</div>
           <p className="text-gray-600">Pentru a activa harta, înlocuiește YOUR_GOOGLE_MAPS_API_KEY cu cheia ta API Google Maps</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (initError) {
-    return (
-      <div className="w-full h-full bg-gradient-to-br from-red-100 to-orange-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-xl font-semibold text-red-800 mb-2">Eroare încărcare hartă</div>
-          <p className="text-gray-600 mb-4">Detalii: {initError}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Reîncarcă pagina
-          </button>
         </div>
       </div>
     );

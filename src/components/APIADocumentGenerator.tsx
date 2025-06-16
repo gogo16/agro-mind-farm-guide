@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,7 @@ const APIADocumentGenerator = () => {
   ];
 
   const previewDocument = (templateId: string, templateName: string) => {
-    const data = generateAPIADocument?.(templateId) || {};
+    const data = generateAPIADocument(templateId, {});
     setPreviewData(data);
     setSelectedTemplate(templateId);
     setShowPreview(true);

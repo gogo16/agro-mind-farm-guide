@@ -1,301 +1,202 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Cloud, Sun, CloudRain, Wind, Thermometer, Droplets, Calendar, RefreshCw } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
-interface WeatherDataPoint {
-  time: string;
-  temperature_2m: number;
-  precipitation: number;
-  relative_humidity_2m: number;
-  wind_speed_10m: number;
-  weather_code: number;
-}
-
-interface WeatherResponse {
-  hourly: {
-    time: string[];
-    temperature_2m: number[];
-    precipitation: number[];
-    relative_humidity_2m: number[];
-    wind_speed_10m: number[];
-    weather_code: number[];
-  };
-}
+import { Cloud, Sun, CloudRain, Wind, Thermometer, Droplets, Calendar, History } from 'lucide-react';
 
 const WeatherWidget = () => {
-  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('current');
-  const [weatherData, setWeatherData] = useState<WeatherDataPoint[]>([]);
-  const [loading, setLoading] = useState(false);
-  
-  // Romanian coordinates (Craiova region as example)
-  const ROMANIA_LAT = 44.5642;
-  const ROMANIA_LNG = 23.8822;
 
-  const fetchWeatherData = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${ROMANIA_LAT}&longitude=${ROMANIA_LNG}&hourly=temperature_2m,precipitation,relative_humidity_2m,wind_speed_10m,weather_code&forecast_days=16&timezone=Europe%2FBucharest`
-      );
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch weather data');
-      }
-      
-      const data: WeatherResponse = await response.json();
-      
-      // Convert API response to our format
-      const processedData: WeatherDataPoint[] = data.hourly.time.map((time, index) => ({
-        time,
-        temperature_2m: data.hourly.temperature_2m[index],
-        precipitation: data.hourly.precipitation[index],
-        relative_humidity_2m: data.hourly.relative_humidity_2m[index],
-        wind_speed_10m: data.hourly.wind_speed_10m[index],
-        weather_code: data.hourly.weather_code[index]
-      }));
-      
-      setWeatherData(processedData);
-      
-      toast({
-        title: "Date meteo actualizate",
-        description: `Prognoză pe 16 zile încărcată cu succes pentru România.`,
-      });
-      
-    } catch (error) {
-      console.error('Error fetching weather:', error);
-      toast({
-        title: "Eroare weather",
-        description: "Nu s-au putut încărca datele meteo.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
+  const currentWeather = {
+    temperature: 22,
+    condition: 'Parțial înnorat',
+    humidity: 65,
+    windSpeed: 12,
+    precipitation: 5
   };
 
-  useEffect(() => {
-    fetchWeatherData();
-  }, []);
+  const forecast = [
+    { day: 'Azi', temp: '22°', icon: Sun, condition: 'Însorit' },
+    { day: 'Mâine', temp: '19°', icon: CloudRain, condition: 'Ploaie' },
+    { day: 'Joi', temp: '24°', icon: Cloud, condition: 'Înnorat' },
+    { day: 'Vineri', temp: '26°', icon: Sun, condition: 'Însorit' },
+    { day: 'Sâmbătă', temp: '23°', icon: CloudRain, condition: 'Ploaie' },
+  ];
 
-  const getWeatherIcon = (weatherCode: number) => {
-    if (weatherCode === 0) return Sun;
-    if (weatherCode >= 1 && weatherCode <= 3) return Cloud;
-    if (weatherCode >= 51 && weatherCode <= 99) return CloudRain;
-    return Cloud;
-  };
-
-  const getWeatherDescription = (weatherCode: number): string => {
-    const weatherCodes: Record<number, string> = {
-      0: 'Cer senin',
-      1: 'Parțial înnorat',
-      2: 'Parțial înnorat',
-      3: 'Înnorat',
-      45: 'Ceață',
-      48: 'Ceață cu gheață',
-      51: 'Burniță ușoară',
-      53: 'Burniță moderată',
-      55: 'Burniță densă',
-      61: 'Ploaie ușoară',
-      63: 'Ploaie moderată',
-      65: 'Ploaie torențială',
-      71: 'Ninsoare ușoară',
-      73: 'Ninsoare moderată',
-      75: 'Ninsoare abundentă',
-      95: 'Furtună',
-      96: 'Furtună cu grindină',
-      99: 'Furtună severă cu grindină'
-    };
-    return weatherCodes[weatherCode] || 'Condiții meteo necunoscute';
-  };
-
-  const getCurrentWeather = () => {
-    if (!weatherData.length) return null;
-    return weatherData[0]; // First entry is current weather
-  };
-
-  const getDailyForecast = () => {
-    if (!weatherData.length) return [];
-
-    // Group by day and get daily averages
-    const dailyData = new Map();
+  // Generate 14-day forecast
+  const extendedForecast = Array.from({ length: 14 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() + index);
+    const icons = [Sun, Cloud, CloudRain];
+    const conditions = ['Însorit', 'Înnorat', 'Ploaie'];
+    const randomIcon = icons[Math.floor(Math.random() * icons.length)];
+    const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
+    const baseTemp = 22;
+    const tempVariation = Math.floor(Math.random() * 10) - 5; // -5 to +5
     
-    weatherData.forEach(item => {
-      const date = new Date(item.time);
-      const dateKey = date.toISOString().split('T')[0];
-      
-      if (!dailyData.has(dateKey)) {
-        dailyData.set(dateKey, {
-          date: dateKey,
-          dateObj: date,
-          temperatures: [],
-          weatherCodes: []
-        });
-      }
-      
-      const dayData = dailyData.get(dateKey);
-      dayData.temperatures.push(item.temperature_2m);
-      dayData.weatherCodes.push(item.weather_code);
-    });
+    return {
+      date: date.toLocaleDateString('ro-RO', { weekday: 'short', day: 'numeric', month: 'short' }),
+      temp: `${baseTemp + tempVariation}°`,
+      icon: randomIcon,
+      condition: randomCondition,
+      humidity: 60 + Math.floor(Math.random() * 20),
+      wind: 8 + Math.floor(Math.random() * 12)
+    };
+  });
 
-    return Array.from(dailyData.values())
-      .slice(0, 16) // Show 16 days
-      .map(dayData => {
-        const avgTemp = Math.round(dayData.temperatures.reduce((a: number, b: number) => a + b, 0) / dayData.temperatures.length);
-        const mostCommonWeatherCode = dayData.weatherCodes[0]; // Simplified
+  // Generate 365-day history (sample data)
+  const weatherHistory = Array.from({ length: 365 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (365 - index));
+    const baseTemp = 15;
+    const seasonalVariation = 10 * Math.sin((index / 365) * 2 * Math.PI); // Seasonal pattern
+    const randomVariation = Math.floor(Math.random() * 10) - 5;
+    
+    return {
+      date: date.toLocaleDateString('ro-RO'),
+      temperature: Math.round(baseTemp + seasonalVariation + randomVariation),
+      humidity: 50 + Math.floor(Math.random() * 30),
+      precipitation: Math.floor(Math.random() * 20)
+    };
+  });
 
-        const dayName = dayData.dateObj.toLocaleDateString('ro-RO', { weekday: 'short', day: 'numeric' });
-        
-        return {
-          day: dayName,
-          temp: `${avgTemp}°`,
-          icon: getWeatherIcon(mostCommonWeatherCode),
-          condition: getWeatherDescription(mostCommonWeatherCode)
-        };
-      });
-  };
-
-  const currentWeather = getCurrentWeather();
-  const forecast = getDailyForecast();
+  // Get recent history (last 30 days for display)
+  const recentHistory = weatherHistory.slice(-30);
 
   return (
     <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Vremea și Prognoze</span>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={fetchWeatherData}
-              disabled={loading}
-              className="text-white hover:bg-white/20"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
-            <Badge variant="secondary" className="bg-white/20 text-white border-0">
-              România
-            </Badge>
-          </div>
+          <Badge variant="secondary" className="bg-white/20 text-white border-0">
+            Alertă Agricolă
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-white/10">
+          <TabsList className="grid w-full grid-cols-3 bg-white/10">
             <TabsTrigger value="current" className="text-white data-[state=active]:bg-white/20">
               Actuală
             </TabsTrigger>
             <TabsTrigger value="forecast" className="text-white data-[state=active]:bg-white/20">
               <Calendar className="h-4 w-4 mr-1" />
-              16 Zile
+              14 Zile
+            </TabsTrigger>
+            <TabsTrigger value="history" className="text-white data-[state=active]:bg-white/20">
+              <History className="h-4 w-4 mr-1" />
+              Istoric
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="current" className="space-y-4">
-            {currentWeather ? (
-              <>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Sun className="h-12 w-12" />
-                    <div>
-                      <p className="text-3xl font-bold">{Math.round(currentWeather.temperature_2m)}°C</p>
-                      <p className="text-blue-100">{getWeatherDescription(currentWeather.weather_code)}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div className="flex flex-col items-center">
-                      <Droplets className="h-4 w-4 mb-1" />
-                      <span className="text-sm">{currentWeather.relative_humidity_2m}%</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <Wind className="h-4 w-4 mb-1" />
-                      <span className="text-sm">{Math.round(currentWeather.wind_speed_10m)} km/h</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <CloudRain className="h-4 w-4 mb-1" />
-                      <span className="text-sm">{currentWeather.precipitation}mm</span>
-                    </div>
-                  </div>
+            {/* Current Weather */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Sun className="h-12 w-12" />
+                <div>
+                  <p className="text-3xl font-bold">{currentWeather.temperature}°C</p>
+                  <p className="text-blue-100">{currentWeather.condition}</p>
                 </div>
-
-                {/* Show 7-day forecast */}
-                {forecast.length > 0 && (
-                  <div className="grid grid-cols-7 gap-1">
-                    {forecast.slice(0, 7).map((day, index) => {
-                      const Icon = day.icon;
-                      return (
-                        <div key={index} className="bg-white/10 rounded-lg p-2 text-center">
-                          <p className="text-xs mb-1">{day.day}</p>
-                          <Icon className="h-4 w-4 mx-auto mb-1" />
-                          <p className="text-xs font-semibold">{day.temp}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-blue-100 mb-4">Se încarcă datele meteo...</p>
-                <Button 
-                  onClick={fetchWeatherData}
-                  disabled={loading}
-                  className="bg-white/20 text-white hover:bg-white/30"
-                >
-                  {loading ? 'Se încarcă...' : 'Reîncarcă datele'}
-                </Button>
               </div>
-            )}
+              
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div className="flex flex-col items-center">
+                  <Droplets className="h-4 w-4 mb-1" />
+                  <span className="text-sm">{currentWeather.humidity}%</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <Wind className="h-4 w-4 mb-1" />
+                  <span className="text-sm">{currentWeather.windSpeed} km/h</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <CloudRain className="h-4 w-4 mb-1" />
+                  <span className="text-sm">{currentWeather.precipitation}%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 5-day forecast */}
+            <div className="grid grid-cols-5 gap-2">
+              {forecast.map((day, index) => {
+                const IconComponent = day.icon;
+                return (
+                  <div key={index} className="bg-white/10 rounded-lg p-3 text-center">
+                    <p className="text-xs mb-2">{day.day}</p>
+                    <IconComponent className="h-5 w-5 mx-auto mb-2" />
+                    <p className="text-sm font-semibold">{day.temp}</p>
+                  </div>
+                );
+              })}
+            </div>
           </TabsContent>
 
           <TabsContent value="forecast" className="space-y-4">
-            {forecast.length > 0 ? (
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                <p className="text-sm text-blue-100 mb-3">Prognoza pe 16 zile</p>
-                {forecast.map((day, index) => {
-                  const Icon = day.icon;
-                  return (
-                    <div key={index} className="bg-white/10 rounded-lg p-3 flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Icon className="h-5 w-5" />
-                        <div>
-                          <p className="text-sm font-medium">{day.day}</p>
-                          <p className="text-xs text-blue-100">{day.condition}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold">{day.temp}</p>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {extendedForecast.map((day, index) => {
+                const IconComponent = day.icon;
+                return (
+                  <div key={index} className="bg-white/10 rounded-lg p-3 flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <IconComponent className="h-5 w-5" />
+                      <div>
+                        <p className="text-sm font-medium">{day.date}</p>
+                        <p className="text-xs text-blue-100">{day.condition}</p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-blue-100 mb-4">Nu sunt disponibile prognoze</p>
-                <Button 
-                  onClick={fetchWeatherData}
-                  disabled={loading}
-                  className="bg-white/20 text-white hover:bg-white/30"
-                >
-                  {loading ? 'Se încarcă...' : 'Descarcă prognoza'}
-                </Button>
-              </div>
-            )}
+                    <div className="text-right">
+                      <p className="text-lg font-bold">{day.temp}</p>
+                      <div className="flex space-x-3 text-xs">
+                        <span>{day.humidity}%</span>
+                        <span>{day.wind} km/h</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-4">
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              <p className="text-sm text-blue-100 mb-3">Ultimele 30 de zile (din 365 disponibile)</p>
+              {recentHistory.map((day, index) => (
+                <div key={index} className="bg-white/10 rounded-lg p-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">{day.date}</p>
+                  </div>
+                  <div className="flex space-x-4 text-sm">
+                    <span className="flex items-center">
+                      <Thermometer className="h-3 w-3 mr-1" />
+                      {day.temperature}°C
+                    </span>
+                    <span className="flex items-center">
+                      <Droplets className="h-3 w-3 mr-1" />
+                      {day.humidity}%
+                    </span>
+                    <span className="flex items-center">
+                      <CloudRain className="h-3 w-3 mr-1" />
+                      {day.precipitation}%
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="bg-white/10 rounded-lg p-3 text-center">
+              <p className="text-xs text-blue-100">
+                Istoricul complet de 365 zile este disponibil pentru analiză detaliată
+              </p>
+            </div>
           </TabsContent>
         </Tabs>
 
-        {/* AI Recommendation */}
+        {/* Agricultural Alert */}
         <div className="bg-amber-500/20 border border-amber-300/30 rounded-lg p-3">
           <p className="text-sm font-medium mb-1">🌾 Recomandare AI</p>
           <p className="text-sm text-blue-100">
-            Condițiile meteo sunt monitorizate pentru România. Prognoza pe 16 zile este disponibilă.
+            Condițiile sunt ideale pentru udarea grâului pe Parcela 3. Vântul scade după-amiaza.
           </p>
         </div>
       </CardContent>
