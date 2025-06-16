@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,10 +11,14 @@ const WeatherWidget = () => {
   const { fields } = useAppContext();
   const [activeTab, setActiveTab] = useState('current');
   
+  console.log('WeatherWidget - Available fields:', fields);
+  
   // Use coordinates from the first field as default
-  const firstField = fields[0];
+  const firstField = fields.find(field => field.coordinates);
   const latitude = firstField?.coordinates?.lat;
   const longitude = firstField?.coordinates?.lng;
+  
+  console.log('WeatherWidget - Using coordinates:', { latitude, longitude, fromField: firstField?.name });
   
   const { weatherData, loading, syncWeatherData, getWeatherDescription } = useWeatherData(latitude, longitude);
 
@@ -206,11 +209,15 @@ const WeatherWidget = () => {
   const recentHistory = getRecentHistory();
 
   if (!latitude || !longitude) {
+    console.log('WeatherWidget - No coordinates available from fields');
     return (
       <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
         <CardContent className="p-6">
           <p className="text-center text-blue-100">
-            Adăugați un teren pentru a vedea datele meteo
+            {fields.length === 0 
+              ? "Adăugați un teren pentru a vedea datele meteo"
+              : "Adăugați coordonate GPS la terenuri pentru a vedea datele meteo"
+            }
           </p>
         </CardContent>
       </Card>

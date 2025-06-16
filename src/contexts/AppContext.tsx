@@ -207,53 +207,68 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
-      const formattedFields: Field[] = (data || []).map(field => ({
-        id: field.id,
-        name: field.name,
-        location: field.location,
-        area: Number(field.area),
-        crop: field.crop,
-        coordinates: field.coordinates_lat && field.coordinates_lng ? {
+      console.log('Raw fields data from database:', data);
+
+      const formattedFields: Field[] = (data || []).map(field => {
+        // Convert database coordinates format to frontend format
+        const coordinates = field.coordinates_lat && field.coordinates_lng ? {
           lat: Number(field.coordinates_lat),
           lng: Number(field.coordinates_lng)
-        } : undefined,
-        soilType: field.soil_type || undefined,
-        lastActivity: field.last_activity || undefined,
-        notes: field.notes || undefined,
-        photos: [],
-        parcelCode: field.parcel_code,
-        size: Number(field.area),
-        status: field.status,
-        color: field.color,
-        plantingDate: field.planting_date || undefined,
-        harvestDate: field.harvest_date || undefined,
-        workType: field.work_type || undefined,
-        inputs: field.inputs || undefined,
-        variety: field.variety || undefined,
-        costs: field.costs ? Number(field.costs) : undefined,
-        roi: field.roi ? Number(field.roi) : undefined,
-        weather: {
-          temperature: 22,
-          condition: 'sunny',
-          humidity: 65,
-          windSpeed: 12
-        }
-      }));
+        } : undefined;
 
+        console.log(`Field ${field.name} coordinates:`, coordinates);
+
+        return {
+          id: field.id,
+          name: field.name,
+          location: field.location,
+          area: Number(field.area),
+          crop: field.crop,
+          coordinates,
+          soilType: field.soil_type || undefined,
+          lastActivity: field.last_activity || undefined,
+          notes: field.notes || undefined,
+          photos: [],
+          parcelCode: field.parcel_code,
+          size: Number(field.area),
+          status: field.status,
+          color: field.color,
+          plantingDate: field.planting_date || undefined,
+          harvestDate: field.harvest_date || undefined,
+          workType: field.work_type || undefined,
+          inputs: field.inputs || undefined,
+          variety: field.variety || undefined,
+          costs: field.costs ? Number(field.costs) : undefined,
+          roi: field.roi ? Number(field.roi) : undefined,
+          weather: {
+            temperature: 22,
+            condition: 'sunny',
+            humidity: 65,
+            windSpeed: 12
+          }
+        };
+      });
+
+      console.log('Formatted fields for frontend:', formattedFields);
       setFields(formattedFields);
 
-      // Auto-sync weather data for each field
+      // Auto-sync weather data for each field with valid coordinates
       for (const field of formattedFields) {
         if (field.coordinates) {
+          console.log(`Syncing weather for field ${field.name} at coordinates:`, field.coordinates);
           WeatherSyncService.syncForUser(user.id, field.coordinates)
             .then(result => {
               if (result.success) {
                 console.log(`Weather data synced for field ${field.name}`);
+              } else {
+                console.log(`Weather sync failed for field ${field.name}:`, result.error);
               }
             })
             .catch(error => {
               console.error(`Failed to sync weather for field ${field.name}:`, error);
             });
+        } else {
+          console.log(`Field ${field.name} has no coordinates, skipping weather sync`);
         }
       }
     } catch (error) {
@@ -278,6 +293,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     try {
+      console.log('Adding field with data:', fieldData);
+      
       const { data, error } = await supabase
         .from('fields')
         .insert([{
@@ -314,6 +331,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
         });
         return;
       }
+
+      console.log('Field added successfully:', data);
 
       // Refresh fields list
       await fetchFields();

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { useAppContext } from '@/contexts/AppContext';
@@ -19,26 +20,34 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
 
   const GOOGLE_MAPS_API_KEY = "AIzaSyDloS4Jj3CMvgpmdrWUECSOKs12A8wX1io";
 
-  // Convertește coordonatele din string în format Google Maps
+  // Convertește coordonatele din field în format Google Maps
   const parseCoordinates = (field: any) => {
-    if (!field.coordinates) return null;
+    console.log('Parsing coordinates for field:', field.name, field.coordinates);
+    
+    if (!field.coordinates) {
+      console.log('No coordinates found for field:', field.name);
+      return null;
+    }
 
-    // Dacă sunt coordonate simple (un punct)
+    // Verifică dacă sunt coordonate simple (un punct)
     if (field.coordinates.lat && field.coordinates.lng) {
+      console.log('Found single point coordinates:', field.coordinates);
       return [{
-        lat: field.coordinates.lat,
-        lng: field.coordinates.lng
+        lat: Number(field.coordinates.lat),
+        lng: Number(field.coordinates.lng)
       }];
     }
 
-    // Dacă sunt coordonate pentru poligon (array)
+    // Verifică dacă sunt coordonate pentru poligon (array)
     if (Array.isArray(field.coordinates)) {
+      console.log('Found array of coordinates:', field.coordinates);
       return field.coordinates.map((coord: any) => ({
-        lat: coord.lat,
-        lng: coord.lng
+        lat: Number(coord.lat),
+        lng: Number(coord.lng)
       }));
     }
 
+    console.log('Coordinates format not recognized for field:', field.name);
     return null;
   };
 
@@ -204,17 +213,23 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
 
         // Creează poligoanele pentru terenuri
         const newPolygons: google.maps.Polygon[] = [];
+        console.log('Creating polygons for fields:', fields);
+        
         fields.forEach(field => {
+          console.log('Processing field for map:', field.name, field.coordinates);
           const polygon = createFieldPolygon(field, map);
           if (polygon) {
             newPolygons.push(polygon);
+            console.log('Created polygon for field:', field.name);
+          } else {
+            console.log('Failed to create polygon for field:', field.name);
           }
         });
 
         polygonsRef.current = newPolygons;
         setIsLoading(false);
 
-        console.log(`Harta încărcată cu ${newPolygons.length} poligoane pentru terenuri`);
+        console.log(`Harta încărcată cu ${newPolygons.length} poligoane pentru ${fields.length} terenuri`);
 
       } catch (error) {
         console.error('Eroare la încărcarea Google Maps:', error);
