@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -39,7 +40,7 @@ interface Task {
   time: string;
   due_date: string;
   due_time: string;
-  status: 'pending' | 'completed' | 'in_progress' | 'cancelled';
+  status: 'pending' | 'completed' | 'in_progress';
   priority: 'high' | 'medium' | 'low';
   category: string;
   duration: number;
@@ -597,7 +598,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const markNotificationAsRead = async (id: string) => {
     const { error } = await supabase
       .from('notifications')
-      .update({ read: true })
+      .update({ is_read: true })
       .eq('id', id);
 
     if (error) {
@@ -679,7 +680,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           parcel_code: field.parcel_code,
           crop: field.crop,
           size: field.size,
-          plantingDate: field.planting_date,
+          planting_date: field.planting_date,
           costs: field.costs || 0
         })),
         totalArea: cerealFields.reduce((sum, f) => sum + f.size, 0),

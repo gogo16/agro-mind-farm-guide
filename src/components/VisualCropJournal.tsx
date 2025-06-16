@@ -34,6 +34,7 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
     ? (fieldPhotos || []).filter((photo: any) => photo.field_id === fieldId)
     : (fieldPhotos || []);
 
+  // Mock data for demonstration
   const [photos] = useState([
     {
       id: 1,
