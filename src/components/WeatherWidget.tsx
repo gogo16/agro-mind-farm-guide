@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -76,22 +75,33 @@ const WeatherWidget = () => {
     const dailyData = new Map();
     
     forecast.forEach(item => {
-      const date = new Date(item.timestamp).toDateString();
-      if (!dailyData.has(date)) {
-        dailyData.set(date, {
-          date,
+      const date = new Date(item.timestamp);
+      const dateKey = date.toISOString().split('T')[0]; // Use YYYY-MM-DD format for proper sorting
+      
+      if (!dailyData.has(dateKey)) {
+        dailyData.set(dateKey, {
+          date: dateKey,
+          dateObj: date,
           temperatures: [],
-          conditions: [],
-          weatherCodes: []
+          weatherCodes: [],
+          humidity: [],
+          windSpeed: []
         });
       }
       
-      const dayData = dailyData.get(date);
+      const dayData = dailyData.get(dateKey);
       if (item.temperature_celsius) dayData.temperatures.push(item.temperature_celsius);
       if (item.weather_code) dayData.weatherCodes.push(item.weather_code);
+      if (item.relative_humidity_percent) dayData.humidity.push(item.relative_humidity_percent);
+      if (item.wind_speed_kph) dayData.windSpeed.push(item.wind_speed_kph);
     });
 
-    return Array.from(dailyData.values()).slice(0, 5).map(dayData => {
+    // Sort by date and return next 7 days
+    const sortedDays = Array.from(dailyData.values())
+      .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
+      .slice(0, 7);
+
+    return sortedDays.map(dayData => {
       const avgTemp = dayData.temperatures.length > 0 
         ? Math.round(dayData.temperatures.reduce((a: number, b: number) => a + b, 0) / dayData.temperatures.length)
         : 0;
@@ -102,14 +112,14 @@ const WeatherWidget = () => {
           ).pop()
         : 0;
 
-      const date = new Date(dayData.date);
-      const dayName = date.toLocaleDateString('ro-RO', { weekday: 'short' });
+      const dayName = dayData.dateObj.toLocaleDateString('ro-RO', { weekday: 'short', day: 'numeric' });
       
       return {
         day: dayName,
         temp: `${avgTemp}°`,
         icon: getWeatherIcon(mostCommonWeatherCode),
-        condition: getWeatherDescription(mostCommonWeatherCode)
+        condition: getWeatherDescription(mostCommonWeatherCode),
+        fullDate: dayData.dateObj
       };
     });
   };
@@ -122,10 +132,13 @@ const WeatherWidget = () => {
     const dailyData = new Map();
     
     forecast.forEach(item => {
-      const date = new Date(item.timestamp).toDateString();
-      if (!dailyData.has(date)) {
-        dailyData.set(date, {
-          date: item.timestamp,
+      const date = new Date(item.timestamp);
+      const dateKey = date.toISOString().split('T')[0];
+      
+      if (!dailyData.has(dateKey)) {
+        dailyData.set(dateKey, {
+          date: dateKey,
+          dateObj: date,
           temperatures: [],
           humidity: [],
           windSpeed: [],
@@ -133,43 +146,44 @@ const WeatherWidget = () => {
         });
       }
       
-      const dayData = dailyData.get(date);
+      const dayData = dailyData.get(dateKey);
       if (item.temperature_celsius) dayData.temperatures.push(item.temperature_celsius);
       if (item.relative_humidity_percent) dayData.humidity.push(item.relative_humidity_percent);
       if (item.wind_speed_kph) dayData.windSpeed.push(item.wind_speed_kph);
       if (item.weather_code) dayData.weatherCodes.push(item.weather_code);
     });
 
-    return Array.from(dailyData.values()).slice(0, 14).map(dayData => {
-      const avgTemp = dayData.temperatures.length > 0 
-        ? Math.round(dayData.temperatures.reduce((a: number, b: number) => a + b, 0) / dayData.temperatures.length)
-        : 0;
-      
-      const avgHumidity = dayData.humidity.length > 0 
-        ? Math.round(dayData.humidity.reduce((a: number, b: number) => a + b, 0) / dayData.humidity.length)
-        : 0;
+    return Array.from(dailyData.values())
+      .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
+      .slice(0, 14)
+      .map(dayData => {
+        const avgTemp = dayData.temperatures.length > 0 
+          ? Math.round(dayData.temperatures.reduce((a: number, b: number) => a + b, 0) / dayData.temperatures.length)
+          : 0;
+        
+        const avgHumidity = dayData.humidity.length > 0 
+          ? Math.round(dayData.humidity.reduce((a: number, b: number) => a + b, 0) / dayData.humidity.length)
+          : 0;
 
-      const avgWind = dayData.windSpeed.length > 0 
-        ? Math.round(dayData.windSpeed.reduce((a: number, b: number) => a + b, 0) / dayData.windSpeed.length)
-        : 0;
-      
-      const mostCommonWeatherCode = dayData.weatherCodes.length > 0 
-        ? dayData.weatherCodes.sort((a: number, b: number) => 
-            dayData.weatherCodes.filter((v: number) => v === a).length - dayData.weatherCodes.filter((v: number) => v === b).length
-          ).pop()
-        : 0;
-
-      const date = new Date(dayData.date);
-      
-      return {
-        date: date.toLocaleDateString('ro-RO', { weekday: 'short', day: 'numeric', month: 'short' }),
-        temp: `${avgTemp}°`,
-        icon: getWeatherIcon(mostCommonWeatherCode),
-        condition: getWeatherDescription(mostCommonWeatherCode),
-        humidity: avgHumidity,
-        wind: avgWind
-      };
-    });
+        const avgWind = dayData.windSpeed.length > 0 
+          ? Math.round(dayData.windSpeed.reduce((a: number, b: number) => a + b, 0) / dayData.windSpeed.length)
+          : 0;
+        
+        const mostCommonWeatherCode = dayData.weatherCodes.length > 0 
+          ? dayData.weatherCodes.sort((a: number, b: number) => 
+              dayData.weatherCodes.filter((v: number) => v === a).length - dayData.weatherCodes.filter((v: number) => v === b).length
+            ).pop()
+          : 0;
+        
+        return {
+          date: dayData.dateObj.toLocaleDateString('ro-RO', { weekday: 'short', day: 'numeric', month: 'short' }),
+          temp: `${avgTemp}°`,
+          icon: getWeatherIcon(mostCommonWeatherCode),
+          condition: getWeatherDescription(mostCommonWeatherCode),
+          humidity: avgHumidity,
+          wind: avgWind
+        };
+      });
   };
 
   const getRecentHistory = () => {
@@ -335,20 +349,16 @@ const WeatherWidget = () => {
                   </div>
                 </div>
 
-                {/* Show basic 5-day forecast if available */}
-                {weatherData.forecast.length > 0 && (
-                  <div className="grid grid-cols-5 gap-2">
-                    {weatherData.forecast.slice(0, 5).map((item, index) => {
-                      const date = new Date(item.timestamp);
-                      const dayName = date.toLocaleDateString('ro-RO', { weekday: 'short' });
-                      
+                {/* Show 7-day forecast */}
+                {forecast.length > 0 && (
+                  <div className="grid grid-cols-7 gap-1">
+                    {forecast.map((day, index) => {
+                      const Icon = day.icon;
                       return (
-                        <div key={index} className="bg-white/10 rounded-lg p-3 text-center">
-                          <p className="text-xs mb-2">{dayName}</p>
-                          <Sun className="h-5 w-5 mx-auto mb-2" />
-                          <p className="text-sm font-semibold">
-                            {item.temperature_celsius ? Math.round(item.temperature_celsius) : '--'}°
-                          </p>
+                        <div key={index} className="bg-white/10 rounded-lg p-2 text-center">
+                          <p className="text-xs mb-1">{day.day}</p>
+                          <Icon className="h-4 w-4 mx-auto mb-1" />
+                          <p className="text-xs font-semibold">{day.temp}</p>
                         </div>
                       );
                     })}
@@ -370,30 +380,24 @@ const WeatherWidget = () => {
           </TabsContent>
 
           <TabsContent value="forecast" className="space-y-4">
-            {weatherData.forecast.length > 0 ? (
+            {extendedForecast.length > 0 ? (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {weatherData.forecast.slice(0, 14).map((item, index) => {
-                  const date = new Date(item.timestamp);
-                  const dateStr = date.toLocaleDateString('ro-RO', { weekday: 'short', day: 'numeric', month: 'short' });
-                  
+                {extendedForecast.map((day, index) => {
+                  const Icon = day.icon;
                   return (
                     <div key={index} className="bg-white/10 rounded-lg p-3 flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <Sun className="h-5 w-5" />
+                        <Icon className="h-5 w-5" />
                         <div>
-                          <p className="text-sm font-medium">{dateStr}</p>
-                          <p className="text-xs text-blue-100">
-                            {getWeatherDescription(item.weather_code)}
-                          </p>
+                          <p className="text-sm font-medium">{day.date}</p>
+                          <p className="text-xs text-blue-100">{day.condition}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold">
-                          {item.temperature_celsius ? Math.round(item.temperature_celsius) : '--'}°
-                        </p>
+                        <p className="text-lg font-bold">{day.temp}</p>
                         <div className="flex space-x-3 text-xs">
-                          <span>{item.relative_humidity_percent || '--'}%</span>
-                          <span>{item.wind_speed_kph || '--'} km/h</span>
+                          <span>{day.humidity}%</span>
+                          <span>{day.wind} km/h</span>
                         </div>
                       </div>
                     </div>

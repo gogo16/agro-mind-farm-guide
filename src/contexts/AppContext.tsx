@@ -204,6 +204,24 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     return null;
   };
 
+  // Improved weather sync with better daily control
+  const shouldSyncWeather = () => {
+    const today = new Date().toDateString();
+    const lastSyncDate = localStorage.getItem('weather_last_sync_date');
+    const lastSyncUserId = localStorage.getItem('weather_last_sync_user');
+    
+    // Sync if it's a new day OR different user
+    return lastSyncDate !== today || lastSyncUserId !== user?.id;
+  };
+
+  const markWeatherSynced = () => {
+    if (user) {
+      const today = new Date().toDateString();
+      localStorage.setItem('weather_last_sync_date', today);
+      localStorage.setItem('weather_last_sync_user', user.id);
+    }
+  };
+
   // Fetch fields from database
   const fetchFields = async () => {
     if (!user) {
@@ -295,15 +313,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('Fields with valid coordinates:', fieldsWithCoords);
       setFields(formattedFields);
 
-      // Auto-sync weather data only once per day per field
-      const today = new Date().toDateString();
-      const lastSyncKey = 'weather_last_sync';
-      const lastSync = localStorage.getItem(lastSyncKey);
-      
-      if (lastSync !== today && fieldsWithCoords.length > 0) {
-        console.log('Starting daily weather sync for fields with coordinates');
+      // Only sync weather if needed and user is present
+      if (shouldSyncWeather() && fieldsWithCoords.length > 0) {
+        console.log('Starting weather sync - daily limit check passed');
         
-        // Use the first field with coordinates for weather data
         const firstField = fieldsWithCoords[0];
         if (firstField.coordinates) {
           try {
@@ -311,10 +324,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
             const result = await WeatherSyncService.syncForUser(user.id, firstField.coordinates);
             if (result.success) {
               console.log(`Weather data synced successfully`);
-              localStorage.setItem(lastSyncKey, today);
+              markWeatherSynced();
               toast({
                 title: "Date meteo sincronizate",
-                description: `Datele meteo au fost actualizate`,
+                description: `Datele meteo au fost actualizate pentru astăzi`,
               });
             } else {
               console.log(`Weather sync failed:`, result.error);
@@ -390,12 +403,12 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('Field added successfully:', data);
       await fetchFields();
 
-      // Trigger weather sync for new field if it has coordinates
+      // Force weather sync for new field with coordinates
       if (fieldData.coordinates) {
         try {
           await WeatherSyncService.syncForUser(user.id, fieldData.coordinates);
-          // Reset the daily sync flag to allow immediate sync for new field
-          localStorage.removeItem('weather_last_sync');
+          // Mark as synced today
+          markWeatherSynced();
           toast({
             title: "Teren adăugat",
             description: "Datele meteo au fost sincronizate automat pentru noul teren.",

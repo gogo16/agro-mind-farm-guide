@@ -17,6 +17,7 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
   const { fields } = useAppContext();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
+  const [initError, setInitError] = useState<string | null>(null);
 
   const GOOGLE_MAPS_API_KEY = "AIzaSyDloS4Jj3CMvgpmdrWUECSOKs12A8wX1io";
 
@@ -124,10 +125,10 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
     });
 
     if (!hasCoordinates) {
-      // Default coordinates for Romania (Buzău area)
+      // Default coordinates for Romania (center of Romania)
       return {
-        center: { lat: 45.75, lng: 21.21 },
-        zoom: 10
+        center: { lat: 45.9432, lng: 24.9668 },
+        zoom: 7
       };
     }
 
@@ -135,10 +136,19 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
   };
 
   useEffect(() => {
-    if (!mapRef.current || !GOOGLE_MAPS_API_KEY) return;
+    if (!mapRef.current) return;
 
     const initMap = async () => {
       try {
+        setIsLoading(true);
+        setInitError(null);
+
+        if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes("YOUR_GOOGLE_MAPS_API_KEY")) {
+          throw new Error("API key not configured");
+        }
+
+        console.log('Initializing Google Maps with API key...');
+
         const loader = new Loader({
           apiKey: GOOGLE_MAPS_API_KEY,
           version: 'weekly',
@@ -146,8 +156,7 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
         });
 
         await loader.load();
-
-        console.log('Google Maps loaded, processing fields:', fields.length);
+        console.log('Google Maps API loaded successfully');
 
         const bounds = calculateMapBounds();
         const mapOptions: google.maps.MapOptions = {
@@ -167,6 +176,7 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
           mapOptions.zoom = bounds.zoom;
         }
 
+        console.log('Creating map with options:', mapOptions);
         const map = new google.maps.Map(mapRef.current!, mapOptions);
         mapInstanceRef.current = map;
 
@@ -211,33 +221,34 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
         polygonsRef.current = newPolygons;
         setIsLoading(false);
 
-        console.log(`Map loaded with ${newPolygons.length} polygons for ${fieldsWithCoordinates.length} fields with coordinates out of ${fields.length} total fields`);
+        console.log(`Map loaded successfully with ${newPolygons.length} polygons`);
 
-        // Show appropriate message based on field status
+        // Show appropriate success message
         if (fields.length === 0) {
           toast({
-            title: "Harta încărcată",
+            title: "Hartă încărcată",
             description: "Adăugați terenuri pentru a le vedea pe hartă.",
           });
         } else if (fieldsWithCoordinates.length === 0) {
           toast({
-            title: "Atenție",
-            description: `Aveți ${fields.length} terenuri dar nu au coordonate GPS. Editați terenurile pentru a adăuga coordonate.`,
+            title: "Hartă încărcată",
+            description: `Aveți ${fields.length} terenuri, dar nu au coordonate GPS. Editați terenurile pentru a adăuga coordonate.`,
             variant: "destructive"
           });
-        } else if (newPolygons.length !== fieldsWithCoordinates.length) {
+        } else {
           toast({
-            title: "Atenție parțială",
-            description: `${newPolygons.length} din ${fieldsWithCoordinates.length} terenuri au fost afișate pe hartă.`,
-            variant: "destructive"
+            title: "Hartă încărcată",
+            description: `${newPolygons.length} din ${fieldsWithCoordinates.length} terenuri afișate pe hartă.`,
           });
         }
 
       } catch (error) {
         console.error('Error loading Google Maps:', error);
+        setInitError(error instanceof Error ? error.message : 'Unknown error');
+        
         toast({
-          title: "Eroare",
-          description: "Nu s-a putut încărca harta Google Maps",
+          title: "Eroare hartă",
+          description: "Nu s-a putut încărca harta Google Maps. Verificați conexiunea la internet.",
           variant: "destructive"
         });
         setIsLoading(false);
@@ -268,6 +279,23 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
         <div className="text-center">
           <div className="text-xl font-semibold text-green-800 mb-2">Google Maps nu este configurat</div>
           <p className="text-gray-600">Pentru a activa harta, înlocuiește YOUR_GOOGLE_MAPS_API_KEY cu cheia ta API Google Maps</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (initError) {
+    return (
+      <div className="w-full h-full bg-gradient-to-br from-red-100 to-orange-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-xl font-semibold text-red-800 mb-2">Eroare încărcare hartă</div>
+          <p className="text-gray-600 mb-4">Detalii: {initError}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Reîncarcă pagina
+          </button>
         </div>
       </div>
     );
