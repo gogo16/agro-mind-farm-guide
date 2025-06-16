@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { WeatherSyncService } from '@/utils/weatherSync';
@@ -184,6 +185,25 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
 
   const currentSeason = 'Vară';
 
+  // Helper function to parse coordinates from string
+  const parseCoordinatesFromString = (coordString: string): { lat: number; lng: number } | null => {
+    if (!coordString) return null;
+    
+    // Remove spaces and split by comma
+    const coords = coordString.replace(/\s/g, '').split(',');
+    if (coords.length >= 2) {
+      const lat = parseFloat(coords[0]);
+      const lng = parseFloat(coords[1]);
+      
+      if (!isNaN(lat) && !isNaN(lng)) {
+        console.log('Parsed coordinates from string:', { lat, lng });
+        return { lat, lng };
+      }
+    }
+    
+    return null;
+  };
+
   // Fetch fields from database
   const fetchFields = async () => {
     if (!user) {
@@ -193,7 +213,6 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     try {
-      // Debug coordinates first
       await debugFieldCoordinates(user.id);
 
       const { data, error } = await supabase
@@ -214,9 +233,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('Raw fields data from database:', data);
 
       const formattedFields: Field[] = (data || []).map(field => {
-        // Fix coordinate parsing - handle both null and valid coordinates
         let coordinates: { lat: number; lng: number } | undefined = undefined;
         
+        // First try the dedicated coordinate columns
         if (field.coordinates_lat !== null && field.coordinates_lng !== null && 
             field.coordinates_lat !== undefined && field.coordinates_lng !== undefined) {
           const lat = Number(field.coordinates_lat);
@@ -224,18 +243,20 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           
           if (!isNaN(lat) && !isNaN(lng)) {
             coordinates = { lat, lng };
-            console.log(`Field ${field.name} has valid coordinates:`, coordinates);
-          } else {
-            console.log(`Field ${field.name} has invalid coordinate numbers:`, {
-              lat: field.coordinates_lat,
-              lng: field.coordinates_lng
-            });
+            console.log(`Field ${field.name} has valid coordinates from columns:`, coordinates);
           }
-        } else {
-          console.log(`Field ${field.name} has null/undefined coordinates:`, {
-            lat: field.coordinates_lat,
-            lng: field.coordinates_lng
-          });
+        }
+        
+        // If no coordinates from columns, try to parse from notes field
+        if (!coordinates && field.notes) {
+          coordinates = parseCoordinatesFromString(field.notes);
+          if (coordinates) {
+            console.log(`Field ${field.name} parsed coordinates from notes:`, coordinates);
+          }
+        }
+        
+        if (!coordinates) {
+          console.log(`Field ${field.name} has no valid coordinates`);
         }
 
         return {
@@ -274,27 +295,36 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('Fields with valid coordinates:', fieldsWithCoords);
       setFields(formattedFields);
 
-      // Auto-sync weather data for each field with valid coordinates
-      console.log(`Found ${fieldsWithCoords.length} fields with coordinates for weather sync`);
+      // Auto-sync weather data only once per day per field
+      const today = new Date().toDateString();
+      const lastSyncKey = 'weather_last_sync';
+      const lastSync = localStorage.getItem(lastSyncKey);
       
-      for (const field of fieldsWithCoords) {
-        if (field.coordinates) {
-          console.log(`Starting weather sync for field ${field.name} at coordinates:`, field.coordinates);
+      if (lastSync !== today && fieldsWithCoords.length > 0) {
+        console.log('Starting daily weather sync for fields with coordinates');
+        
+        // Use the first field with coordinates for weather data
+        const firstField = fieldsWithCoords[0];
+        if (firstField.coordinates) {
           try {
-            const result = await WeatherSyncService.syncForUser(user.id, field.coordinates);
+            console.log(`Syncing weather for field ${firstField.name} at coordinates:`, firstField.coordinates);
+            const result = await WeatherSyncService.syncForUser(user.id, firstField.coordinates);
             if (result.success) {
-              console.log(`Weather data synced successfully for field ${field.name}`);
+              console.log(`Weather data synced successfully`);
+              localStorage.setItem(lastSyncKey, today);
               toast({
                 title: "Date meteo sincronizate",
-                description: `Datele meteo au fost actualizate pentru ${field.name}`,
+                description: `Datele meteo au fost actualizate`,
               });
             } else {
-              console.log(`Weather sync failed for field ${field.name}:`, result.error);
+              console.log(`Weather sync failed:`, result.error);
             }
           } catch (error) {
-            console.error(`Failed to sync weather for field ${field.name}:`, error);
+            console.error(`Failed to sync weather:`, error);
           }
         }
+      } else {
+        console.log('Weather sync skipped - already done today or no fields with coordinates');
       }
     } catch (error) {
       console.error('Error in fetchFields:', error);
@@ -358,13 +388,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       console.log('Field added successfully:', data);
-
-      // Refresh fields list
       await fetchFields();
 
+      // Trigger weather sync for new field if it has coordinates
       if (fieldData.coordinates) {
         try {
           await WeatherSyncService.syncForUser(user.id, fieldData.coordinates);
+          // Reset the daily sync flag to allow immediate sync for new field
+          localStorage.removeItem('weather_last_sync');
           toast({
             title: "Teren adăugat",
             description: "Datele meteo au fost sincronizate automat pentru noul teren.",

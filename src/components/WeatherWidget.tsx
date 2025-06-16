@@ -15,9 +15,10 @@ const WeatherWidget = () => {
   console.log('WeatherWidget - Available fields:', fields);
   console.log('WeatherWidget - Fields with coordinates:', fields.filter(f => f.coordinates));
   
-  // Use coordinates from the first field with valid coordinates
+  // Use coordinates from the first field with valid simple coordinates
   const firstFieldWithCoords = fields.find(field => 
     field.coordinates && 
+    typeof field.coordinates === 'object' &&
     typeof field.coordinates.lat === 'number' && 
     typeof field.coordinates.lng === 'number' &&
     !isNaN(field.coordinates.lat) && 
@@ -37,9 +38,9 @@ const WeatherWidget = () => {
   
   const { weatherData, loading, syncWeatherData, getWeatherDescription } = useWeatherData(latitude, longitude);
 
-  // Auto-sync forecast data on component mount
+  // Auto-sync forecast data on component mount (only if no data exists)
   useEffect(() => {
-    if (latitude && longitude && weatherData.forecast.length === 0) {
+    if (latitude && longitude && weatherData.forecast.length === 0 && weatherData.current === null) {
       console.log('Auto-syncing weather data for coordinates:', { latitude, longitude });
       syncWeatherData('forecast');
     }
@@ -242,8 +243,8 @@ const WeatherWidget = () => {
               </div>
             ) : (
               <div>
-                <p className="mb-2">Coordonate GPS nevalide</p>
-                <p className="text-sm">Verificați coordonatele GPS ale terenurilor</p>
+                <p className="mb-2">Coordonate GPS detectate dar nevalide</p>
+                <p className="text-sm">Verificați formatul coordonatelor GPS ale terenurilor</p>
               </div>
             )}
           </div>
@@ -271,7 +272,7 @@ const WeatherWidget = () => {
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
             <Badge variant="secondary" className="bg-white/20 text-white border-0">
-              {firstFieldWithCoords?.name || 'Fără coordonate'}
+              {firstFieldWithCoords?.name || 'Coordonate nevalide'}
             </Badge>
           </div>
         </CardTitle>
@@ -293,42 +294,61 @@ const WeatherWidget = () => {
           </TabsList>
 
           <TabsContent value="current" className="space-y-4">
-            {currentWeather ? (
+            {weatherData.current || weatherData.forecast.length > 0 ? (
               <>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <Sun className="h-12 w-12" />
                     <div>
-                      <p className="text-3xl font-bold">{currentWeather.temperature}°C</p>
-                      <p className="text-blue-100">{currentWeather.condition}</p>
+                      <p className="text-3xl font-bold">
+                        {weatherData.current?.temperature_celsius || 
+                         (weatherData.forecast[0]?.temperature_celsius ? Math.round(weatherData.forecast[0].temperature_celsius) : 22)}°C
+                      </p>
+                      <p className="text-blue-100">
+                        {getWeatherDescription(weatherData.current?.weather_code || weatherData.forecast[0]?.weather_code || 0)}
+                      </p>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div className="flex flex-col items-center">
                       <Droplets className="h-4 w-4 mb-1" />
-                      <span className="text-sm">{currentWeather.humidity}%</span>
+                      <span className="text-sm">
+                        {weatherData.current?.relative_humidity_percent || 
+                         weatherData.forecast[0]?.relative_humidity_percent || 65}%
+                      </span>
                     </div>
                     <div className="flex flex-col items-center">
                       <Wind className="h-4 w-4 mb-1" />
-                      <span className="text-sm">{currentWeather.windSpeed} km/h</span>
+                      <span className="text-sm">
+                        {weatherData.current?.wind_speed_kph || 
+                         weatherData.forecast[0]?.wind_speed_kph || 12} km/h
+                      </span>
                     </div>
                     <div className="flex flex-col items-center">
                       <CloudRain className="h-4 w-4 mb-1" />
-                      <span className="text-sm">{currentWeather.precipitation}%</span>
+                      <span className="text-sm">
+                        {weatherData.current?.precipitation_mm || 
+                         weatherData.forecast[0]?.precipitation_mm || 0}mm
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {forecast.length > 0 && (
+                {/* Show basic 5-day forecast if available */}
+                {weatherData.forecast.length > 0 && (
                   <div className="grid grid-cols-5 gap-2">
-                    {forecast.map((day, index) => {
-                      const IconComponent = day.icon;
+                    {weatherData.forecast.slice(0, 5).map((item, index) => {
+                      const date = new Date(item.timestamp);
+                      const dayName = date.toLocaleDateString('ro-RO', { weekday: 'short' });
+                      
                       return (
                         <div key={index} className="bg-white/10 rounded-lg p-3 text-center">
-                          <p className="text-xs mb-2">{day.day}</p>
-                          <IconComponent className="h-5 w-5 mx-auto mb-2" />
-                          <p className="text-sm font-semibold">{day.temp}</p>
+                          <p className="text-xs mb-2">{dayName}</p>
+                          <Sun className="h-5 w-5 mx-auto mb-2" />
+                          <p className="text-sm font-semibold">
+                            {item.temperature_celsius ? Math.round(item.temperature_celsius) : '--'}°
+                          </p>
                         </div>
                       );
                     })}
@@ -350,24 +370,30 @@ const WeatherWidget = () => {
           </TabsContent>
 
           <TabsContent value="forecast" className="space-y-4">
-            {extendedForecast.length > 0 ? (
+            {weatherData.forecast.length > 0 ? (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {extendedForecast.map((day, index) => {
-                  const IconComponent = day.icon;
+                {weatherData.forecast.slice(0, 14).map((item, index) => {
+                  const date = new Date(item.timestamp);
+                  const dateStr = date.toLocaleDateString('ro-RO', { weekday: 'short', day: 'numeric', month: 'short' });
+                  
                   return (
                     <div key={index} className="bg-white/10 rounded-lg p-3 flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <IconComponent className="h-5 w-5" />
+                        <Sun className="h-5 w-5" />
                         <div>
-                          <p className="text-sm font-medium">{day.date}</p>
-                          <p className="text-xs text-blue-100">{day.condition}</p>
+                          <p className="text-sm font-medium">{dateStr}</p>
+                          <p className="text-xs text-blue-100">
+                            {getWeatherDescription(item.weather_code)}
+                          </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-lg font-bold">{day.temp}</p>
+                        <p className="text-lg font-bold">
+                          {item.temperature_celsius ? Math.round(item.temperature_celsius) : '--'}°
+                        </p>
                         <div className="flex space-x-3 text-xs">
-                          <span>{day.humidity}%</span>
-                          <span>{day.wind} km/h</span>
+                          <span>{item.relative_humidity_percent || '--'}%</span>
+                          <span>{item.wind_speed_kph || '--'} km/h</span>
                         </div>
                       </div>
                     </div>
@@ -389,36 +415,36 @@ const WeatherWidget = () => {
           </TabsContent>
 
           <TabsContent value="history" className="space-y-4">
-            {recentHistory.length > 0 ? (
+            {weatherData.historical.length > 0 ? (
               <>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   <p className="text-sm text-blue-100 mb-3">Ultimele 30 de zile</p>
-                  {recentHistory.map((day, index) => (
-                    <div key={index} className="bg-white/10 rounded-lg p-3 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium">{day.date}</p>
+                  {weatherData.historical.slice(-30).map((item, index) => {
+                    const date = new Date(item.timestamp);
+                    const dateStr = date.toLocaleDateString('ro-RO');
+                    
+                    return (
+                      <div key={index} className="bg-white/10 rounded-lg p-3 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">{dateStr}</p>
+                        </div>
+                        <div className="flex space-x-4 text-sm">
+                          <span className="flex items-center">
+                            <Thermometer className="h-3 w-3 mr-1" />
+                            {item.temperature_celsius ? Math.round(item.temperature_celsius) : '--'}°C
+                          </span>
+                          <span className="flex items-center">
+                            <Droplets className="h-3 w-3 mr-1" />
+                            {item.relative_humidity_percent || '--'}%
+                          </span>
+                          <span className="flex items-center">
+                            <CloudRain className="h-3 w-3 mr-1" />
+                            {item.precipitation_mm || 0}mm
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex space-x-4 text-sm">
-                        <span className="flex items-center">
-                          <Thermometer className="h-3 w-3 mr-1" />
-                          {day.temperature}°C
-                        </span>
-                        <span className="flex items-center">
-                          <Droplets className="h-3 w-3 mr-1" />
-                          {day.humidity}%
-                        </span>
-                        <span className="flex items-center">
-                          <CloudRain className="h-3 w-3 mr-1" />
-                          {day.precipitation}mm
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="bg-white/10 rounded-lg p-3 text-center">
-                  <p className="text-xs text-blue-100">
-                    Istoricul complet de 365 zile este disponibil pentru analiză detaliată
-                  </p>
+                    );
+                  })}
                 </div>
               </>
             ) : (
@@ -444,8 +470,8 @@ const WeatherWidget = () => {
         <div className="bg-amber-500/20 border border-amber-300/30 rounded-lg p-3">
           <p className="text-sm font-medium mb-1">🌾 Recomandare AI</p>
           <p className="text-sm text-blue-100">
-            {currentWeather ? 
-              `Cu ${currentWeather.temperature}°C și ${currentWeather.humidity}% umiditate, condițiile sunt potrivite pentru lucrările agricole.` :
+            {weatherData.current || weatherData.forecast.length > 0 ? 
+              `Condițiile meteo sunt monitorizate pentru terenul ${firstFieldWithCoords?.name}.` :
               'Sincronizați datele meteo pentru recomandări personalizate AI.'
             }
           </p>
