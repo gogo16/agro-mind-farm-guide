@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -178,12 +177,12 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
                 <div className="aspect-video bg-gray-100 relative">
                   <img 
                     src={photo.image_url} 
-                    alt={`${photo.activity} - ${photo.field_name}`}
+                    alt={`${photo.activity} - ${photo.field_name || 'N/A'}`}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-2 left-2">
                     <Badge className="bg-white/90 text-gray-800">
-                      {photo.field_name}
+                      {photo.field_name || 'N/A'}
                     </Badge>
                   </div>
                 </div>
