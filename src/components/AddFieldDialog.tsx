@@ -31,6 +31,7 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
     work_type: '',
     costs: '',
     inputs: '',
+    notes: '',
     roi: '',
     color: '#22c55e'
   });
@@ -47,21 +48,21 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
 
     const newField = {
       name: fieldData.name,
-      parcel_code: fieldData.parcel_code || undefined,
+      parcel_code: fieldData.parcel_code || '',
       size: parseFloat(fieldData.size),
-      crop: fieldData.crop || undefined,
+      crop: fieldData.crop || '',
       status: fieldData.status,
-      location: fieldData.location || undefined,
-      coordinates: undefined,
-      planting_date: fieldData.planting_date || undefined,
-      harvest_date: fieldData.harvest_date || undefined,
-      work_type: fieldData.work_type || undefined,
+      location: fieldData.location || '',
+      coordinates: null,
+      planting_date: fieldData.planting_date || '',
+      harvest_date: fieldData.harvest_date || '',
+      work_type: fieldData.work_type || '',
       costs: fieldData.costs ? parseFloat(fieldData.costs) : 0,
-      inputs: fieldData.inputs || undefined,
+      inputs: fieldData.inputs || '',
+      notes: fieldData.notes || '',
       roi: fieldData.roi ? parseFloat(fieldData.roi) : 0,
       color: fieldData.color,
       soil_data: {},
-      updated_at: new Date().toISOString(),
     };
 
     try {
@@ -78,6 +79,7 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
         work_type: '',
         costs: '',
         inputs: '',
+        notes: '',
         roi: '',
         color: '#22c55e'
       });
@@ -249,6 +251,15 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
               value={fieldData.inputs}
               onChange={(e) => setFieldData({...fieldData, inputs: e.target.value})}
               placeholder="Descriere inputuri: semințe, îngrășăminte, tratamente..."
+            />
+          </div>
+          <div className="md:col-span-2">
+            <Label htmlFor="notes">Notițe</Label>
+            <Textarea
+              id="notes"
+              value={fieldData.notes}
+              onChange={(e) => setFieldData({...fieldData, notes: e.target.value})}
+              placeholder="Observații și notițe despre teren..."
             />
           </div>
         </div>

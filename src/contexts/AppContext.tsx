@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
-type Json = Database['public']['Json']
+type Json = Database['public']['Tables']['fields']['Row']['coordinates']
 
 interface Field {
   id: string;
@@ -24,6 +24,8 @@ interface Field {
   roi: number;
   color: string;
   work_type: string;
+  status: string;
+  soil_data: Json;
 }
 
 interface Task {
@@ -37,7 +39,7 @@ interface Task {
   time: string;
   due_date: string;
   due_time: string;
-  status: 'pending' | 'completed' | 'in progress' | 'cancelled';
+  status: 'pending' | 'completed' | 'in_progress' | 'cancelled';
   priority: 'high' | 'medium' | 'low';
   category: string;
   duration: number;
@@ -78,8 +80,12 @@ interface Notification {
   created_at: string;
   user_id: string;
   type: string;
+  title: string;
   message: string;
   read: boolean;
+  is_read: boolean;
+  read_at: string | null;
+  priority: 'high' | 'medium' | 'low';
 }
 
 interface InventoryItem {
@@ -89,13 +95,21 @@ interface InventoryItem {
   user_id: string;
   name: string;
   type: 'seed' | 'fertilizer' | 'pesticide' | 'equipment' | 'other';
-  quantity: number;
+  quantity: string;
   unit: string;
   purchase_date: string;
   expiry_date: string;
   cost_per_unit: number;
   notes: string;
   condition: string;
+  location: string;
+  last_used: string;
+  next_maintenance: string;
+  expiration_date: string;
+  stock_level: string;
+  purchase_cost: number;
+  current_value: number;
+  purpose: string;
 }
 
 interface PropertyDocument {
@@ -119,6 +133,7 @@ interface AppContextType {
   tasks: Task[];
   fieldPhotos: FieldPhoto[];
   financialTransactions: Transaction[];
+  transactions: Transaction[];
   notifications: Notification[];
   inventory: InventoryItem[];
   propertyDocuments: PropertyDocument[];
@@ -214,14 +229,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     getSession();
 
-    supabase.auth.onAuthStateChange((event, session) => {
+    supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        const { data: profile } = supabase
+        const { data: profile } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
-          .single()
-          .then((res) => res);
+          .single();
 
         setUser({
           id: session.user.id,
@@ -568,7 +582,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    setNotifications(prev => prev.map(notification => notification.id === id ? { ...notification, read: true } : notification));
+    setNotifications(prev => prev.map(notification => notification.id === id ? { ...notification, read: true, is_read: true } : notification));
   };
 
   // Inventory methods
@@ -650,38 +664,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       };
     }
 
-    if (templateId === 'apia-eco-scheme') {
-      return {
-        ...baseData,
-        ecoMeasures: [
-          'Rotația culturilor pentru menținerea fertilității solului',
-          'Păstrarea habitatelor naturale în proporție de min. 7%',
-          'Diversificarea culturilor pentru protejarea biodiversității'
-        ],
-        totalEcoArea: fields.reduce((sum, f) => sum + f.size, 0)
-      };
-    }
-
-    if (templateId === 'afir-modernizare') {
-      return {
-        ...baseData,
-        investmentType: 'Modernizare exploatație agricolă',
-        requestedAmount: 150000,
-        cofinancing: 30000,
-        timeline: '24 luni',
-        equipment: inventory.filter(item => item.type === 'equipment').map(item => ({
-          name: item.name,
-          condition: item.condition || 'Bună'
-        }))
-      };
-    }
-
     return baseData;
   };
 
   // Report methods
   const generateReport = async (type: string, data: any) => {
-    // Implementation for report generation
     toast({ title: "Raport generat", description: `Raportul ${type} a fost generat cu succes.` });
   };
 
@@ -696,6 +683,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     tasks,
     fieldPhotos,
     financialTransactions,
+    transactions: financialTransactions,
     notifications,
     inventory,
     user,

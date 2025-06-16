@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,8 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
       crop_stage: 'Pregătire sol',
       weather_conditions: 'Însorit, 22°C',
       notes: 'Sol în condiții optime pentru semănat',
-      image_url: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=400'
+      image_url: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=400',
+      field_id: '1'
     },
     {
       id: 2,
@@ -52,7 +54,8 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
       crop_stage: 'Creștere',
       weather_conditions: 'Noros, 18°C',
       notes: 'Aplicat fungicid preventiv',
-      image_url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400'
+      image_url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400',
+      field_id: '2'
     },
     {
       id: 3,
@@ -62,7 +65,8 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
       crop_stage: 'Dezvoltare',
       weather_conditions: 'Ploios, 15°C',
       notes: 'Îngrășământ NPK aplicat înainte de ploaie',
-      image_url: 'https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?w=400'
+      image_url: 'https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?w=400',
+      field_id: '3'
     }
   ]);
 
@@ -184,12 +188,12 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
                 <div className="aspect-video bg-gray-100 relative">
                   <img 
                     src={photo.image_url} 
-                    alt={`${photo.activity} - ${getFieldName(photo.field_id)}`}
+                    alt={`${photo.activity} - ${photo.field_name || getFieldName(photo.field_id)}`}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-2 left-2">
                     <Badge className="bg-white/90 text-gray-800">
-                      {getFieldName(photo.field_id)}
+                      {photo.field_name || getFieldName(photo.field_id)}
                     </Badge>
                   </div>
                 </div>

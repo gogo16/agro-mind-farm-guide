@@ -33,14 +33,15 @@ const NotificationCenter = () => {
           title: 'Sarcină programată astăzi',
           message: `"${task.title}" este programată pentru astăzi pe ${task.field_name}`,
           priority: task.priority,
+          read: false,
           is_read: false,
-          read_at: undefined
+          read_at: null
         });
       }
     });
   }, [tasks, notifications, addNotification]);
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const unreadCount = notifications.filter(n => !n.read && !n.is_read).length;
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -59,7 +60,7 @@ const NotificationCenter = () => {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority?: string) => {
     switch (priority) {
       case 'high':
         return 'border-l-red-500';
@@ -73,7 +74,7 @@ const NotificationCenter = () => {
   };
 
   const handleNotificationClick = (notification: any) => {
-    if (!notification.is_read) {
+    if (!notification.read && !notification.is_read) {
       markNotificationAsRead(notification.id);
     }
 
@@ -126,8 +127,8 @@ const NotificationCenter = () => {
             notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`p-4 border-l-4 ${getPriorityColor(notification.priority || 'medium')} bg-gray-50 rounded-r-lg cursor-pointer hover:bg-gray-100 transition-colors ${
-                  !notification.is_read ? 'bg-blue-50 hover:bg-blue-100' : ''
+                className={`p-4 border-l-4 ${getPriorityColor(notification.priority)} bg-gray-50 rounded-r-lg cursor-pointer hover:bg-gray-100 transition-colors ${
+                  !notification.read && !notification.is_read ? 'bg-blue-50 hover:bg-blue-100' : ''
                 }`}
                 onClick={() => handleNotificationClick(notification)}
               >
@@ -135,10 +136,10 @@ const NotificationCenter = () => {
                   {getNotificationIcon(notification.type)}
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
-                      <h4 className={`font-medium text-sm ${!notification.is_read ? 'text-blue-900' : 'text-gray-900'}`}>
-                        {notification.title}
+                      <h4 className={`font-medium text-sm ${!notification.read && !notification.is_read ? 'text-blue-900' : 'text-gray-900'}`}>
+                        {notification.title || notification.message.substring(0, 30) + '...'}
                       </h4>
-                      {!notification.is_read && (
+                      {!notification.read && !notification.is_read && (
                         <Badge className="bg-blue-100 text-blue-800 text-xs">Nou</Badge>
                       )}
                     </div>
@@ -158,7 +159,7 @@ const NotificationCenter = () => {
             <Button 
               className="w-full" 
               variant="outline"
-              onClick={() => notifications.filter(n => !n.is_read).forEach(n => markNotificationAsRead(n.id))}
+              onClick={() => notifications.filter(n => !n.read && !n.is_read).forEach(n => markNotificationAsRead(n.id))}
             >
               Marchează toate ca citite
             </Button>
