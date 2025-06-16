@@ -307,10 +307,13 @@ const MapView = () => {
             <Card className="bg-white border-green-200">
               <CardContent className="p-0">
                 <InteractiveMap
-                  fields={fields}
-                  center={mapCenter}
-                  onMapClick={handleMapClick}
-                  selectedCoordinates={selectedCoordinates}
+                  mapType="roadmap"
+                  onFieldSelect={(field) => {
+                    toast({
+                      title: field.name,
+                      description: `${field.crop} • ${field.size} ha • ${field.parcel_code}`
+                    });
+                  }}
                 />
               </CardContent>
             </Card>

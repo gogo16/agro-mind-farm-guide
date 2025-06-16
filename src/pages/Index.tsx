@@ -54,7 +54,7 @@ const Index = () => {
   };
 
   const handleNotificationClick = async (notificationId: string) => {
-    await markNotificationAsRead(notificationId);
+    await markNotificationAsRead(notificationId, true);
     toast({
       title: "Notificare citită",
       description: "Notificarea a fost marcată ca citită."
@@ -143,13 +143,18 @@ const Index = () => {
           </Card>
 
           {/* Notifications */}
-          <NotificationCenter onNotificationClick={handleNotificationClick} />
+          <NotificationCenter />
         </div>
 
         {/* Secondary Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <TasksWidget />
-          <AIRecommendationsCard />
+          <AIRecommendationsCard
+            zoneId="ai-dashboard"
+            title="Recomandări AI"
+            icon={<span>🤖</span>}
+            gradientClass="from-purple-500 to-pink-600"
+          />
         </div>
 
         {/* Weather and Fields */}

@@ -27,17 +27,17 @@ const Finance = () => {
     amount: '',
     description: '',
     category: '',
-    field: '',
+    field_id: '',
     date: ''
   });
 
   const totalIncome = transactions
     .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const totalExpenses = transactions
     .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const profit = totalIncome - totalExpenses;
   const roi = totalExpenses > 0 ? ((profit / totalExpenses) * 100).toFixed(1) : '0';
@@ -80,11 +80,11 @@ const Finance = () => {
       amount: parseFloat(newTransaction.amount),
       description: newTransaction.description,
       category: newTransaction.category || 'General',
-      field: newTransaction.field || 'General',
+      field_id: newTransaction.field_id || null,
       date: newTransaction.date || new Date().toISOString().split('T')[0]
     });
 
-    setNewTransaction({ type: '', amount: '', description: '', category: '', field: '', date: '' });
+    setNewTransaction({ type: '', amount: '', description: '', category: '', field_id: '', date: '' });
     setIsAddingTransaction(false);
 
     toast({
@@ -109,7 +109,7 @@ const Finance = () => {
 
     updateTransaction(editingTransaction.id, {
       ...editingTransaction,
-      amount: parseFloat(editingTransaction.amount)
+      amount: parseFloat(editingTransaction.amount.toString())
     });
 
     toast({
@@ -120,7 +120,7 @@ const Finance = () => {
     setEditingTransaction(null);
   };
 
-  const handleDeleteTransaction = (id: number) => {
+  const handleDeleteTransaction = (id: string) => {
     deleteTransaction(id);
     toast({
       title: "Tranzacție ștersă",
@@ -278,16 +278,16 @@ const Finance = () => {
                             </Select>
                           </div>
                           <div>
-                            <Label htmlFor="field">Teren</Label>
-                            <Select onValueChange={(value) => setNewTransaction({...newTransaction, field: value})}>
+                            <Label htmlFor="field_id">Teren</Label>
+                            <Select onValueChange={(value) => setNewTransaction({...newTransaction, field_id: value})}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Selectează terenul" />
                               </SelectTrigger>
                               <SelectContent>
                                 {fields.map((field) => (
-                                  <SelectItem key={field.id} value={field.name}>{field.name}</SelectItem>
+                                  <SelectItem key={field.id} value={field.id}>{field.name}</SelectItem>
                                 ))}
-                                <SelectItem value="General">General</SelectItem>
+                                <SelectItem value="">General</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -313,62 +313,65 @@ const Finance = () => {
                     </Dialog>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {transactions.slice(0, 8).map((transaction) => (
-                      <div key={transaction.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className={`p-2 rounded-lg ${
-                            transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'
-                          }`}>
-                            {transaction.type === 'income' ? (
-                              <ArrowUpRight className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <ArrowDownRight className="h-4 w-4 text-red-600" />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900">{transaction.description}</p>
-                            <div className="flex items-center space-x-2 mt-1">
-                              <Badge variant="secondary" className="text-xs">{transaction.category}</Badge>
-                              <span className="text-xs text-gray-500">{transaction.field}</span>
-                              <span className="text-xs text-gray-500">{transaction.date}</span>
+                    {transactions.slice(0, 8).map((transaction) => {
+                      const fieldName = transaction.field_id ? fields.find(f => f.id === transaction.field_id)?.name || 'General' : 'General';
+                      return (
+                        <div key={transaction.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <div className={`p-2 rounded-lg ${
+                              transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'
+                            }`}>
+                              {transaction.type === 'income' ? (
+                                <ArrowUpRight className="h-4 w-4 text-green-600" />
+                              ) : (
+                                <ArrowDownRight className="h-4 w-4 text-red-600" />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900">{transaction.description}</p>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <Badge variant="secondary" className="text-xs">{transaction.category}</Badge>
+                                <span className="text-xs text-gray-500">{fieldName}</span>
+                                <span className="text-xs text-gray-500">{transaction.date}</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <div className="text-right">
-                            <p className={`font-semibold ${
-                              transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                            }`}>
-                              {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toLocaleString()} RON
-                            </p>
+                          <div className="flex items-center space-x-2">
+                            <div className="text-right">
+                              <p className={`font-semibold ${
+                                transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                {transaction.type === 'income' ? '+' : '-'}{Number(transaction.amount).toLocaleString()} RON
+                              </p>
+                            </div>
+                            <Button size="sm" variant="outline" onClick={() => handleEditTransaction(transaction)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Ești sigur că vrei să ștergi această tranzacție?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Această acțiune nu poate fi anulată. Tranzacția "{transaction.description}" va fi ștersă permanent.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Anulează</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteTransaction(transaction.id)} className="bg-red-600 hover:bg-red-700">
+                                    Șterge definitiv
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
-                          <Button size="sm" variant="outline" onClick={() => handleEditTransaction(transaction)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Ești sigur că vrei să ștergi această tranzacție?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Această acțiune nu poate fi anulată. Tranzacția "{transaction.description}" va fi ștersă permanent.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Anulează</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteTransaction(transaction.id)} className="bg-red-600 hover:bg-red-700">
-                                  Șterge definitiv
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </CardContent>
                 </Card>
               </div>

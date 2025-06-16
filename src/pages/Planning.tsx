@@ -1,95 +1,98 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar, Clock, Plus, CheckCircle, AlertCircle, Circle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Calendar, Clock, Plus, CheckCircle2, AlertCircle, Sprout, Wrench, Target } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
 
 const Planning = () => {
   const { toast } = useToast();
-  const { tasks, fields, addTask, updateTask, addNotification } = useAppContext();
+  const { tasks, fields, addTask, addNotification } = useAppContext();
   const [isAddingTask, setIsAddingTask] = useState(false);
-  const [selectedField, setSelectedField] = useState('');
-  const [taskForm, setTaskForm] = useState({
+  const [newTask, setNewTask] = useState({
     title: '',
     description: '',
     field_name: '',
     date: '',
-    time: '08:00',
+    time: '',
     due_date: '',
-    due_time: '17:00',
+    due_time: '',
     priority: 'medium' as 'high' | 'medium' | 'low',
     category: '',
-    estimated_duration: '2 ore'
+    estimated_duration: ''
   });
 
   const handleAddTask = async () => {
-    if (!taskForm.title || !taskForm.field_name || !taskForm.date) {
+    if (!newTask.title || !newTask.field_name || !newTask.date) {
       toast({
         title: "Eroare",
-        description: "Vă rugăm completați toate câmpurile obligatorii.",
+        description: "Te rugăm să completezi toate câmpurile obligatorii.",
         variant: "destructive"
       });
       return;
     }
 
+    const selectedField = fields.find(f => f.name === newTask.field_name);
+
     try {
-      await addNotification({
-        type: 'task',
-        title: 'Sarcină nouă adăugată',
-        message: `Sarcina "${taskForm.title}" a fost programată pentru ${taskForm.date}`,
-        read: false,
-        is_read: false,
-        priority: taskForm.priority,
-        read_at: null,
-      });
-
-      const selectedFieldObj = fields.find(f => f.name === taskForm.field_name);
-
       await addTask({
-        title: taskForm.title,
-        description: taskForm.description,
-        field_name: taskForm.field_name,
-        field_id: selectedFieldObj?.id || null,
-        date: taskForm.date,
-        time: taskForm.time,
-        due_date: taskForm.due_date || taskForm.date,
-        due_time: taskForm.due_time,
-        priority: taskForm.priority,
+        title: newTask.title,
+        description: newTask.description,
+        field_name: newTask.field_name,
+        field_id: selectedField?.id || null,
+        date: newTask.date,
+        time: newTask.time,
+        due_date: newTask.due_date || newTask.date,
+        due_time: newTask.due_time || newTask.time,
+        priority: newTask.priority,
         status: 'pending',
         ai_suggested: false,
-        estimated_duration: taskForm.estimated_duration,
-        duration: parseInt(taskForm.estimated_duration.split(' ')[0]) || 0,
-        category: taskForm.category,
-        completed_at: null,
+        estimated_duration: newTask.estimated_duration,
+        duration: parseInt(newTask.estimated_duration) || null,
+        category: newTask.category,
+        completed_at: null
       });
 
-      setTaskForm({
+      // Add notification for high priority tasks
+      if (newTask.priority === 'high') {
+        await addNotification({
+          type: 'task',
+          title: 'Sarcină urgentă adăugată',
+          message: `Sarcina "${newTask.title}" a fost programată pentru ${newTask.date}`,
+          read: false,
+          is_read: false,
+          priority: newTask.priority,
+          read_at: null
+        });
+      }
+
+      setNewTask({
         title: '',
         description: '',
         field_name: '',
         date: '',
-        time: '08:00',
+        time: '',
         due_date: '',
-        due_time: '17:00',
+        due_time: '',
         priority: 'medium',
         category: '',
-        estimated_duration: '2 ore'
+        estimated_duration: ''
       });
-
       setIsAddingTask(false);
+
       toast({
         title: "Succes",
         description: "Sarcina a fost adăugată cu succes."
       });
+
     } catch (error) {
       console.error('Error adding task:', error);
       toast({
@@ -100,64 +103,47 @@ const Planning = () => {
     }
   };
 
-  const handleCompleteTask = async (taskId: string) => {
-    try {
-      await updateTask(taskId, { 
-        status: 'completed',
-        completed_at: new Date().toISOString()
-      });
-      toast({
-        title: "Succes",
-        description: "Sarcina a fost marcată ca finalizată."
-      });
-    } catch (error) {
-      console.error('Error completing task:', error);
-      toast({
-        title: "Eroare",
-        description: "A apărut o eroare la finalizarea sarcinii.",
-        variant: "destructive"
-      });
-    }
-  };
+  // Group tasks by status
+  const pendingTasks = tasks.filter(task => task.status === 'pending');
+  const completedTasks = tasks.filter(task => task.status === 'completed');
+  const inProgressTasks = tasks.filter(task => task.status === 'in_progress');
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'in_progress':
-        return <AlertCircle className="h-4 w-4 text-yellow-600" />;
-      default:
-        return <Circle className="h-4 w-4 text-gray-400" />;
-    }
-  };
+  // Get upcoming tasks (next 7 days)
+  const today = new Date();
+  const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+  
+  const upcomingTasks = pendingTasks.filter(task => {
+    const taskDate = new Date(task.due_date || task.date);
+    return taskDate >= today && taskDate <= nextWeek;
+  }).sort((a, b) => new Date(a.due_date || a.date).getTime() - new Date(b.due_date || b.date).getTime());
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high':
-        return 'bg-red-100 text-red-800';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'low':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      case 'high': return 'bg-red-100 text-red-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  // Group tasks by status
-  const pendingTasks = tasks.filter(task => task.status === 'pending');
-  const inProgressTasks = tasks.filter(task => task.status === 'in_progress');
-  const completedTasks = tasks.filter(task => task.status === 'completed');
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'Plantare': return <Sprout className="h-4 w-4" />;
+      case 'Mentenanță': return <Wrench className="h-4 w-4" />;
+      case 'Recoltare': return <Target className="h-4 w-4" />;
+      default: return <Calendar className="h-4 w-4" />;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-green-800">Planificare</h1>
-            <p className="text-green-600">Gestionează sarcinile fermei tale</p>
+            <h1 className="text-3xl font-bold text-green-800">Planificare Activități</h1>
+            <p className="text-green-600">Organizează și monitorizează sarcinile fermei</p>
           </div>
 
           <Dialog open={isAddingTask} onOpenChange={setIsAddingTask}>
@@ -173,20 +159,30 @@ const Planning = () => {
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="title">Titlu *</Label>
+                  <Label htmlFor="title">Titlu sarcină *</Label>
                   <Input
                     id="title"
-                    value={taskForm.title}
-                    onChange={(e) => setTaskForm(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="Ex: Irrigare grâu"
+                    value={newTask.title}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Ex: Aplicare îngrășământ"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="field">Parcelă *</Label>
-                  <Select value={taskForm.field_name} onValueChange={(value) => setTaskForm(prev => ({ ...prev, field_name: value }))}>
+                  <Label htmlFor="description">Descriere</Label>
+                  <Textarea
+                    id="description"
+                    value={newTask.description}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Detalii despre sarcină..."
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="field_name">Teren *</Label>
+                  <Select value={newTask.field_name} onValueChange={(value) => setNewTask(prev => ({ ...prev, field_name: value }))}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selectează parcela" />
+                      <SelectValue placeholder="Selectează terenul" />
                     </SelectTrigger>
                     <SelectContent>
                       {fields.map(field => (
@@ -204,8 +200,8 @@ const Planning = () => {
                     <Input
                       id="date"
                       type="date"
-                      value={taskForm.date}
-                      onChange={(e) => setTaskForm(prev => ({ ...prev, date: e.target.value }))}
+                      value={newTask.date}
+                      onChange={(e) => setNewTask(prev => ({ ...prev, date: e.target.value }))}
                     />
                   </div>
                   <div>
@@ -213,44 +209,52 @@ const Planning = () => {
                     <Input
                       id="time"
                       type="time"
-                      value={taskForm.time}
-                      onChange={(e) => setTaskForm(prev => ({ ...prev, time: e.target.value }))}
+                      value={newTask.time}
+                      onChange={(e) => setNewTask(prev => ({ ...prev, time: e.target.value }))}
                     />
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="priority">Prioritate</Label>
-                  <Select value={taskForm.priority} onValueChange={(value: 'high' | 'medium' | 'low') => setTaskForm(prev => ({ ...prev, priority: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="high">Înaltă</SelectItem>
-                      <SelectItem value="medium">Medie</SelectItem>
-                      <SelectItem value="low">Scăzută</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="priority">Prioritate</Label>
+                    <Select value={newTask.priority} onValueChange={(value: 'high' | 'medium' | 'low') => setNewTask(prev => ({ ...prev, priority: value }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="high">Urgent</SelectItem>
+                        <SelectItem value="medium">Mediu</SelectItem>
+                        <SelectItem value="low">Scăzut</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="category">Categorie</Label>
+                    <Select value={newTask.category} onValueChange={(value) => setNewTask(prev => ({ ...prev, category: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selectează categoria" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Plantare">Plantare</SelectItem>
+                        <SelectItem value="Îngrijire">Îngrijire</SelectItem>
+                        <SelectItem value="Tratamente">Tratamente</SelectItem>
+                        <SelectItem value="Recoltare">Recoltare</SelectItem>
+                        <SelectItem value="Mentenanță">Mentenanță</SelectItem>
+                        <SelectItem value="Altele">Altele</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="category">Categorie</Label>
+                  <Label htmlFor="estimated_duration">Durata estimată (minute)</Label>
                   <Input
-                    id="category"
-                    value={taskForm.category}
-                    onChange={(e) => setTaskForm(prev => ({ ...prev, category: e.target.value }))}
-                    placeholder="Ex: Îngrijire, Recoltare"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Descriere</Label>
-                  <Textarea
-                    id="description"
-                    value={taskForm.description}
-                    onChange={(e) => setTaskForm(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Detalii despre sarcină..."
-                    rows={3}
+                    id="estimated_duration"
+                    type="number"
+                    value={newTask.estimated_duration}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, estimated_duration: e.target.value }))}
+                    placeholder="Ex: 120"
                   />
                 </div>
 
@@ -267,118 +271,141 @@ const Planning = () => {
           </Dialog>
         </div>
 
-        {/* Task Board */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Pending Tasks */}
+        {/* Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-white/80 backdrop-blur-sm border-orange-200">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-3">
+                <div className="bg-orange-100 p-3 rounded-lg">
+                  <Clock className="h-6 w-6 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-orange-800">{pendingTasks.length}</p>
+                  <p className="text-sm text-orange-600">În așteptare</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border-blue-200">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-3">
+                <div className="bg-blue-100 p-3 rounded-lg">
+                  <AlertCircle className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-blue-800">{inProgressTasks.length}</p>
+                  <p className="text-sm text-blue-600">În progres</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border-green-200">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-3">
+                <div className="bg-green-100 p-3 rounded-lg">
+                  <CheckCircle2 className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-green-800">{completedTasks.length}</p>
+                  <p className="text-sm text-green-600">Completate</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border-purple-200">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-3">
+                <div className="bg-purple-100 p-3 rounded-lg">
+                  <Calendar className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-purple-800">{upcomingTasks.length}</p>
+                  <p className="text-sm text-purple-600">Săptămâna aceasta</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tasks Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Upcoming Tasks */}
           <Card className="bg-white border-green-200">
             <CardHeader>
               <CardTitle className="text-green-800 flex items-center space-x-2">
-                <Circle className="h-5 w-5 text-gray-400" />
-                <span>În așteptare ({pendingTasks.length})</span>
+                <Calendar className="h-5 w-5" />
+                <span>Sarcini viitoare</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {pendingTasks.map(task => (
-                <div key={task.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-medium text-gray-900">{task.title}</h4>
-                    <Badge className={getPriorityColor(task.priority || 'medium')}>
-                      {task.priority === 'high' ? 'Înaltă' : 
-                       task.priority === 'medium' ? 'Medie' : 'Scăzută'}
+              {upcomingTasks.length > 0 ? upcomingTasks.map(task => (
+                <div key={task.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-semibold text-gray-900">{task.title}</h4>
+                    <Badge className={getPriorityColor(task.priority)}>
+                      {task.priority === 'high' ? 'Urgent' : 
+                       task.priority === 'medium' ? 'Mediu' : 'Scăzut'}
                     </Badge>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">{task.field_name}</p>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center space-x-2 text-gray-500">
-                      <Calendar className="h-4 w-4" />
-                      <span>{task.due_date || task.date}</span>
-                      <Clock className="h-4 w-4" />
-                      <span>{task.time || '08:00'}</span>
+                  <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                  <div className="flex justify-between items-center text-sm">
+                    <div className="flex items-center space-x-2">
+                      {getCategoryIcon(task.category)}
+                      <span className="text-gray-500">{task.field_name}</span>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleCompleteTask(task.id)}
-                    >
-                      Finalizează
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-500">
+                        {task.due_date} {task.due_time && `la ${task.due_time}`}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              ))}
-              {pendingTasks.length === 0 && (
-                <p className="text-gray-500 text-center py-8">Nu există sarcini în așteptare</p>
+              )) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p>Nu există sarcini programate pentru săptămâna aceasta</p>
+                  <p className="text-sm">Adaugă sarcini noi pentru a le vedea aici</p>
+                </div>
               )}
             </CardContent>
           </Card>
 
-          {/* In Progress Tasks */}
+          {/* All Tasks */}
           <Card className="bg-white border-green-200">
             <CardHeader>
-              <CardTitle className="text-green-800 flex items-center space-x-2">
-                <AlertCircle className="h-5 w-5 text-yellow-600" />
-                <span>În progres ({inProgressTasks.length})</span>
-              </CardTitle>
+              <CardTitle className="text-green-800">Toate sarcinile</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {inProgressTasks.map(task => (
-                <div key={task.id} className="border border-yellow-200 rounded-lg p-4 bg-yellow-50">
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-medium text-gray-900">{task.title}</h4>
-                    <Badge className={getPriorityColor(task.priority || 'medium')}>
-                      {task.priority === 'high' ? 'Înaltă' : 
-                       task.priority === 'medium' ? 'Medie' : 'Scăzută'}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">{task.field_name}</p>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center space-x-2 text-gray-500">
-                      <Calendar className="h-4 w-4" />
-                      <span>{task.due_date || task.date}</span>
-                      <Clock className="h-4 w-4" />
-                      <span>{task.time || '08:00'}</span>
+            <CardContent className="space-y-4 max-h-96 overflow-y-auto">
+              {tasks.length > 0 ? tasks.slice(0, 10).map(task => (
+                <div key={task.id} className={`border rounded-lg p-3 ${
+                  task.status === 'completed' ? 'bg-green-50 border-green-200' : 
+                  task.status === 'in_progress' ? 'bg-blue-50 border-blue-200' : 
+                  'bg-gray-50 border-gray-200'
+                }`}>
+                  <div className="flex justify-between items-start mb-1">
+                    <h5 className="font-medium text-gray-900">{task.title}</h5>
+                    <div className="flex items-center space-x-1">
+                      <Badge variant="secondary" className="text-xs">{task.category}</Badge>
+                      <Badge className={getPriorityColor(task.priority)} size="sm">
+                        {task.priority === 'high' ? 'H' : task.priority === 'medium' ? 'M' : 'L'}
+                      </Badge>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleCompleteTask(task.id)}
-                    >
-                      Finalizează
-                    </Button>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">{task.field_name}</span>
+                    <span className="text-gray-500">{task.due_date || task.date}</span>
                   </div>
                 </div>
-              ))}
-              {inProgressTasks.length === 0 && (
-                <p className="text-gray-500 text-center py-8">Nu există sarcini în progres</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Completed Tasks */}
-          <Card className="bg-white border-green-200">
-            <CardHeader>
-              <CardTitle className="text-green-800 flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <span>Finalizate ({completedTasks.length})</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {completedTasks.slice(0, 5).map(task => (
-                <div key={task.id} className="border border-green-200 rounded-lg p-4 bg-green-50">
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-medium text-gray-900">{task.title}</h4>
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">{task.field_name}</p>
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <Calendar className="h-4 w-4" />
-                    <span>{task.due_date || task.date}</span>
-                    <span>•</span>
-                    <span>Completat</span>
-                  </div>
+              )) : (
+                <div className="text-center py-8 text-gray-500">
+                  <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p>Nu există sarcini create</p>
+                  <p className="text-sm">Începe prin a adăuga prima sarcină</p>
                 </div>
-              ))}
-              {completedTasks.length === 0 && (
-                <p className="text-gray-500 text-center py-8">Nu există sarcini finalizate</p>
               )}
             </CardContent>
           </Card>
