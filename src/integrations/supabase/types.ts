@@ -619,66 +619,6 @@ export type Database = {
           },
         ]
       }
-      satellite_monitoring: {
-        Row: {
-          ai_insights: Json | null
-          analysis_date: string
-          change_detected: boolean | null
-          change_percentage: number | null
-          comparison_image_url: string | null
-          created_at: string
-          current_image_url: string | null
-          field_id: string
-          id: string
-          next_analysis_date: string | null
-          previous_image_url: string | null
-          user_id: string
-        }
-        Insert: {
-          ai_insights?: Json | null
-          analysis_date?: string
-          change_detected?: boolean | null
-          change_percentage?: number | null
-          comparison_image_url?: string | null
-          created_at?: string
-          current_image_url?: string | null
-          field_id: string
-          id?: string
-          next_analysis_date?: string | null
-          previous_image_url?: string | null
-          user_id: string
-        }
-        Update: {
-          ai_insights?: Json | null
-          analysis_date?: string
-          change_detected?: boolean | null
-          change_percentage?: number | null
-          comparison_image_url?: string | null
-          created_at?: string
-          current_image_url?: string | null
-          field_id?: string
-          id?: string
-          next_analysis_date?: string | null
-          previous_image_url?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "satellite_monitoring_field_id_fkey"
-            columns: ["field_id"]
-            isOneToOne: false
-            referencedRelation: "fields"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "satellite_monitoring_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       tasks: {
         Row: {
           ai_suggested: boolean | null

@@ -32,7 +32,9 @@ const NotificationCenter = () => {
           type: 'task',
           title: 'Sarcină programată astăzi',
           message: `"${task.title}" este programată pentru astăzi pe ${task.field_name}`,
-          priority: task.priority
+          priority: task.priority,
+          is_read: false,
+          read_at: undefined
         });
       }
     });
