@@ -533,6 +533,77 @@ export const useAIRecommendations = () => {
     ];
   };
 
+  const generateFieldRecommendations = (field: Field): string[] => {
+    const recommendations: string[] = [];
+    const today = new Date();
+    
+    // Planting date recommendations
+    if (field.planting_date) {
+      const plantingDate = new Date(field.planting_date);
+      const daysSinceSeeded = Math.floor((today.getTime() - plantingDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysSinceSeeded > 30 && daysSinceSeeded < 60) {
+        recommendations.push('Este timpul pentru prima fertilizare cu azot');
+      }
+    }
+
+    // Crop-specific recommendations
+    if (field.crop?.toLowerCase() === 'grau') {
+      recommendations.push('Monitorizează apariția bolilor foliare în această perioadă');
+    }
+
+    // Weather-based recommendations (simplified since weather property doesn't exist on Field)
+    recommendations.push('Verifică prognoza meteo pentru planificarea tratamentelor');
+
+    return recommendations;
+  };
+
+  const getFieldStatus = (fieldId: string) => {
+    const field = fields.find(f => f.id === fieldId);
+    if (!field) return { status: 'Necunoscut', description: 'Date indisponibile', color: 'gray' };
+
+    // Calculate status based on planting and harvest dates
+    const today = new Date();
+    const plantingDate = field.planting_date ? new Date(field.planting_date) : null;
+    const harvestDate = field.harvest_date ? new Date(field.harvest_date) : null;
+
+    if (plantingDate && harvestDate) {
+      if (today < plantingDate) {
+        return { status: 'Pregătire', description: 'În pregătire pentru însămânțare', color: 'blue' };
+      } else if (today > harvestDate) {
+        return { status: 'Recoltat', description: 'Sezonul s-a încheiat', color: 'gray' };
+      } else {
+        return { status: 'În dezvoltare', description: 'Cultura se dezvoltă normal', color: 'green' };
+      }
+    }
+
+    return { status: 'Activ', description: 'În monitorizare', color: 'green' };
+  };
+
+  const getFieldProgress = (fieldId: string) => {
+    const field = fields.find(f => f.id === fieldId);
+    if (!field) return { developmentProgress: 0, daysToHarvest: 0 };
+
+    const today = new Date();
+    const plantingDate = field.planting_date ? new Date(field.planting_date) : null;
+    const harvestDate = field.harvest_date ? new Date(field.harvest_date) : null;
+
+    if (plantingDate && harvestDate) {
+      const totalDays = Math.floor((harvestDate.getTime() - plantingDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysPassed = Math.floor((today.getTime() - plantingDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysToHarvest = Math.floor((harvestDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+      const developmentProgress = Math.min(100, Math.max(0, (daysPassed / totalDays) * 100));
+
+      return {
+        developmentProgress: Math.round(developmentProgress),
+        daysToHarvest: Math.max(0, daysToHarvest)
+      };
+    }
+
+    return { developmentProgress: 50, daysToHarvest: 60 }; // Default values
+  };
+
   // Refresh recommendations when farm data changes
   useEffect(() => {
     generateRecommendations();
@@ -546,72 +617,14 @@ export const useAIRecommendations = () => {
     return aiContent[zoneId] || [];
   };
 
-  const getFieldProgress = (fieldId: number) => {
-    const field = fields.find(f => f.id === fieldId);
-    if (!field) return { developmentProgress: 0, daysToHarvest: 0 };
-
-    const plantingDate = field.plantingDate ? new Date(field.plantingDate) : new Date();
-    const harvestDate = field.harvestDate ? new Date(field.harvestDate) : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
-    
-    const totalDays = Math.floor((harvestDate.getTime() - plantingDate.getTime()) / (1000 * 60 * 60 * 24));
-    const daysSincePlanting = Math.floor((new Date().getTime() - plantingDate.getTime()) / (1000 * 60 * 60 * 24));
-    const daysToHarvest = Math.floor((harvestDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    
-    const developmentProgress = Math.min(100, Math.max(0, (daysSincePlanting / totalDays) * 100));
-
-    return { 
-      developmentProgress: Math.round(developmentProgress), 
-      daysToHarvest: Math.max(0, daysToHarvest) 
-    };
-  };
-
-  const getFieldStatus = (fieldId: number) => {
-    const field = fields.find(f => f.id === fieldId);
-    if (!field) return { status: 'Necunoscut', description: 'Date indisponibile', color: 'gray' };
-
-    let status = 'Sănătos';
-    let description = 'Dezvoltare normală';
-    let color = 'green';
-
-    // Weather-based status
-    if (field.weather?.condition === 'rainy') {
-      status = 'Risc umiditate';
-      description = 'Monitorizează pentru boli fungice';
-      color = 'yellow';
-    } else if (field.weather?.temperature && field.weather.temperature > 35) {
-      status = 'Stres termic';
-      description = 'Necesită irigare suplimentară';
-      color = 'red';
-    } else if (field.weather?.temperature && field.weather.temperature < 5) {
-      status = 'Risc îngheț';
-      description = 'Monitorizează pentru daune';
-      color = 'blue';
-    }
-
-    // Development stage based on planting date
-    const daysSincePlanting = field.plantingDate ? 
-      Math.floor((new Date().getTime() - new Date(field.plantingDate).getTime()) / (1000 * 60 * 60 * 24)) : 0;
-
-    if (daysSincePlanting > 180) {
-      description = 'Aproape de maturitate';
-    } else if (daysSincePlanting > 90) {
-      description = 'Dezvoltare activă';
-    } else if (daysSincePlanting > 30) {
-      description = 'Creștere timpurie';
-    } else if (daysSincePlanting > 0) {
-      description = 'Răsărire și înrădăcinare';
-    }
-
-    return { status, description, color };
-  };
-
   return {
     aiContent,
     isLoading,
     lastUpdate,
     refreshRecommendations,
     getRecommendationsByZone,
-    getFieldProgress,
-    getFieldStatus
+    generateFieldRecommendations,
+    getFieldStatus,
+    getFieldProgress
   };
 };

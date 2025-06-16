@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -86,15 +85,15 @@ const TasksWidget = () => {
       field_id: selectedField?.id,
       priority: newTask.priority,
       date: newTask.date,
-      time: newTask.time || undefined,
       due_date: newTask.date,
-      due_time: newTask.time || undefined,
+      due_time: newTask.time || null,
       status: 'pending' as const,
       ai_suggested: false,
-      description: newTask.description || undefined,
-      estimated_duration: newTask.estimated_duration || undefined,
-      duration: undefined,
-      category: undefined
+      description: newTask.description || null,
+      estimated_duration: newTask.estimated_duration || null,
+      duration: null,
+      category: null,
+      completed_at: null
     });
 
     setNewTask({

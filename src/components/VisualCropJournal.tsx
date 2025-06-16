@@ -21,6 +21,13 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
   const [selectedField, setSelectedField] = useState('');
   
+  // Helper function to get field name from field_id
+  const getFieldName = (fieldIdToFind?: string) => {
+    if (!fieldIdToFind) return 'N/A';
+    const field = fields.find(f => f.id === fieldIdToFind);
+    return field ? field.name : 'N/A';
+  };
+
   // Filtrează pozele pentru terenul specific dacă este specificat fieldId
   const displayedPhotos = fieldId 
     ? (fieldPhotos || []).filter((photo: any) => photo.field_id === fieldId)
@@ -177,12 +184,12 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
                 <div className="aspect-video bg-gray-100 relative">
                   <img 
                     src={photo.image_url} 
-                    alt={`${photo.activity} - ${photo.field_name || 'N/A'}`}
+                    alt={`${photo.activity} - ${getFieldName(photo.field_id)}`}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-2 left-2">
                     <Badge className="bg-white/90 text-gray-800">
-                      {photo.field_name || 'N/A'}
+                      {getFieldName(photo.field_id)}
                     </Badge>
                   </div>
                 </div>
