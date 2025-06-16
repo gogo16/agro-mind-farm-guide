@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -390,7 +389,7 @@ const Planning = () => {
                     <h5 className="font-medium text-gray-900">{task.title}</h5>
                     <div className="flex items-center space-x-1">
                       <Badge variant="secondary" className="text-xs">{task.category}</Badge>
-                      <Badge className={getPriorityColor(task.priority)} size="sm">
+                      <Badge className={getPriorityColor(task.priority)}>
                         {task.priority === 'high' ? 'H' : task.priority === 'medium' ? 'M' : 'L'}
                       </Badge>
                     </div>

@@ -43,7 +43,7 @@ const Index = () => {
   const totalArea = fields.reduce((sum, field) => sum + Number(field.size), 0);
 
   // Get recent notifications  
-  const recentNotifications = notifications.filter(n => !n.read).slice(0, 3);
+  const recentNotifications = notifications.filter(n => !n.is_read).slice(0, 3);
 
   // Quick stats
   const stats = {
@@ -54,7 +54,7 @@ const Index = () => {
   };
 
   const handleNotificationClick = async (notificationId: string) => {
-    await markNotificationAsRead(notificationId, true);
+    await markNotificationAsRead(notificationId);
     toast({
       title: "Notificare citită",
       description: "Notificarea a fost marcată ca citită."
@@ -150,7 +150,7 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <TasksWidget />
           <AIRecommendationsCard
-            zoneId="ai-dashboard"
+            zoneId="ai-seasonal-guidance"
             title="Recomandări AI"
             icon={<span>🤖</span>}
             gradientClass="from-purple-500 to-pink-600"
