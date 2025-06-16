@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -9,16 +8,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { Plus } from 'lucide-react';
-
 interface AddFieldDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
-
-const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
-  const { toast } = useToast();
-  const { addField } = useAppContext();
-  
+const AddFieldDialog = ({
+  open,
+  onOpenChange
+}: AddFieldDialogProps) => {
+  const {
+    toast
+  } = useToast();
+  const {
+    addField
+  } = useAppContext();
   const [fieldData, setFieldData] = useState({
     name: '',
     parcel_code: '',
@@ -35,7 +38,6 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
     roi: '',
     color: '#22c55e'
   });
-
   const handleAddField = async () => {
     if (!fieldData.name || !fieldData.size) {
       toast({
@@ -45,7 +47,6 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
       });
       return;
     }
-
     const newField = {
       name: fieldData.name,
       parcel_code: fieldData.parcel_code || '',
@@ -62,9 +63,8 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
       notes: fieldData.notes || '',
       roi: fieldData.roi ? parseFloat(fieldData.roi) : 0,
       color: fieldData.color,
-      soil_data: {},
+      soil_data: {}
     };
-
     try {
       await addField(newField);
       setFieldData({
@@ -86,7 +86,7 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
       onOpenChange(false);
       toast({
         title: "Succes",
-        description: "Terenul a fost adăugat cu succes.",
+        description: "Terenul a fost adăugat cu succes."
       });
     } catch (error) {
       toast({
@@ -96,9 +96,7 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
       });
     }
   };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+  return <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button size="sm" className="bg-green-600 hover:bg-green-700">
           <Plus className="h-4 w-4 mr-1" />
@@ -112,36 +110,31 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="name">Nume teren *</Label>
-            <Input
-              id="name"
-              value={fieldData.name}
-              onChange={(e) => setFieldData({...fieldData, name: e.target.value})}
-              placeholder="ex: Parcela Nord"
-            />
+            <Input id="name" value={fieldData.name} onChange={e => setFieldData({
+            ...fieldData,
+            name: e.target.value
+          })} placeholder="ex: Parcela Nord" />
           </div>
           <div>
             <Label htmlFor="parcel_code">Cod parcelă</Label>
-            <Input
-              id="parcel_code"
-              value={fieldData.parcel_code}
-              onChange={(e) => setFieldData({...fieldData, parcel_code: e.target.value})}
-              placeholder="ex: PN-001"
-            />
+            <Input id="parcel_code" value={fieldData.parcel_code} onChange={e => setFieldData({
+            ...fieldData,
+            parcel_code: e.target.value
+          })} placeholder="ex: PN-001" />
           </div>
           <div>
             <Label htmlFor="size">Suprafață (ha) *</Label>
-            <Input
-              id="size"
-              type="number"
-              step="0.01"
-              value={fieldData.size}
-              onChange={(e) => setFieldData({...fieldData, size: e.target.value})}
-              placeholder="ex: 5.5"
-            />
+            <Input id="size" type="number" step="0.01" value={fieldData.size} onChange={e => setFieldData({
+            ...fieldData,
+            size: e.target.value
+          })} placeholder="ex: 5.5" />
           </div>
           <div>
             <Label htmlFor="crop">Cultură</Label>
-            <Select value={fieldData.crop} onValueChange={(value) => setFieldData({...fieldData, crop: value})}>
+            <Select value={fieldData.crop} onValueChange={value => setFieldData({
+            ...fieldData,
+            crop: value
+          })}>
               <SelectTrigger>
                 <SelectValue placeholder="Selectează cultura" />
               </SelectTrigger>
@@ -159,7 +152,10 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
           </div>
           <div>
             <Label htmlFor="status">Status</Label>
-            <Select value={fieldData.status} onValueChange={(value) => setFieldData({...fieldData, status: value})}>
+            <Select value={fieldData.status} onValueChange={value => setFieldData({
+            ...fieldData,
+            status: value
+          })}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -170,98 +166,39 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label htmlFor="location">Locație</Label>
-            <Input
-              id="location"
-              value={fieldData.location}
-              onChange={(e) => setFieldData({...fieldData, location: e.target.value})}
-              placeholder="ex: Comuna X, Județul Y"
-            />
-          </div>
+          
           <div>
             <Label htmlFor="planting_date">Data plantării</Label>
-            <Input
-              id="planting_date"
-              type="date"
-              value={fieldData.planting_date}
-              onChange={(e) => setFieldData({...fieldData, planting_date: e.target.value})}
-            />
+            <Input id="planting_date" type="date" value={fieldData.planting_date} onChange={e => setFieldData({
+            ...fieldData,
+            planting_date: e.target.value
+          })} />
           </div>
           <div>
             <Label htmlFor="harvest_date">Data recoltării</Label>
-            <Input
-              id="harvest_date"
-              type="date"
-              value={fieldData.harvest_date}
-              onChange={(e) => setFieldData({...fieldData, harvest_date: e.target.value})}
-            />
+            <Input id="harvest_date" type="date" value={fieldData.harvest_date} onChange={e => setFieldData({
+            ...fieldData,
+            harvest_date: e.target.value
+          })} />
           </div>
-          <div>
-            <Label htmlFor="work_type">Tip lucrare</Label>
-            <Select value={fieldData.work_type} onValueChange={(value) => setFieldData({...fieldData, work_type: value})}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selectează tipul de lucrare" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="arare">Arare</SelectItem>
-                <SelectItem value="discuire">Discuire</SelectItem>
-                <SelectItem value="semănat">Semănat</SelectItem>
-                <SelectItem value="fertilizare">Fertilizare</SelectItem>
-                <SelectItem value="tratament">Tratament fitosanitar</SelectItem>
-                <SelectItem value="recoltare">Recoltare</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="costs">Costuri (RON)</Label>
-            <Input
-              id="costs"
-              type="number"
-              step="0.01"
-              value={fieldData.costs}
-              onChange={(e) => setFieldData({...fieldData, costs: e.target.value})}
-              placeholder="ex: 1500.50"
-            />
-          </div>
-          <div>
-            <Label htmlFor="roi">ROI (%)</Label>
-            <Input
-              id="roi"
-              type="number"
-              step="0.01"
-              value={fieldData.roi}
-              onChange={(e) => setFieldData({...fieldData, roi: e.target.value})}
-              placeholder="ex: 15.5"
-            />
-          </div>
+          
+          
+          
           <div>
             <Label htmlFor="color">Culoare</Label>
-            <Input
-              id="color"
-              type="color"
-              value={fieldData.color}
-              onChange={(e) => setFieldData({...fieldData, color: e.target.value})}
-            />
+            <Input id="color" type="color" value={fieldData.color} onChange={e => setFieldData({
+            ...fieldData,
+            color: e.target.value
+          })} />
           </div>
           <div className="md:col-span-2">
-            <Label htmlFor="inputs">Inputuri utilizate</Label>
-            <Textarea
-              id="inputs"
-              value={fieldData.inputs}
-              onChange={(e) => setFieldData({...fieldData, inputs: e.target.value})}
-              placeholder="Descriere inputuri: semințe, îngrășăminte, tratamente..."
-            />
+            <Label htmlFor="inputs">Lucrari efectuate</Label>
+            <Textarea id="inputs" value={fieldData.inputs} onChange={e => setFieldData({
+            ...fieldData,
+            inputs: e.target.value
+          })} placeholder="Descriere inputuri: semințe, îngrășăminte, tratamente..." />
           </div>
-          <div className="md:col-span-2">
-            <Label htmlFor="notes">Notițe</Label>
-            <Textarea
-              id="notes"
-              value={fieldData.notes}
-              onChange={(e) => setFieldData({...fieldData, notes: e.target.value})}
-              placeholder="Observații și notițe despre teren..."
-            />
-          </div>
+          
         </div>
         <div className="flex space-x-2 mt-6">
           <Button onClick={() => onOpenChange(false)} variant="outline" className="flex-1">
@@ -272,8 +209,6 @@ const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
           </Button>
         </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 };
-
 export default AddFieldDialog;
