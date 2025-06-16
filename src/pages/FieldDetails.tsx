@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -73,7 +74,7 @@ const FieldDetails = () => {
 
   // Convert size to number for consistent usage
   const fieldSize = Number(field.size);
-  const fieldRoi = field.roi ? Number(field.roi) : null;
+  const fieldRoi = field.roi ? Number(field.roi) : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
@@ -108,7 +109,7 @@ const FieldDetails = () => {
               field={{ 
                 ...field, 
                 size: fieldSize,
-                roi: fieldRoi || 0
+                roi: fieldRoi
               }} 
               isOpen={isEditingField} 
               onOpenChange={setIsEditingField} 
