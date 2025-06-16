@@ -22,7 +22,7 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
 
   // Convertește coordonatele din field în format Google Maps
   const parseCoordinates = (field: any) => {
-    console.log('Parsing coordinates for field:', field.name, field.coordinates);
+    console.log('Parsing coordinates for field:', field.name, 'coordinates:', field.coordinates);
     
     if (!field.coordinates) {
       console.log('No coordinates found for field:', field.name);
@@ -30,12 +30,13 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
     }
 
     // Verifică dacă sunt coordonate simple (un punct)
-    if (field.coordinates.lat && field.coordinates.lng) {
-      console.log('Found single point coordinates:', field.coordinates);
-      return [{
+    if (typeof field.coordinates === 'object' && field.coordinates.lat && field.coordinates.lng) {
+      const coords = {
         lat: Number(field.coordinates.lat),
         lng: Number(field.coordinates.lng)
-      }];
+      };
+      console.log('Found valid point coordinates for field:', field.name, coords);
+      return [coords];
     }
 
     // Verifică dacă sunt coordonate pentru poligon (array)
@@ -47,7 +48,7 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
       }));
     }
 
-    console.log('Coordinates format not recognized for field:', field.name);
+    console.log('Coordinates format not recognized for field:', field.name, 'type:', typeof field.coordinates);
     return null;
   };
 
@@ -170,6 +171,9 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
 
         await loader.load();
 
+        console.log('Google Maps loaded, processing fields:', fields.length);
+        console.log('Fields data:', fields.map(f => ({ name: f.name, coordinates: f.coordinates })));
+
         const bounds = calculateMapBounds();
         const mapOptions: google.maps.MapOptions = {
           mapTypeId: mapType as google.maps.MapTypeId,
@@ -215,7 +219,10 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
         const newPolygons: google.maps.Polygon[] = [];
         console.log('Creating polygons for fields:', fields);
         
-        fields.forEach(field => {
+        const fieldsWithCoordinates = fields.filter(field => field.coordinates);
+        console.log(`Processing ${fieldsWithCoordinates.length} fields with coordinates out of ${fields.length} total fields`);
+        
+        fieldsWithCoordinates.forEach(field => {
           console.log('Processing field for map:', field.name, field.coordinates);
           const polygon = createFieldPolygon(field, map);
           if (polygon) {
@@ -229,7 +236,16 @@ const InteractiveMap = ({ mapType = 'roadmap', onFieldSelect, onMapClick }: Inte
         polygonsRef.current = newPolygons;
         setIsLoading(false);
 
-        console.log(`Harta încărcată cu ${newPolygons.length} poligoane pentru ${fields.length} terenuri`);
+        console.log(`Harta încărcată cu ${newPolygons.length} poligoane pentru ${fieldsWithCoordinates.length} terenuri cu coordonate din ${fields.length} terenuri totale`);
+
+        if (newPolygons.length === 0 && fields.length > 0) {
+          console.warn('No polygons created despite having fields. Check coordinate data.');
+          toast({
+            title: "Atenție",
+            description: `Aveți ${fields.length} terenuri dar nu s-au putut afișa pe hartă. Verificați coordonatele GPS.`,
+            variant: "destructive"
+          });
+        }
 
       } catch (error) {
         console.error('Eroare la încărcarea Google Maps:', error);

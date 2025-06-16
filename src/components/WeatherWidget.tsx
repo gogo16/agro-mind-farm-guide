@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,19 +13,34 @@ const WeatherWidget = () => {
   const [activeTab, setActiveTab] = useState('current');
   
   console.log('WeatherWidget - Available fields:', fields);
+  console.log('WeatherWidget - Fields with coordinates:', fields.filter(f => f.coordinates));
   
-  // Use coordinates from the first field as default
-  const firstField = fields.find(field => field.coordinates);
-  const latitude = firstField?.coordinates?.lat;
-  const longitude = firstField?.coordinates?.lng;
+  // Use coordinates from the first field with valid coordinates
+  const firstFieldWithCoords = fields.find(field => 
+    field.coordinates && 
+    typeof field.coordinates.lat === 'number' && 
+    typeof field.coordinates.lng === 'number' &&
+    !isNaN(field.coordinates.lat) && 
+    !isNaN(field.coordinates.lng)
+  );
   
-  console.log('WeatherWidget - Using coordinates:', { latitude, longitude, fromField: firstField?.name });
+  const latitude = firstFieldWithCoords?.coordinates?.lat;
+  const longitude = firstFieldWithCoords?.coordinates?.lng;
+  
+  console.log('WeatherWidget - Using coordinates:', { 
+    latitude, 
+    longitude, 
+    fromField: firstFieldWithCoords?.name,
+    totalFields: fields.length,
+    fieldsWithCoords: fields.filter(f => f.coordinates).length
+  });
   
   const { weatherData, loading, syncWeatherData, getWeatherDescription } = useWeatherData(latitude, longitude);
 
   // Auto-sync forecast data on component mount
   useEffect(() => {
     if (latitude && longitude && weatherData.forecast.length === 0) {
+      console.log('Auto-syncing weather data for coordinates:', { latitude, longitude });
       syncWeatherData('forecast');
     }
   }, [latitude, longitude]);
@@ -209,16 +225,28 @@ const WeatherWidget = () => {
   const recentHistory = getRecentHistory();
 
   if (!latitude || !longitude) {
-    console.log('WeatherWidget - No coordinates available from fields');
+    console.log('WeatherWidget - No valid coordinates available from fields');
+    const fieldsWithCoordinates = fields.filter(f => f.coordinates);
+    const totalFields = fields.length;
+    
     return (
       <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0">
         <CardContent className="p-6">
-          <p className="text-center text-blue-100">
-            {fields.length === 0 
-              ? "Adăugați un teren pentru a vedea datele meteo"
-              : "Adăugați coordonate GPS la terenuri pentru a vedea datele meteo"
-            }
-          </p>
+          <div className="text-center text-blue-100">
+            {totalFields === 0 ? (
+              <p>Adăugați un teren pentru a vedea datele meteo</p>
+            ) : fieldsWithCoordinates.length === 0 ? (
+              <div>
+                <p className="mb-2">Aveți {totalFields} terenuri dar niciunul nu are coordonate GPS</p>
+                <p className="text-sm">Editați terenurile și adăugați coordonate GPS pentru a vedea datele meteo</p>
+              </div>
+            ) : (
+              <div>
+                <p className="mb-2">Coordonate GPS nevalide</p>
+                <p className="text-sm">Verificați coordonatele GPS ale terenurilor</p>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     );
@@ -233,14 +261,17 @@ const WeatherWidget = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => syncWeatherData('forecast')}
+              onClick={() => {
+                console.log('Manual weather sync requested for coordinates:', { latitude, longitude });
+                syncWeatherData('forecast');
+              }}
               disabled={loading}
               className="text-white hover:bg-white/20"
             >
               <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
             <Badge variant="secondary" className="bg-white/20 text-white border-0">
-              {currentWeather ? 'Actualizat' : 'Fără date'}
+              {firstFieldWithCoords?.name || 'Fără coordonate'}
             </Badge>
           </div>
         </CardTitle>

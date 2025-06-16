@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import { WeatherSyncService } from '@/utils/weatherSync';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { debugFieldCoordinates } from '@/utils/debugCoordinates';
 
 export interface Field {
   id: string;
@@ -192,6 +193,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     try {
+      // Debug coordinates first
+      await debugFieldCoordinates(user.id);
+
       const { data, error } = await supabase
         .from('fields')
         .select('*')
@@ -210,13 +214,29 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('Raw fields data from database:', data);
 
       const formattedFields: Field[] = (data || []).map(field => {
-        // Convert database coordinates format to frontend format
-        const coordinates = field.coordinates_lat && field.coordinates_lng ? {
-          lat: Number(field.coordinates_lat),
-          lng: Number(field.coordinates_lng)
-        } : undefined;
-
-        console.log(`Field ${field.name} coordinates:`, coordinates);
+        // Fix coordinate parsing - handle both null and valid coordinates
+        let coordinates: { lat: number; lng: number } | undefined = undefined;
+        
+        if (field.coordinates_lat !== null && field.coordinates_lng !== null && 
+            field.coordinates_lat !== undefined && field.coordinates_lng !== undefined) {
+          const lat = Number(field.coordinates_lat);
+          const lng = Number(field.coordinates_lng);
+          
+          if (!isNaN(lat) && !isNaN(lng)) {
+            coordinates = { lat, lng };
+            console.log(`Field ${field.name} has valid coordinates:`, coordinates);
+          } else {
+            console.log(`Field ${field.name} has invalid coordinate numbers:`, {
+              lat: field.coordinates_lat,
+              lng: field.coordinates_lng
+            });
+          }
+        } else {
+          console.log(`Field ${field.name} has null/undefined coordinates:`, {
+            lat: field.coordinates_lat,
+            lng: field.coordinates_lng
+          });
+        }
 
         return {
           id: field.id,
@@ -250,25 +270,30 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       });
 
       console.log('Formatted fields for frontend:', formattedFields);
+      const fieldsWithCoords = formattedFields.filter(f => f.coordinates);
+      console.log('Fields with valid coordinates:', fieldsWithCoords);
       setFields(formattedFields);
 
       // Auto-sync weather data for each field with valid coordinates
-      for (const field of formattedFields) {
+      console.log(`Found ${fieldsWithCoords.length} fields with coordinates for weather sync`);
+      
+      for (const field of fieldsWithCoords) {
         if (field.coordinates) {
-          console.log(`Syncing weather for field ${field.name} at coordinates:`, field.coordinates);
-          WeatherSyncService.syncForUser(user.id, field.coordinates)
-            .then(result => {
-              if (result.success) {
-                console.log(`Weather data synced for field ${field.name}`);
-              } else {
-                console.log(`Weather sync failed for field ${field.name}:`, result.error);
-              }
-            })
-            .catch(error => {
-              console.error(`Failed to sync weather for field ${field.name}:`, error);
-            });
-        } else {
-          console.log(`Field ${field.name} has no coordinates, skipping weather sync`);
+          console.log(`Starting weather sync for field ${field.name} at coordinates:`, field.coordinates);
+          try {
+            const result = await WeatherSyncService.syncForUser(user.id, field.coordinates);
+            if (result.success) {
+              console.log(`Weather data synced successfully for field ${field.name}`);
+              toast({
+                title: "Date meteo sincronizate",
+                description: `Datele meteo au fost actualizate pentru ${field.name}`,
+              });
+            } else {
+              console.log(`Weather sync failed for field ${field.name}:`, result.error);
+            }
+          } catch (error) {
+            console.error(`Failed to sync weather for field ${field.name}:`, error);
+          }
         }
       }
     } catch (error) {
