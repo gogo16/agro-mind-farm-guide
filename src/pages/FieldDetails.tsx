@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -85,7 +86,7 @@ const FieldDetails = () => {
             </Button>
             <div>
               <h1 className="text-3xl font-bold text-green-800">{field.name}</h1>
-              <p className="text-green-600">{field.crop} • {field.size} ha • {field.parcel_code}</p>
+              <p className="text-green-600">{field.crop} • {Number(field.size)} ha • {field.parcel_code}</p>
             </div>
           </div>
           <div className="flex space-x-2">
@@ -133,7 +134,7 @@ const FieldDetails = () => {
                 <MapPin className="h-5 w-5 text-blue-600" />
                 <span className="text-sm font-medium text-gray-700">Suprafață</span>
               </div>
-              <p className="text-lg font-bold text-green-800">{field.size} ha</p>
+              <p className="text-lg font-bold text-green-800">{Number(field.size)} ha</p>
               <p className="text-sm text-gray-600">{field.coordinates ? `${(field.coordinates as any).lat}, ${(field.coordinates as any).lng}` : 'N/A'}</p>
             </CardContent>
           </Card>
@@ -192,7 +193,7 @@ const FieldDetails = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">ROI</p>
-                      <p className="font-medium text-green-600">{field.roi ? `${field.roi}%` : 'N/A'}</p>
+                      <p className="font-medium text-green-600">{field.roi ? `${Number(field.roi)}%` : 'N/A'}</p>
                     </div>
                   </div>
                 </CardContent>
