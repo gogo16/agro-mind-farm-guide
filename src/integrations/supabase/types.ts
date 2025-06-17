@@ -72,6 +72,63 @@ export type Database = {
         }
         Relationships: []
       }
+      fields: {
+        Row: {
+          cod_parcela: string
+          coordonate_gps: Json | null
+          created_at: string
+          culoare: string | null
+          cultura: string | null
+          data_insamantare: string | null
+          data_recoltare: string | null
+          data_stergerii: string | null
+          id: string
+          ingrasaminte_folosite: string | null
+          istoric_activitati: Json | null
+          nume_teren: string
+          suprafata: number
+          updated_at: string
+          user_id: string
+          varietate: string | null
+        }
+        Insert: {
+          cod_parcela: string
+          coordonate_gps?: Json | null
+          created_at?: string
+          culoare?: string | null
+          cultura?: string | null
+          data_insamantare?: string | null
+          data_recoltare?: string | null
+          data_stergerii?: string | null
+          id?: string
+          ingrasaminte_folosite?: string | null
+          istoric_activitati?: Json | null
+          nume_teren: string
+          suprafata: number
+          updated_at?: string
+          user_id: string
+          varietate?: string | null
+        }
+        Update: {
+          cod_parcela?: string
+          coordonate_gps?: Json | null
+          created_at?: string
+          culoare?: string | null
+          cultura?: string | null
+          data_insamantare?: string | null
+          data_recoltare?: string | null
+          data_stergerii?: string | null
+          id?: string
+          ingrasaminte_folosite?: string | null
+          istoric_activitati?: Json | null
+          nume_teren?: string
+          suprafata?: number
+          updated_at?: string
+          user_id?: string
+          varietate?: string | null
+        }
+        Relationships: []
+      }
       inventory: {
         Row: {
           cantitate_status: string | null

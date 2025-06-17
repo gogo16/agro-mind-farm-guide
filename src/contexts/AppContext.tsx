@@ -18,6 +18,7 @@ interface WeatherData {
   }[];
 }
 
+// DEPRECATED: Using Supabase fields table now
 interface Field {
   id: number;
   name: string;
@@ -79,10 +80,11 @@ interface SatelliteData {
   lastUpdated: string;
 }
 
+// TODO: Reconnect with Supabase fields table
 interface Task {
   id: number;
   title: string;
-  field: string;
+  field: string; // Will be changed to field_id when reconnecting
   priority: 'high' | 'medium' | 'low';
   date: string;
   time: string;
@@ -96,13 +98,14 @@ interface Task {
   category?: string;
 }
 
+// TODO: Reconnect with Supabase fields table
 interface Transaction {
   id: number;
   type: 'income' | 'expense';
   amount: number;
   description: string;
   category: string;
-  field: string;
+  field: string; // Will be changed to field_id when reconnecting
   date: string;
 }
 
@@ -151,7 +154,10 @@ interface FieldPhoto {
 }
 
 interface AppContextType {
+  // DEPRECATED: Use useFields hook instead
   fields: Field[];
+  
+  // TODO: Will be reconnected to Supabase fields
   tasks: Task[];
   transactions: Transaction[];
   inventory: InventoryItem[]; // Deprecated - folosește useInventory hook pentru funcționalități noi
@@ -163,9 +169,13 @@ interface AppContextType {
   fieldPhotos: FieldPhoto[];
   user: User;
   currentSeason: string;
+  
+  // DEPRECATED: Use useFields hook instead
   addField: (field: Omit<Field, 'id'>) => void;
   updateField: (id: number, field: Partial<Field>) => void;
   deleteField: (id: number) => void;
+  
+  // TODO: Will be updated to work with Supabase fields
   addTask: (task: Omit<Task, 'id'>) => void;
   updateTask: (id: number, task: Partial<Task>) => void;
   deleteTask: (id: number) => void;
@@ -214,124 +224,28 @@ const getCurrentSeason = () => {
 };
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [fields, setFields] = useState<Field[]>([
-    { 
-      id: 1, 
-      name: 'Parcela Nord', 
-      parcelCode: 'PN-001',
-      size: 15.5, 
-      crop: 'Grâu de toamnă', 
-      status: 'Plantat', 
-      location: 'Nord', 
-      coordinates: { lat: 44.4268, lng: 26.1025 },
-      plantingDate: '2024-10-15',
-      harvestDate: '2024-07-20',
-      workType: 'Arătură conventională',
-      costs: 2500,
-      inputs: 'NPK 16:16:16, Herbicid',
-      roi: 15.2,
-      color: '#22c55e',
-      weather: {
-        temperature: 18,
-        condition: 'cloudy',
-        humidity: 68,
-        windSpeed: 15,
-        windDirection: 'NV',
-        pressure: 1015,
-        uvIndex: 4,
-        visibility: 10,
-        lastUpdated: 'acum 25 min'
-      }
-    },
-    { 
-      id: 2, 
-      name: 'Câmp Sud', 
-      parcelCode: 'CS-002',
-      size: 22.3, 
-      crop: 'Porumb', 
-      status: 'Pregătire teren', 
-      location: 'Sud', 
-      coordinates: { lat: 44.4168, lng: 26.1125 },
-      plantingDate: '2024-04-20',
-      harvestDate: '2024-09-15',
-      workType: 'Arătură + Grăpare',
-      costs: 3200,
-      inputs: 'Semințe hibrid, Îngrășământ starter',
-      roi: 18.7,
-      color: '#3b82f6',
-      weather: {
-        temperature: 24,
-        condition: 'sunny',
-        humidity: 45,
-        windSpeed: 8,
-        windDirection: 'S',
-        pressure: 1018,
-        uvIndex: 7,
-        visibility: 15,
-        lastUpdated: 'acum 15 min'
-      }
-    },
-    { 
-      id: 3, 
-      name: 'Livada Est', 
-      parcelCode: 'LE-003',
-      size: 8.7, 
-      crop: 'Măr', 
-      status: 'Maturitate', 
-      location: 'Est', 
-      coordinates: { lat: 44.4368, lng: 26.1225 },
-      plantingDate: '2020-03-10',
-      harvestDate: '2024-08-30',
-      workType: 'Întreținere livadă',
-      costs: 1800,
-      inputs: 'Fungicide, Insecticide',
-      roi: 22.1,
-      color: '#f59e0b',
-      weather: {
-        temperature: 20,
-        condition: 'rainy',
-        humidity: 85,
-        windSpeed: 12,
-        windDirection: 'E',
-        pressure: 1010,
-        uvIndex: 2,
-        visibility: 8,
-        lastUpdated: 'acum 10 min'
-      }
-    }
-  ]);
+  // DEPRECATED: Empty fields array - use useFields hook instead
+  const [fields, setFields] = useState<Field[]>([]);
 
+  // TODO: Tasks will be reconnected to Supabase fields table
   const [tasks, setTasks] = useState<Task[]>([
     {
       id: 1,
-      title: 'Irigarea Parcelei Nord',
-      field: 'Parcela Nord',
-      priority: 'high',
-      date: '2024-06-06',
-      time: '06:00',
-      dueDate: '2024-06-06',
-      dueTime: '06:00',
-      status: 'pending',
-      aiSuggested: true,
-      description: 'Condițiile meteo sunt ideale pentru irigare dimineața devreme.',
-      estimatedDuration: '2 ore'
-    },
-    {
-      id: 2,
-      title: 'Fertilizare Câmp Sud',
-      field: 'Câmp Sud',
+      title: 'Verificare generală terenuri',
+      field: 'General', // Temporary generic field
       priority: 'medium',
-      date: '2024-06-07',
-      time: '14:00',
-      dueDate: '2024-06-07',
-      dueTime: '14:00',
+      date: '2024-06-06',
+      time: '08:00',
+      dueDate: '2024-06-06',
+      dueTime: '08:00',
       status: 'pending',
-      aiSuggested: true,
-      description: 'Aplicare îngrășământ NPK conform planificării.',
-      estimatedDuration: '3 ore'
+      aiSuggested: false,
+      description: 'Verificare stare generală terenuri și echipamente.',
+      estimatedDuration: '2 ore'
     }
   ]);
 
+  // TODO: Transactions will be reconnected to Supabase fields table
   const [transactions, setTransactions] = useState<Transaction[]>([
     {
       id: 1,
@@ -339,21 +253,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       amount: 1800,
       description: 'Îngrășământ NPK 16:16:16',
       category: 'Fertilizatori',
-      field: 'Parcela Nord',
+      field: 'General', // Temporary generic field
       date: '2024-06-01'
     },
     {
       id: 2,
       type: 'income',
       amount: 12000,
-      description: 'Vânzare grâu - 20 tone',
+      description: 'Vânzare produse agricole',
       category: 'Vânzări',
-      field: 'Parcela Nord',
+      field: 'General', // Temporary generic field
       date: '2024-05-15'
     }
   ]);
 
-  // Inventarul vechi rămâne pentru compatibilitate, dar este deprecated
+  // ... keep existing code (inventory, notifications, satelliteData, workHistory, ownerHistory, propertyDocuments, fieldPhotos, user, currentSeason state)
   const [inventory, setInventory] = useState<InventoryItem[]>([
     {
       id: 1,
@@ -379,11 +293,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     {
       id: 1,
       type: 'task',
-      title: 'Sarcină urgentă',
-      message: 'Irigarea Parcelei Nord trebuie efectuată mâine dimineață',
+      title: 'Sarcină programată',
+      message: 'Verificare echipamente programată pentru astăzi',
       date: '2024-06-05',
       isRead: false,
-      priority: 'high'
+      priority: 'medium'
     },
     {
       id: 2,
@@ -393,83 +307,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       date: '2024-06-05',
       isRead: false,
       priority: 'medium'
-    },
-    {
-      id: 3,
-      type: 'ai',
-      title: 'Recomandare AI',
-      message: 'Condițiile meteo sunt optime pentru tratamente în următoarele 3 zile',
-      date: '2024-06-04',
-      isRead: true,
-      priority: 'low'
     }
   ]);
 
   const [satelliteData, setSatelliteData] = useState<SatelliteData[]>([]);
 
-  const [workHistory, setWorkHistory] = useState<WorkHistory[]>([
-    {
-      id: 1,
-      parcelId: 1,
-      workType: 'Arătură',
-      date: '2024-03-15',
-      description: 'Arătură de primăvară cu tractorul',
-      worker: 'Ion Popescu',
-      cost: 500
-    },
-    {
-      id: 2,
-      parcelId: 1,
-      workType: 'Însămânțare',
-      date: '2024-04-10',
-      description: 'Însămânțare grâu de toamnă',
-      worker: 'Maria Ionescu',
-      cost: 800
-    }
-  ]);
+  const [workHistory, setWorkHistory] = useState<WorkHistory[]>([]);
 
-  const [ownerHistory, setOwnerHistory] = useState<OwnerHistory[]>([
-    {
-      id: 1,
-      parcelId: 1,
-      ownerName: 'Ion Popescu',
-      startDate: '2020-01-01',
-      ownershipType: 'Proprietar',
-      notes: 'Cumpărat prin succesiune'
-    },
-    {
-      id: 2,
-      parcelId: 2,
-      ownerName: 'Ferma AgroMind SRL',
-      startDate: '2021-06-15',
-      ownershipType: 'Închiriere',
-      notes: 'Contract închiriere pe 10 ani'
-    }
-  ]);
+  const [ownerHistory, setOwnerHistory] = useState<OwnerHistory[]>([]);
 
   const [propertyDocuments, setPropertyDocuments] = useState<PropertyDocument[]>([
     {
       id: 1,
-      parcelId: 1,
       type: 'Certificat de Atestare Fiscală',
-      name: 'CF Parcela Nord',
-      fileName: 'cf_parcela_nord.pdf',
+      name: 'CF General',
+      fileName: 'cf_general.pdf',
       uploadDate: '2024-01-15',
       issueDate: '2024-01-10',
       validUntil: '2025-01-10',
       status: 'complete',
       notes: 'Document valabil pentru APIA'
-    },
-    {
-      id: 2,
-      parcelId: 2,
-      type: 'Contract închiriere',
-      name: 'Contract Câmp Sud',
-      fileName: 'contract_camp_sud.pdf',
-      uploadDate: '2024-02-01',
-      issueDate: '2021-06-15',
-      validUntil: '2031-06-15',
-      status: 'verified'
     }
   ]);
 
@@ -485,48 +342,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [currentSeason, setCurrentSeason] = useState(getCurrentSeason());
 
+  // DEPRECATED: Empty functions - use useFields hook instead
   const addField = (field: Omit<Field, 'id'>) => {
-    const newField = { ...field, id: Date.now() };
-    setFields(prev => [...prev, newField]);
+    console.warn('addField is deprecated. Use useFields hook instead.');
   };
 
   const updateField = (id: number, fieldUpdate: Partial<Field>) => {
-    setFields(prev => prev.map(field => field.id === id ? { ...field, ...fieldUpdate } : field));
+    console.warn('updateField is deprecated. Use useFields hook instead.');
   };
 
   const deleteField = (id: number) => {
-    setFields(prev => prev.filter(field => field.id !== id));
+    console.warn('deleteField is deprecated. Use useFields hook instead.');
   };
 
   const updateFieldWeather = (fieldId: number, weatherData: WeatherData) => {
-    setFields(prev => prev.map(field => 
-      field.id === fieldId ? { ...field, weather: weatherData } : field
-    ));
+    console.warn('updateFieldWeather is deprecated. Use useFields hook instead.');
   };
 
   const fetchWeatherData = async (fieldId: number) => {
-    const field = fields.find(f => f.id === fieldId);
-    if (!field || !field.coordinates) return;
-
-    try {
-      console.log(`Fetching weather for field ${fieldId} at coordinates ${field.coordinates.lat}, ${field.coordinates.lng}`);
-      
-      const newNotification: Notification = {
-        id: Date.now(),
-        type: 'weather',
-        title: 'Date meteo actualizate',
-        message: `Informațiile meteo pentru ${field.name} au fost actualizate`,
-        date: new Date().toISOString().split('T')[0],
-        isRead: false,
-        priority: 'low'
-      };
-      setNotifications(prev => [newNotification, ...prev]);
-      
-    } catch (error) {
-      console.error('Error fetching weather data:', error);
-    }
+    console.warn('fetchWeatherData is deprecated. Use useFields hook instead.');
   };
 
+  // ... keep existing code (all other functions remain the same)
   const addTask = (task: Omit<Task, 'id'>) => {
     const newTask = { ...task, id: Date.now() };
     setTasks(prev => [...prev, newTask]);
@@ -626,6 +463,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const generateAPIADocument = (type: string, data: any) => {
+    // TODO: Will be updated to work with Supabase fields
     const baseData = {
       farmerCode: user.farmName.substring(0, 8).toUpperCase(),
       farmName: user.farmName,
@@ -639,27 +477,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         return {
           documentType: 'APIA - Cerere Cereale',
           ...baseData,
-          parcels: fields.filter(f => ['Grâu', 'Orz', 'Ovăz'].includes(f.crop.split(' ')[0])),
-          totalArea: fields.reduce((sum, field) => sum + field.size, 0),
-          estimatedProduction: fields.reduce((sum, field) => sum + (field.size * 4.5), 0)
-        };
-      case 'apia-eco-scheme':
-        return {
-          documentType: 'APIA - Eco-scheme',
-          ...baseData,
-          ecoMeasures: ['Rotația culturilor', 'Zone tampon', 'Păstrarea vegetației permanente'],
-          parcels: fields,
-          totalEcoArea: fields.reduce((sum, field) => sum + field.size, 0)
-        };
-      case 'afir-modernizare':
-        return {
-          documentType: 'AFIR - Modernizare Exploatații',
-          ...baseData,
-          investmentType: 'Modernizare echipamente agricole',
-          requestedAmount: 150000,
-          cofinancing: 75000,
-          timeline: '24 luni',
-          equipment: inventory.filter(item => item.type === 'equipment')
+          parcels: [], // Empty until reconnected
+          totalArea: 0,
+          estimatedProduction: 0
         };
       default:
         return baseData;
@@ -667,35 +487,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchSatelliteData = (parcelId: number) => {
-    setTimeout(() => {
-      const mockData: SatelliteData = {
-        parcelId,
-        currentImage: `/api/satellite/current/${parcelId}`,
-        previousImage: `/api/satellite/previous/${parcelId}`,
-        changeDetected: Math.random() > 0.7,
-        changePercentage: Math.random() * 15,
-        lastUpdated: new Date().toISOString()
-      };
-
-      setSatelliteData(prev => [...prev.filter(d => d.parcelId !== parcelId), mockData]);
-
-      if (mockData.changeDetected) {
-        const field = fields.find(f => f.id === parcelId);
-        const newNotification: Notification = {
-          id: Date.now(),
-          type: 'ai',
-          title: 'Modificare teren detectată',
-          message: `Modificare detectată pe ${field?.name} (${field?.parcelCode}) în ultimele 7 zile - ${mockData.changePercentage.toFixed(1)}% din suprafață`,
-          date: new Date().toISOString().split('T')[0],
-          isRead: false,
-          priority: 'high'
-        };
-        setNotifications(prev => [newNotification, ...prev]);
-      }
-    }, 2000);
+    // TODO: Will be updated to work with Supabase fields
+    console.warn('fetchSatelliteData temporarily disabled during field migration');
   };
 
   const generateReport = (type: string) => {
+    // TODO: Will be updated to work with Supabase fields
     const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
     const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
     const profit = totalIncome - totalExpenses;
@@ -704,10 +501,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     switch (type) {
       case 'productivity':
         return {
-          totalFields: fields.length,
-          totalArea: fields.reduce((sum, field) => sum + field.size, 0),
-          avgProductivity: 8.5,
-          topPerformingField: fields.reduce((max, field) => field.size > max.size ? field : max, fields[0])
+          totalFields: 0, // Will be updated when reconnected
+          totalArea: 0,
+          avgProductivity: 0,
+          topPerformingField: null
         };
       case 'financial':
         return {
@@ -722,7 +519,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           currentSeason: 'Vară',
           completedTasks: tasks.filter(t => t.status === 'completed').length,
           pendingTasks: tasks.filter(t => t.status === 'pending').length,
-          seasonalRecommendations: ['Irigare frecventă', 'Monitorizare dăunători', 'Pregătire recoltare']
+          seasonalRecommendations: ['Verificare echipamente', 'Monitorizare stocuri']
         };
       default:
         return {};
@@ -736,7 +533,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AppContext.Provider value={{
-      fields,
+      fields, // DEPRECATED: Empty array
       tasks,
       transactions,
       inventory, // Deprecated - folosește useInventory hook pentru funcționalități noi
@@ -748,9 +545,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       fieldPhotos,
       user,
       currentSeason,
-      addField,
-      updateField,
-      deleteField,
+      addField, // DEPRECATED
+      updateField, // DEPRECATED
+      deleteField, // DEPRECATED
       addTask,
       updateTask,
       deleteTask,
@@ -776,8 +573,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       generateAPIADocument,
       fetchSatelliteData,
       addNotification,
-      updateFieldWeather,
-      fetchWeatherData
+      updateFieldWeather, // DEPRECATED
+      fetchWeatherData // DEPRECATED
     }}>
       {children}
     </AppContext.Provider>

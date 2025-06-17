@@ -11,31 +11,29 @@ import SeasonalGuidanceAI from '@/components/SeasonalGuidanceAI';
 import Navigation from '@/components/Navigation';
 import { useAppContext } from '@/contexts/AppContext';
 import { useInventory } from '@/hooks/useInventory';
+import { useFields } from '@/hooks/useFields';
 import { MapPin, Sprout, Calendar, Package, Sun, Snowflake, Leaf, CloudRain, TrendingUp, BarChart, FileText, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAIRecommendations } from '@/hooks/useAIRecommendations';
+
 const Index = () => {
   const {
-    fields,
     tasks,
     transactions,
     generateReport,
     currentSeason
   } = useAppContext();
 
-  // Folosim noul hook pentru inventar în loc de inventarul din AppContext
-  const {
-    inventory
-  } = useInventory();
-  const {
-    toast
-  } = useToast();
+  const { inventory } = useInventory();
+  const { fields } = useFields();
+  const { toast } = useToast();
+  
   const [seasonalBackground, setSeasonalBackground] = useState('');
   const [seasonalTips, setSeasonalTips] = useState<string[]>([]);
   const [seasonIcon, setSeasonIcon] = useState<React.ReactNode>(null);
   const [generatedReport, setGeneratedReport] = useState<any>(null);
   const [reportType, setReportType] = useState<string>('');
   const [generatingReports, setGeneratingReports] = useState<Record<number, boolean>>({});
+
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   const today = new Date().toISOString().split('T')[0];
@@ -44,19 +42,14 @@ const Index = () => {
     return taskDate === today && t.status === 'pending';
   }).length;
   const totalTasks = tasks.length;
-  const totalArea = fields.reduce((sum, field) => sum + field.size, 0);
+  const totalArea = fields.reduce((sum, field) => sum + field.suprafata, 0);
   const profit = totalIncome - totalExpenses;
   const efficiency = totalExpenses > 0 ? profit / totalExpenses * 100 : 0;
-  const plantedCrops = fields.filter(field => field.crop && field.crop.trim() !== '' && field.crop !== 'Necunoscută').length;
+  const plantedCrops = fields.filter(field => field.cultura && field.cultura.trim() !== '').length;
+
+  const inventoryItemsCount = inventory ? inventory.length : 0;
 
   // Actualizăm calculul pentru inventarul din Supabase
-  const inventoryItemsCount = inventory ? inventory.length : 0;
-  const monthlyInventoryChange = Math.floor(Math.random() * 20) - 10;
-  const {
-    getRecommendationsByZone,
-    isLoading: aiLoading,
-    refreshRecommendations
-  } = useAIRecommendations();
   useEffect(() => {
     const month = new Date().getMonth();
     let season = '';
@@ -88,6 +81,7 @@ const Index = () => {
     setSeasonalTips(tips);
     setSeasonIcon(icon);
   }, []);
+
   const generateReportHandler = (reportId: number, type: string, reportTitle: string) => {
     setGeneratingReports(prev => ({
       ...prev,
@@ -107,6 +101,7 @@ const Index = () => {
       });
     }, 2000);
   };
+
   const reportTypes = [{
     id: 1,
     title: 'Raport Productivitate',
@@ -135,6 +130,7 @@ const Index = () => {
     status: 'ready',
     type: 'seasonal'
   }];
+
   const renderGeneratedReport = () => {
     if (!generatedReport || !reportType) return null;
     switch (reportType) {
@@ -143,12 +139,12 @@ const Index = () => {
             <h3 className="text-lg font-semibold">Raport Productivitate</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p><strong>Total terenuri:</strong> {generatedReport.totalFields}</p>
-                <p><strong>Suprafață totală:</strong> {generatedReport.totalArea.toFixed(1)} ha</p>
+                <p><strong>Total terenuri:</strong> {generatedReport.totalFields || fields.length}</p>
+                <p><strong>Suprafață totală:</strong> {totalArea.toFixed(1)} ha</p>
               </div>
               <div>
-                <p><strong>Productivitate medie:</strong> {generatedReport.avgProductivity} t/ha</p>
-                <p><strong>Cel mai productiv teren:</strong> {generatedReport.topPerformingField?.name}</p>
+                <p><strong>Productivitate medie:</strong> {generatedReport.avgProductivity || 0} t/ha</p>
+                <p><strong>Cel mai productiv teren:</strong> {generatedReport.topPerformingField?.nume_teren || 'N/A'}</p>
               </div>
             </div>
           </div>;
@@ -179,31 +175,12 @@ const Index = () => {
         return null;
     }
   };
-  const renderAIRecommendations = (zoneId: string, recommendations: any[]) => {
-    if (aiLoading) {
-      return <div className="space-y-2">
-          {[1, 2, 3].map(i => <div key={i} className="bg-white/10 rounded-lg p-3 animate-pulse">
-              <div className="h-4 bg-white/20 rounded mb-2"></div>
-              <div className="h-3 bg-white/15 rounded"></div>
-            </div>)}
-        </div>;
-    }
-    return <div className="space-y-3">
-        {recommendations.map(rec => <div key={rec.id} className="bg-white/10 rounded-lg p-3 relative">
-            {rec.isNew && <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full"></div>}
-            <p className="text-sm font-medium mb-1">{rec.title}</p>
-            <p className="text-xs">{rec.content}</p>
-            {rec.priority === 'high' && <div className="mt-2">
-                <span className="text-xs bg-red-500/20 text-red-100 px-2 py-1 rounded">Prioritate înaltă</span>
-              </div>}
-          </div>)}
-      </div>;
-  };
+
   return <div className={`min-h-screen bg-gradient-to-br ${seasonalBackground}`}>
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
-        {/* Header without AI refresh button */}
+        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center space-x-3 mb-4">
             {seasonIcon}
@@ -263,7 +240,6 @@ const Index = () => {
                 <div>
                   <p className="text-sm text-green-600 font-medium">Stoc Inventar</p>
                   <p className="text-3xl font-bold text-green-800">{inventoryItemsCount}</p>
-                  
                 </div>
                 <Package className="h-8 w-8 text-emerald-500" />
               </div>
@@ -332,23 +308,27 @@ const Index = () => {
                     </CardContent>
                   </Card>}
 
-                {/* AI Main Insights */}
-                <Card className="bg-gradient-to-r from-purple-500 to-blue-600 text-white border-0" data-ai-zone="ai-main-insights">
+                {/* TODO: Reconnect AI Recommendations */}
+                <Card className="bg-gradient-to-r from-purple-500 to-blue-600 text-white border-0">
                   <CardHeader>
                     <CardTitle>🤖 Perspective AI</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {renderAIRecommendations('ai-main-insights', getRecommendationsByZone('ai-main-insights'))}
+                    <div className="text-center py-4">
+                      <p className="text-white/80">Recomandările AI vor fi disponibile în curând</p>
+                      <p className="text-xs text-white/60 mt-2">În proces de reconectare la noua structură</p>
+                    </div>
                   </CardContent>
                 </Card>
 
-                {/* AI Daily Recommendation */}
-                <Card className="bg-gradient-to-r from-green-500 to-teal-600 text-white border-0" data-ai-zone="ai-daily-recommendation">
+                <Card className="bg-gradient-to-r from-green-500 to-teal-600 text-white border-0">
                   <CardHeader>
                     <CardTitle>💡 Recomandarea Zilei</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {renderAIRecommendations('ai-daily-recommendation', getRecommendationsByZone('ai-daily-recommendation'))}
+                    <div className="text-center py-4">
+                      <p className="text-white/80">Verificarea echipamentelor este esențială în această perioadă</p>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -359,7 +339,7 @@ const Index = () => {
             <TasksWidget />
           </TabsContent>
 
-          <TabsContent value="seasonal" data-ai-zone="ai-seasonal-guidance">
+          <TabsContent value="seasonal">
             <SeasonalGuidanceAI />
           </TabsContent>
         </Tabs>

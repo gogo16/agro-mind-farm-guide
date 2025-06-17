@@ -1,92 +1,72 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Sprout, Calendar, ArrowLeft, Edit, History, Camera } from 'lucide-react';
+import { MapPin, Sprout, Calendar, ArrowLeft, Edit, Camera, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import VisualCropJournal from '@/components/VisualCropJournal';
 import EditFieldDialog from '@/components/EditFieldDialog';
-import AddPhotoDialog from '@/components/AddPhotoDialog';
 import SoilSection from '@/components/SoilSection';
-import { useAppContext } from '@/contexts/AppContext';
-import { useAIRecommendations } from '@/hooks/useAIRecommendations';
+import { useFields } from '@/hooks/useFields';
+
 const FieldDetails = () => {
-  const {
-    id
-  } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const {
-    fields,
-    tasks
-  } = useAppContext();
-  const {
-    getFieldProgress,
-    getFieldStatus
-  } = useAIRecommendations();
+  const { fields, loading } = useFields();
   const [isEditingField, setIsEditingField] = useState(false);
-  const [isAddingPhoto, setIsAddingPhoto] = useState(false);
-  const fieldId = id ? parseInt(id, 10) : null;
-  const field = fieldId ? fields.find(f => f.id === fieldId) : null;
 
-  // Get AI-powered field status and progress
-  const fieldStatus = fieldId ? getFieldStatus(fieldId) : {
-    status: 'Necunoscut',
-    description: 'Date indisponibile',
-    color: 'gray'
-  };
-  const fieldProgress = fieldId ? getFieldProgress(fieldId) : {
-    developmentProgress: 0,
-    daysToHarvest: 0
-  };
+  const field = fields.find(f => f.id === id);
 
-  // Get completed tasks for this field
-  const completedActivities = tasks.filter(task => task.field === field?.name && task.status === 'completed').map(task => ({
-    id: task.id,
-    date: task.dueDate || new Date().toISOString().split('T')[0],
-    activity: task.title,
-    details: task.description || 'Activitate completată',
-    cost: 0,
-    weather: 'N/A'
-  }));
-
-  // Get the last completed task for work type
-  const lastCompletedTask = tasks.filter(task => task.field === field?.name && task.status === 'completed').sort((a, b) => new Date(b.dueDate || b.date).getTime() - new Date(a.dueDate || a.date).getTime())[0];
-  if (!field) {
-    return <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
         <Navigation />
         <div className="container mx-auto px-4 py-6">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-800 mb-4">Parcela nu a fost găsită</h1>
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+            <span className="ml-4 text-lg text-gray-600">Se încarcă detaliile terenului...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!field) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+        <Navigation />
+        <div className="container mx-auto px-4 py-6">
+          <div className="text-center py-20">
+            <AlertTriangle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold text-gray-800 mb-4">Terenul nu a fost găsit</h1>
+            <p className="text-gray-600 mb-6">Terenul solicitat nu există sau a fost șters.</p>
             <Button onClick={() => navigate('/')} className="bg-green-600 hover:bg-green-700">
               Înapoi la Dashboard
             </Button>
           </div>
         </div>
-      </div>;
+      </div>
+    );
   }
-  const getStatusColor = (color: string) => {
-    switch (color) {
-      case 'green':
-        return 'bg-green-100 text-green-800';
-      case 'yellow':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'red':
-        return 'bg-red-100 text-red-800';
-      case 'blue':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+
+  const getStatusColor = (cultura?: string) => {
+    if (!cultura) return 'bg-gray-100 text-gray-800';
+    return 'bg-green-100 text-green-800';
   };
-  return <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+
+  const getStatusText = (cultura?: string, data_insamantare?: string) => {
+    if (!cultura) return 'Fără cultură';
+    if (data_insamantare) return 'Plantat';
+    return 'Pregătire teren';
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
-        {/* Header */}
-        
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
@@ -95,23 +75,31 @@ const FieldDetails = () => {
               Înapoi
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-green-800">{field.name}</h1>
-              <p className="text-green-600">{field.crop} • {field.size} ha • {field.parcelCode}</p>
+              <h1 className="text-3xl font-bold text-green-800">{field.nume_teren}</h1>
+              <p className="text-green-600">
+                {field.cultura || 'Fără cultură'} • {field.suprafata} ha • {field.cod_parcela}
+              </p>
             </div>
           </div>
           <div className="flex space-x-2">
-            <AddPhotoDialog fieldId={field.id} isOpen={isAddingPhoto} onOpenChange={setIsAddingPhoto} trigger={<Button variant="outline">
-                  <Camera className="h-4 w-4 mr-2" />
-                  Adaugă poză
-                </Button>} />
-            <EditFieldDialog field={field} isOpen={isEditingField} onOpenChange={setIsEditingField} trigger={<Button className="bg-green-600 hover:bg-green-700">
+            {/* TODO: Reconnect photo functionality */}
+            <Button variant="outline" disabled>
+              <Camera className="h-4 w-4 mr-2" />
+              Adaugă poză (Temporar indisponibil)
+            </Button>
+            <EditFieldDialog 
+              field={field} 
+              isOpen={isEditingField} 
+              onOpenChange={setIsEditingField}
+              trigger={
+                <Button className="bg-green-600 hover:bg-green-700">
                   <Edit className="h-4 w-4 mr-2" />
                   Editează
-                </Button>} />
+                </Button>
+              }
+            />
           </div>
         </div>
-
-        {/* Quick Info Cards */}
 
         {/* Quick Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -121,8 +109,8 @@ const FieldDetails = () => {
                 <Sprout className="h-5 w-5 text-green-600" />
                 <span className="text-sm font-medium text-gray-700">Cultură</span>
               </div>
-              <p className="text-lg font-bold text-green-800">{field.crop}</p>
-              <p className="text-sm text-gray-600">{field.parcelCode}</p>
+              <p className="text-lg font-bold text-green-800">{field.cultura || 'Fără cultură'}</p>
+              <p className="text-sm text-gray-600">{field.cod_parcela}</p>
             </CardContent>
           </Card>
 
@@ -132,8 +120,13 @@ const FieldDetails = () => {
                 <MapPin className="h-5 w-5 text-blue-600" />
                 <span className="text-sm font-medium text-gray-700">Suprafață</span>
               </div>
-              <p className="text-lg font-bold text-green-800">{field.size} ha</p>
-              <p className="text-sm text-gray-600">{field.coordinates ? `${field.coordinates.lat}, ${field.coordinates.lng}` : 'N/A'}</p>
+              <p className="text-lg font-bold text-green-800">{field.suprafata} ha</p>
+              <p className="text-sm text-gray-600">
+                {field.coordonate_gps ? 
+                  `${field.coordonate_gps.lat}, ${field.coordonate_gps.lng}` : 
+                  'Coordonate nedefinite'
+                }
+              </p>
             </CardContent>
           </Card>
 
@@ -143,31 +136,37 @@ const FieldDetails = () => {
                 <Calendar className="h-5 w-5 text-purple-600" />
                 <span className="text-sm font-medium text-gray-700">Plantat</span>
               </div>
-              <p className="text-lg font-bold text-green-800">{field.plantingDate || 'N/A'}</p>
+              <p className="text-lg font-bold text-green-800">
+                {field.data_insamantare || 'Nedefinit'}
+              </p>
               <p className="text-sm text-gray-600">Data însămânțare</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-green-200" data-ai-zone="ai-field-status">
+          <Card className="bg-white/80 backdrop-blur-sm border-green-200">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2 mb-2">
-                <div className={`w-5 h-5 rounded-full ${fieldStatus.color === 'green' ? 'bg-green-500' : fieldStatus.color === 'yellow' ? 'bg-yellow-500' : fieldStatus.color === 'red' ? 'bg-red-500' : fieldStatus.color === 'blue' ? 'bg-blue-500' : 'bg-gray-500'}`}></div>
+                <div 
+                  className="w-5 h-5 rounded-full"
+                  style={{ backgroundColor: field.culoare || '#22c55e' }}
+                ></div>
                 <span className="text-sm font-medium text-gray-700">Status</span>
               </div>
-              <Badge className={getStatusColor(fieldStatus.color)}>{fieldStatus.status}</Badge>
-              <p className="text-sm text-gray-600 mt-1">{fieldStatus.description}</p>
+              <Badge className={getStatusColor(field.cultura)}>
+                {getStatusText(field.cultura, field.data_insamantare)}
+              </Badge>
+              <p className="text-sm text-gray-600 mt-1">
+                {field.varietate ? `Varietate: ${field.varietate}` : 'Fără varietate'}
+              </p>
             </CardContent>
           </Card>
         </div>
 
         {/* Detailed Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          {/* Tabs list and overview content */}
-          
-          <TabsList className="grid w-full grid-cols-4 lg:w-[480px] bg-white/80 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-3 lg:w-[360px] bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="overview">Prezentare</TabsTrigger>
             <TabsTrigger value="activities">Istoric Activități</TabsTrigger>
-            <TabsTrigger value="journal">Jurnal Foto</TabsTrigger>
             <TabsTrigger value="soil">Sol</TabsTrigger>
           </TabsList>
 
@@ -181,57 +180,78 @@ const FieldDetails = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-600">Cod parcelă</p>
-                      <p className="font-medium">{field.parcelCode}</p>
+                      <p className="font-medium">{field.cod_parcela}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Tip lucrare</p>
-                      <p className="font-medium">{lastCompletedTask?.title || field.workType || 'N/A'}</p>
+                      <p className="text-sm text-gray-600">Suprafață</p>
+                      <p className="font-medium">{field.suprafata} ha</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Istoric îngrășăminte/chimicale</p>
-                      <p className="font-medium">{field.inputs || 'N/A'}</p>
+                      <p className="text-sm text-gray-600">Cultură</p>
+                      <p className="font-medium">{field.cultura || 'Nedefinită'}</p>
                     </div>
-                    
+                    <div>
+                      <p className="text-sm text-gray-600">Varietate</p>
+                      <p className="font-medium">{field.varietate || 'Nedefinită'}</p>
+                    </div>
+                  </div>
+                  
+                  {field.ingrasaminte_folosite && (
+                    <div>
+                      <p className="text-sm text-gray-600">Îngrășăminte folosite</p>
+                      <p className="font-medium">{field.ingrasaminte_folosite}</p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Data însămânțare</p>
+                      <p className="font-medium">{field.data_insamantare || 'Nedefinită'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Data recoltare</p>
+                      <p className="font-medium">{field.data_recoltare || 'Nedefinită'}</p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              
+              <Card className="bg-white border-green-200">
+                <CardHeader>
+                  <CardTitle className="text-green-800">Coordonate GPS</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {field.coordonate_gps ? (
+                    <div className="space-y-2">
+                      <p><strong>Latitudine:</strong> {field.coordonate_gps.lat}</p>
+                      <p><strong>Longitudine:</strong> {field.coordonate_gps.lng}</p>
+                      {/* TODO: Reconnect map functionality */}
+                      <div className="mt-4 p-4 bg-gray-100 rounded-lg text-center">
+                        <p className="text-gray-600">Harta va fi disponibilă în curând</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-gray-600">Coordonate GPS nedefinite</p>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
-          {/* Activities and journal tabs */}
-
           <TabsContent value="activities" className="space-y-6">
             <Card className="bg-white border-green-200">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-green-800 flex items-center space-x-2">
-                  <History className="h-5 w-5" />
-                  <span>Istoric Activități</span>
-                </CardTitle>
+              <CardHeader>
+                <CardTitle className="text-green-800">Istoric Activități</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {completedActivities.length > 0 ? completedActivities.map(activity => <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-semibold text-gray-900">{activity.activity}</h4>
-                      <Badge variant="secondary" className="text-xs">{activity.date}</Badge>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-2">{activity.details}</p>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-500">Sarcină completată</span>
-                      <span className="font-medium text-green-600">Finalizat</span>
-                    </div>
-                  </div>) : <div className="text-center py-8 text-gray-500">
-                    <History className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p>Nu există activități completate pentru acest teren</p>
-                    <p className="text-sm">Activitățile completate vor apărea aici</p>
-                  </div>}
+              <CardContent>
+                {/* TODO: Reconnect activities functionality */}
+                <div className="text-center py-8 text-gray-500">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                  <p className="text-lg font-medium">Funcționalitatea va fi disponibilă în curând</p>
+                  <p className="text-sm">Istoricul activităților va fi reconectat la noua structură de date</p>
+                </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="journal" className="space-y-6">
-            <VisualCropJournal fieldId={field.id} />
           </TabsContent>
 
           <TabsContent value="soil" className="space-y-6">
@@ -239,6 +259,8 @@ const FieldDetails = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default FieldDetails;

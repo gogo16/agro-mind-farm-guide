@@ -10,12 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAppContext } from '@/contexts/AppContext';
-import { Plus, Edit, Trash2, FileText, Upload, Eye, Download, AlertTriangle, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, FileText, Upload, Eye, Download, AlertTriangle, CheckCircle, Clock, XCircle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const PropertyDocuments = () => {
   const { 
-    fields, 
     propertyDocuments, 
     addPropertyDocument, 
     updatePropertyDocument, 
@@ -67,22 +66,6 @@ const PropertyDocuments = () => {
     return null;
   };
 
-  // Funcție pentru obținerea culorii terenului cu transparență
-  const getFieldColor = (parcelId?: number) => {
-    if (!parcelId) return 'rgba(0, 0, 0, 0)'; // Transparent pentru documente generale
-    
-    const field = fields.find(f => f.id === parcelId);
-    if (!field?.color) return 'rgba(0, 0, 0, 0)';
-    
-    // Convertim culoarea hex la rgba cu 60% transparență
-    const hex = field.color.replace('#', '');
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
-    
-    return `rgba(${r}, ${g}, ${b}, 0.6)`;
-  };
-
   const handleAddDocument = () => {
     if (!newDoc.type || !newDoc.name) {
       toast({
@@ -94,7 +77,8 @@ const PropertyDocuments = () => {
     }
 
     const docData = {
-      parcelId: newDoc.parcelId && newDoc.parcelId !== 'general' ? parseInt(newDoc.parcelId) : undefined,
+      // TODO: Will be reconnected to Supabase fields - temporary no parcel association
+      parcelId: undefined,
       type: newDoc.type,
       name: newDoc.name,
       fileName: newDoc.fileName || `${newDoc.name}.pdf`,
@@ -154,12 +138,6 @@ const PropertyDocuments = () => {
     }
   };
 
-  const getFieldName = (parcelId?: number) => {
-    if (!parcelId) return 'General';
-    const field = fields.find(f => f.id === parcelId);
-    return field ? `${field.name} (${field.parcelCode})` : 'Teren necunoscut';
-  };
-
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -210,24 +188,17 @@ const PropertyDocuments = () => {
                 <Input
                   value={newDoc.name}
                   onChange={(e) => setNewDoc({...newDoc, name: e.target.value})}
-                  placeholder="ex: CF Parcela Nord"
+                  placeholder="ex: CF General"
                 />
               </div>
-              <div>
-                <Label>Parcelă asociată</Label>
-                <Select onValueChange={(value) => setNewDoc({...newDoc, parcelId: value})} value={newDoc.parcelId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selectează parcela (opțional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="general">General (nu se aplică unei parcele)</SelectItem>
-                    {fields.map(field => (
-                      <SelectItem key={field.id} value={field.id.toString()}>
-                        {field.name} ({field.parcelCode})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* TODO: Reconnect parcel selection when fields are reconnected */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <div className="flex items-center space-x-2">
+                  <Info className="h-4 w-4 text-yellow-600" />
+                  <p className="text-sm text-yellow-800">
+                    Asocierea cu parcelele va fi disponibilă în curând
+                  </p>
+                </div>
               </div>
               <div>
                 <Label>Încarcă fișier</Label>
@@ -309,7 +280,6 @@ const PropertyDocuments = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {propertyDocuments.map((doc) => {
           const expirationStatus = getExpirationStatus(doc.validUntil);
-          const fieldColor = getFieldColor(doc.parcelId);
           
           return (
             <Card 
@@ -317,7 +287,6 @@ const PropertyDocuments = () => {
               className="border-green-200 hover:shadow-lg transition-shadow"
               style={{
                 borderLeft: expirationStatus ? `4px solid ${expirationStatus.type === 'expired' ? '#dc2626' : '#ea580c'}` : undefined,
-                backgroundColor: fieldColor
               }}
             >
               <CardHeader className="pb-3">
@@ -325,7 +294,7 @@ const PropertyDocuments = () => {
                   <div className="flex-1">
                     <CardTitle className="text-lg">{doc.name}</CardTitle>
                     <p className="text-sm text-gray-600">{doc.type}</p>
-                    <p className="text-xs text-gray-500">{getFieldName(doc.parcelId)}</p>
+                    <p className="text-xs text-gray-500">General</p>
                   </div>
                   <div className="flex flex-col space-y-1">
                     {getStatusBadge(doc.status)}
