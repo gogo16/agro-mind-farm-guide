@@ -3,20 +3,10 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Tables } from '@/integrations/supabase/types';
 
-interface InventoryItem {
-  id: string;
-  nume_element: string;
-  categorie_element: 'equipment' | 'chemical' | 'crop' | 'material' | 'fuel';
-  cantitate_status?: string;
-  locatia?: string;
-  pret?: number;
-  tip_tranzactie?: 'income' | 'expense';
-  created_at: string;
-  data_stergerii?: string;
-  updated_at: string;
-  user_id: string;
-}
+// Folosim tipul din Supabase pentru consistență
+type InventoryItem = Tables<'inventory'>;
 
 export const useInventory = () => {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
@@ -75,7 +65,7 @@ export const useInventory = () => {
 
       if (error) throw error;
       
-      if (data) {
+      if (data && data.length > 0) {
         setInventory(prev => [data[0], ...prev]);
         return true;
       }
@@ -104,7 +94,7 @@ export const useInventory = () => {
 
       if (error) throw error;
 
-      if (data) {
+      if (data && data.length > 0) {
         setInventory(prev => prev.map(item => 
           item.id === id ? { ...item, ...data[0] } : item
         ));
