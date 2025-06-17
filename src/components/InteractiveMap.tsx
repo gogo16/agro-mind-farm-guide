@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { useAppContext } from '@/contexts/AppContext';
@@ -7,13 +6,13 @@ import { useToast } from '@/hooks/use-toast';
 interface InteractiveMapProps {
   mapType: string;
   onFieldSelect?: (field: any) => void;
+  fields?: any[];
 }
 
-const InteractiveMap = ({ mapType, onFieldSelect }: InteractiveMapProps) => {
+const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapProps) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const polygonsRef = useRef<google.maps.Polygon[]>([]);
-  const { fields } = useAppContext();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
 
