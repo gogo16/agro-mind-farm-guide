@@ -13,12 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DollarSign, TrendingUp, TrendingDown, Calculator, Plus, ArrowUpRight, ArrowDownRight, Trash2, Edit, BarChart3, Calendar, Target, Lightbulb, Sprout, Wrench } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
-import { useAIRecommendations } from '@/hooks/useAIRecommendations';
 
 const Finance = () => {
   const { toast } = useToast();
   const { transactions, fields, addTransaction, updateTransaction, deleteTransaction } = useAppContext();
-  const { getRecommendationsByZone, isLoading } = useAIRecommendations();
   const [isAddingTransaction, setIsAddingTransaction] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [newTransaction, setNewTransaction] = useState({
@@ -490,23 +488,39 @@ const Finance = () => {
               </Card>
             </div>
 
-            {/* AI Recommendations Tabs */}
-            <Tabs defaultValue="analytics-ai" className="space-y-6">
+            {/* Simple Analytics Tabs */}
+            <Tabs defaultValue="analytics-simple" className="space-y-6">
               <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm">
-                <TabsTrigger value="analytics-ai">Analize</TabsTrigger>
+                <TabsTrigger value="analytics-simple">Analize</TabsTrigger>
                 <TabsTrigger value="rotation">Rotația Culturilor</TabsTrigger>
                 <TabsTrigger value="planning">Planificare</TabsTrigger>
                 <TabsTrigger value="maintenance">Mentenanță</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="analytics-ai" className="space-y-6">
+              <TabsContent value="analytics-simple" className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <AIRecommendationsCard
-                    zoneId="ai-analytics"
-                    title="Analize Comparative"
-                    icon={<BarChart3 className="h-5 w-5" />}
-                    gradientClass="from-blue-500 to-purple-600"
-                  />
+                  <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0">
+                    <CardHeader>
+                      <CardTitle className="flex items-center space-x-2">
+                        <BarChart3 className="h-5 w-5" />
+                        <span>Analize Comparative</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="bg-white/10 rounded-lg p-3">
+                        <p className="text-sm font-medium mb-1">Performanță ROI</p>
+                        <p className="text-xs">
+                          Ferma ta are un ROI superior cu {Math.abs(yourPerformance.roi - nationalAverage.roi).toFixed(1)}% față de media națională.
+                        </p>
+                      </div>
+                      <div className="bg-white/10 rounded-lg p-3">
+                        <p className="text-sm font-medium mb-1">Eficiență costuri</p>
+                        <p className="text-xs">
+                          Analizează structura costurilor pentru optimizare continuă.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
                   
                   <Card className="bg-white border-blue-200">
                     <CardHeader>
@@ -535,30 +549,78 @@ const Finance = () => {
               </TabsContent>
 
               <TabsContent value="rotation" className="space-y-6">
-                <AIRecommendationsCard
-                  zoneId="ai-crop-rotation"
-                  title="Optimizare Rotația Culturilor"
-                  icon={<Sprout className="h-5 w-5" />}
-                  gradientClass="from-green-500 to-teal-600"
-                />
+                <Card className="bg-gradient-to-r from-green-500 to-teal-600 text-white border-0">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Sprout className="h-5 w-5" />
+                      <span>Optimizare Rotația Culturilor</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="bg-white/10 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-1">Rotație recomandată</p>
+                      <p className="text-xs">
+                        Pentru anul următor: porumb → soia → grâu pentru optimizarea solului.
+                      </p>
+                    </div>
+                    <div className="bg-white/10 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-1">Beneficii estimate</p>
+                      <p className="text-xs">
+                        Creșterea randamentului cu 12% și reducerea costurilor cu fertilizatori.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               <TabsContent value="planning" className="space-y-6">
-                <AIRecommendationsCard
-                  zoneId="ai-seasonal-planning"
-                  title="Planificare Sezonieră"
-                  icon={<Calendar className="h-5 w-5" />}
-                  gradientClass="from-orange-500 to-red-600"
-                />
+                <Card className="bg-gradient-to-r from-orange-500 to-red-600 text-white border-0">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Calendar className="h-5 w-5" />
+                      <span>Planificare Sezonieră</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="bg-white/10 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-1">Priorități următoare 30 zile</p>
+                      <p className="text-xs">
+                        Pregătirea solului, comandarea semințelor și planificarea tratamentelor.
+                      </p>
+                    </div>
+                    <div className="bg-white/10 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-1">Buget trimestru</p>
+                      <p className="text-xs">
+                        Alocare recomandată: 40% fertilizatori, 30% semințe, 30% combustibil.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               <TabsContent value="maintenance" className="space-y-6">
-                <AIRecommendationsCard
-                  zoneId="ai-equipment-maintenance"
-                  title="Mentenanța Utilajelor"
-                  icon={<Wrench className="h-5 w-5" />}
-                  gradientClass="from-gray-500 to-slate-600"
-                />
+                <Card className="bg-gradient-to-r from-gray-500 to-slate-600 text-white border-0">
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Wrench className="h-5 w-5" />
+                      <span>Mentenanța Utilajelor</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="bg-white/10 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-1">Mentenanță programată</p>
+                      <p className="text-xs">
+                        Revizii tractoare și combine înainte de sezonul de vară.
+                      </p>
+                    </div>
+                    <div className="bg-white/10 rounded-lg p-3">
+                      <p className="text-sm font-medium mb-1">Costuri estimate</p>
+                      <p className="text-xs">
+                        Buget recomandat: 8.500 RON pentru mentenanța anuală.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               </TabsContent>
             </Tabs>
           </TabsContent>
