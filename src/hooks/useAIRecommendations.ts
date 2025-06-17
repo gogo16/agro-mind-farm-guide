@@ -572,25 +572,34 @@ export const useAIRecommendations = () => {
   };
 
   const getFieldProgress = (fieldId: string) => {
-    const field = fields.find(f => f.id === fieldId);
-    if (!field) return { developmentProgress: 0, daysToHarvest: 0 };
+  const field = fields.find(f => f.id === fieldId);
+  if (!field) {
+    // Ensure all properties are numbers, even in the default return
+    return { developmentProgress: 0, daysToHarvest: 0 };
+  }
 
-    const today = new Date();
-    const plantingDate = field.planting_date ? new Date(field.planting_date) : null;
-    const harvestDate = field.harvest_date ? new Date(field.harvest_date) : null;
+  const today = new Date();
+  // Ensure plantingDate and harvestDate are valid Date objects or null
+  const plantingDate = field.planting_date ? new Date(field.planting_date) : null;
+  const harvestDate = field.harvest_date ? new Date(field.harvest_date) : null;
 
-    if (plantingDate && harvestDate) {
-      const totalDays = Math.floor((harvestDate.getTime() - plantingDate.getTime()) / (1000 * 60 * 60 * 24));
-      const daysPassed = Math.floor((today.getTime() - plantingDate.getTime()) / (1000 * 60 * 60 * 24));
-      const daysToHarvest = Math.floor((harvestDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  // Check if dates are valid before proceeding with calculations
+  if (plantingDate && !isNaN(plantingDate.getTime()) && harvestDate && !isNaN(harvestDate.getTime())) {
+    const totalDays = Math.floor((harvestDate.getTime() - plantingDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysPassed = Math.floor((today.getTime() - plantingDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysToHarvest = Math.floor((harvestDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-      const developmentProgress = Math.min(100, Math.max(0, (daysPassed / totalDays) * 100));
+    const developmentProgress = Math.min(100, Math.max(0, (daysPassed / totalDays) * 100));
 
-      return {
-        developmentProgress: Math.round(developmentProgress),
-        daysToHarvest: Math.max(0, daysToHarvest)
-      };
-    }
+    return {
+      developmentProgress: Math.round(developmentProgress),
+      daysToHarvest: Math.max(0, daysToHarvest)
+    };
+  } else {
+    // If dates are invalid or missing, return the default numeric values
+    return { developmentProgress: 0, daysToHarvest: 0 };
+  }
+};
 
     return { developmentProgress: 50, daysToHarvest: 60 }; // Default values
   };
