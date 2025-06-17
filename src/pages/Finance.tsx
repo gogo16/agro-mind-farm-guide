@@ -15,11 +15,21 @@ import { DollarSign, TrendingUp, TrendingDown, Calculator, Plus, ArrowUpRight, A
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 import { useAIRecommendations } from '@/hooks/useAIRecommendations';
-
 const Finance = () => {
-  const { toast } = useToast();
-  const { transactions, fields, addTransaction, updateTransaction, deleteTransaction } = useAppContext();
-  const { getRecommendationsByZone, isLoading } = useAIRecommendations();
+  const {
+    toast
+  } = useToast();
+  const {
+    transactions,
+    fields,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction
+  } = useAppContext();
+  const {
+    getRecommendationsByZone,
+    isLoading
+  } = useAIRecommendations();
   const [isAddingTransaction, setIsAddingTransaction] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [newTransaction, setNewTransaction] = useState({
@@ -30,17 +40,10 @@ const Finance = () => {
     field: '',
     date: ''
   });
-
-  const totalIncome = transactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalExpenses = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
-
+  const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   const profit = totalIncome - totalExpenses;
-  const roi = totalExpenses > 0 ? ((profit / totalExpenses) * 100).toFixed(1) : '0';
+  const roi = totalExpenses > 0 ? (profit / totalExpenses * 100).toFixed(1) : '0';
 
   // Mock comparative data for analytics
   const nationalAverage = {
@@ -48,23 +51,20 @@ const Finance = () => {
     yieldPerHa: 5.2,
     costPerHa: 4200
   };
-
   const yourPerformance = {
     roi: parseFloat(roi),
-    yieldPerHa: 6.1, // Mock data
+    yieldPerHa: 6.1,
+    // Mock data
     costPerHa: 4700 // Mock data
   };
-
   const getPerformanceColor = (your: number, average: number, higher_is_better: boolean = true) => {
     const isGood = higher_is_better ? your > average : your < average;
     return isGood ? 'text-green-600' : 'text-red-600';
   };
-
   const getPerformanceIcon = (your: number, average: number, higher_is_better: boolean = true) => {
     const isGood = higher_is_better ? your > average : your < average;
     return isGood ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />;
   };
-
   const handleAddTransaction = () => {
     if (!newTransaction.type || !newTransaction.amount || !newTransaction.description) {
       toast({
@@ -74,7 +74,6 @@ const Finance = () => {
       });
       return;
     }
-
     addTransaction({
       type: newTransaction.type as 'income' | 'expense',
       amount: parseFloat(newTransaction.amount),
@@ -83,20 +82,25 @@ const Finance = () => {
       field: newTransaction.field || 'General',
       date: newTransaction.date || new Date().toISOString().split('T')[0]
     });
-
-    setNewTransaction({ type: '', amount: '', description: '', category: '', field: '', date: '' });
+    setNewTransaction({
+      type: '',
+      amount: '',
+      description: '',
+      category: '',
+      field: '',
+      date: ''
+    });
     setIsAddingTransaction(false);
-
     toast({
       title: "Succes",
-      description: "Tranzacția a fost adăugată cu succes.",
+      description: "Tranzacția a fost adăugată cu succes."
     });
   };
-
   const handleEditTransaction = (transaction: any) => {
-    setEditingTransaction({ ...transaction });
+    setEditingTransaction({
+      ...transaction
+    });
   };
-
   const handleUpdateTransaction = () => {
     if (!editingTransaction.description || !editingTransaction.amount) {
       toast({
@@ -106,30 +110,24 @@ const Finance = () => {
       });
       return;
     }
-
     updateTransaction(editingTransaction.id, {
       ...editingTransaction,
       amount: parseFloat(editingTransaction.amount)
     });
-
     toast({
       title: "Succes",
-      description: "Tranzacția a fost actualizată cu succes.",
+      description: "Tranzacția a fost actualizată cu succes."
     });
-
     setEditingTransaction(null);
   };
-
   const handleDeleteTransaction = (id: number) => {
     deleteTransaction(id);
     toast({
       title: "Tranzacție ștersă",
-      description: "Tranzacția a fost ștersă cu succes.",
+      description: "Tranzacția a fost ștersă cu succes."
     });
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+  return <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
@@ -176,7 +174,7 @@ const Finance = () => {
                 <div>
                   <p className="text-sm text-blue-600 font-medium mb-1">Profit net</p>
                   <p className="text-2xl font-bold text-blue-800">{profit.toLocaleString()} RON</p>
-                  <p className="text-xs text-blue-600 mt-1">Marjă: {totalIncome > 0 ? ((profit / totalIncome) * 100).toFixed(1) : 0}%</p>
+                  <p className="text-xs text-blue-600 mt-1">Marjă: {totalIncome > 0 ? (profit / totalIncome * 100).toFixed(1) : 0}%</p>
                 </div>
                 <div className="bg-blue-100 p-3 rounded-lg">
                   <DollarSign className="h-6 w-6 text-blue-600" />
@@ -191,7 +189,7 @@ const Finance = () => {
                 <div>
                   <p className="text-sm text-purple-600 font-medium mb-1">ROI estimat</p>
                   <p className="text-2xl font-bold text-purple-800">
-                    {totalExpenses > 0 ? ((profit / totalExpenses) * 100).toFixed(1) : 0}%
+                    {totalExpenses > 0 ? (profit / totalExpenses * 100).toFixed(1) : 0}%
                   </p>
                   <p className="text-xs text-purple-600 mt-1">Return on Investment</p>
                 </div>
@@ -232,7 +230,10 @@ const Finance = () => {
                         <div className="space-y-4">
                           <div>
                             <Label htmlFor="type">Tip tranzacție *</Label>
-                            <Select onValueChange={(value) => setNewTransaction({...newTransaction, type: value})}>
+                            <Select onValueChange={value => setNewTransaction({
+                            ...newTransaction,
+                            type: value
+                          })}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Selectează tipul" />
                               </SelectTrigger>
@@ -244,26 +245,24 @@ const Finance = () => {
                           </div>
                           <div>
                             <Label htmlFor="amount">Sumă (RON) *</Label>
-                            <Input
-                              id="amount"
-                              type="number"
-                              value={newTransaction.amount}
-                              onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})}
-                              placeholder="ex: 1500"
-                            />
+                            <Input id="amount" type="number" value={newTransaction.amount} onChange={e => setNewTransaction({
+                            ...newTransaction,
+                            amount: e.target.value
+                          })} placeholder="ex: 1500" />
                           </div>
                           <div>
                             <Label htmlFor="description">Descriere *</Label>
-                            <Input
-                              id="description"
-                              value={newTransaction.description}
-                              onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})}
-                              placeholder="ex: Îngrășământ NPK"
-                            />
+                            <Input id="description" value={newTransaction.description} onChange={e => setNewTransaction({
+                            ...newTransaction,
+                            description: e.target.value
+                          })} placeholder="ex: Îngrășământ NPK" />
                           </div>
                           <div>
                             <Label htmlFor="category">Categorie</Label>
-                            <Select onValueChange={(value) => setNewTransaction({...newTransaction, category: value})}>
+                            <Select onValueChange={value => setNewTransaction({
+                            ...newTransaction,
+                            category: value
+                          })}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Selectează categoria" />
                               </SelectTrigger>
@@ -279,26 +278,25 @@ const Finance = () => {
                           </div>
                           <div>
                             <Label htmlFor="field">Teren</Label>
-                            <Select onValueChange={(value) => setNewTransaction({...newTransaction, field: value})}>
+                            <Select onValueChange={value => setNewTransaction({
+                            ...newTransaction,
+                            field: value
+                          })}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Selectează terenul" />
                               </SelectTrigger>
                               <SelectContent>
-                                {fields.map((field) => (
-                                  <SelectItem key={field.id} value={field.name}>{field.name}</SelectItem>
-                                ))}
+                                {fields.map(field => <SelectItem key={field.id} value={field.name}>{field.name}</SelectItem>)}
                                 <SelectItem value="General">General</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                           <div>
                             <Label htmlFor="date">Data</Label>
-                            <Input
-                              id="date"
-                              type="date"
-                              value={newTransaction.date}
-                              onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})}
-                            />
+                            <Input id="date" type="date" value={newTransaction.date} onChange={e => setNewTransaction({
+                            ...newTransaction,
+                            date: e.target.value
+                          })} />
                           </div>
                           <div className="flex space-x-2">
                             <Button onClick={() => setIsAddingTransaction(false)} variant="outline" className="flex-1">
@@ -313,17 +311,10 @@ const Finance = () => {
                     </Dialog>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {transactions.slice(0, 8).map((transaction) => (
-                      <div key={transaction.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                    {transactions.slice(0, 8).map(transaction => <div key={transaction.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                         <div className="flex items-center space-x-3">
-                          <div className={`p-2 rounded-lg ${
-                            transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'
-                          }`}>
-                            {transaction.type === 'income' ? (
-                              <ArrowUpRight className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <ArrowDownRight className="h-4 w-4 text-red-600" />
-                            )}
+                          <div className={`p-2 rounded-lg ${transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'}`}>
+                            {transaction.type === 'income' ? <ArrowUpRight className="h-4 w-4 text-green-600" /> : <ArrowDownRight className="h-4 w-4 text-red-600" />}
                           </div>
                           <div className="flex-1">
                             <p className="font-medium text-gray-900">{transaction.description}</p>
@@ -336,9 +327,7 @@ const Finance = () => {
                         </div>
                         <div className="flex items-center space-x-2">
                           <div className="text-right">
-                            <p className={`font-semibold ${
-                              transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                            }`}>
+                            <p className={`font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                               {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toLocaleString()} RON
                             </p>
                           </div>
@@ -367,41 +356,14 @@ const Finance = () => {
                             </AlertDialogContent>
                           </AlertDialog>
                         </div>
-                      </div>
-                    ))}
+                      </div>)}
                   </CardContent>
                 </Card>
               </div>
 
               {/* Quick Actions & Budget */}
               <div className="space-y-6">
-                <Card className="bg-white border-green-200">
-                  <CardHeader>
-                    <CardTitle className="text-green-800">Buget lunar</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Cheltuieli planificate</span>
-                        <span>75%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">18.750 / 25.000 RON</p>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Venituri estimate</span>
-                        <span>60%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-green-600 h-2 rounded-full" style={{ width: '60%' }}></div>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">12.000 / 20.000 RON</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                
 
                 <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0">
                   <CardHeader>
@@ -499,12 +461,7 @@ const Finance = () => {
 
               <TabsContent value="analytics-ai" className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <AIRecommendationsCard
-                    zoneId="ai-analytics"
-                    title="Analize Comparative"
-                    icon={<BarChart3 className="h-5 w-5" />}
-                    gradientClass="from-blue-500 to-purple-600"
-                  />
+                  <AIRecommendationsCard zoneId="ai-analytics" title="Analize Comparative" icon={<BarChart3 className="h-5 w-5" />} gradientClass="from-blue-500 to-purple-600" />
                   
                   <Card className="bg-white border-blue-200">
                     <CardHeader>
@@ -533,30 +490,15 @@ const Finance = () => {
               </TabsContent>
 
               <TabsContent value="rotation" className="space-y-6">
-                <AIRecommendationsCard
-                  zoneId="ai-crop-rotation"
-                  title="Optimizare Rotația Culturilor"
-                  icon={<Sprout className="h-5 w-5" />}
-                  gradientClass="from-green-500 to-teal-600"
-                />
+                <AIRecommendationsCard zoneId="ai-crop-rotation" title="Optimizare Rotația Culturilor" icon={<Sprout className="h-5 w-5" />} gradientClass="from-green-500 to-teal-600" />
               </TabsContent>
 
               <TabsContent value="planning" className="space-y-6">
-                <AIRecommendationsCard
-                  zoneId="ai-seasonal-planning"
-                  title="Planificare Sezonieră"
-                  icon={<Calendar className="h-5 w-5" />}
-                  gradientClass="from-orange-500 to-red-600"
-                />
+                <AIRecommendationsCard zoneId="ai-seasonal-planning" title="Planificare Sezonieră" icon={<Calendar className="h-5 w-5" />} gradientClass="from-orange-500 to-red-600" />
               </TabsContent>
 
               <TabsContent value="maintenance" className="space-y-6">
-                <AIRecommendationsCard
-                  zoneId="ai-equipment-maintenance"
-                  title="Mentenanța Utilajelor"
-                  icon={<Wrench className="h-5 w-5" />}
-                  gradientClass="from-gray-500 to-slate-600"
-                />
+                <AIRecommendationsCard zoneId="ai-equipment-maintenance" title="Mentenanța Utilajelor" icon={<Wrench className="h-5 w-5" />} gradientClass="from-gray-500 to-slate-600" />
               </TabsContent>
             </Tabs>
           </TabsContent>
@@ -564,8 +506,7 @@ const Finance = () => {
       </div>
 
       {/* Edit Transaction Dialog */}
-      {editingTransaction && (
-        <Dialog open={true} onOpenChange={() => setEditingTransaction(null)}>
+      {editingTransaction && <Dialog open={true} onOpenChange={() => setEditingTransaction(null)}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Editează tranzacția</DialogTitle>
@@ -573,22 +514,24 @@ const Finance = () => {
             <div className="space-y-4">
               <div>
                 <Label>Descriere</Label>
-                <Input
-                  value={editingTransaction.description}
-                  onChange={(e) => setEditingTransaction({...editingTransaction, description: e.target.value})}
-                />
+                <Input value={editingTransaction.description} onChange={e => setEditingTransaction({
+              ...editingTransaction,
+              description: e.target.value
+            })} />
               </div>
               <div>
                 <Label>Sumă (RON)</Label>
-                <Input
-                  type="number"
-                  value={editingTransaction.amount}
-                  onChange={(e) => setEditingTransaction({...editingTransaction, amount: e.target.value})}
-                />
+                <Input type="number" value={editingTransaction.amount} onChange={e => setEditingTransaction({
+              ...editingTransaction,
+              amount: e.target.value
+            })} />
               </div>
               <div>
                 <Label>Categorie</Label>
-                <Select onValueChange={(value) => setEditingTransaction({...editingTransaction, category: value})} value={editingTransaction.category}>
+                <Select onValueChange={value => setEditingTransaction({
+              ...editingTransaction,
+              category: value
+            })} value={editingTransaction.category}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -612,10 +555,7 @@ const Finance = () => {
               </div>
             </div>
           </DialogContent>
-        </Dialog>
-      )}
-    </div>
-  );
+        </Dialog>}
+    </div>;
 };
-
 export default Finance;
