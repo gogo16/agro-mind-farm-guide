@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -157,10 +156,7 @@ const MapView = () => {
                 <div className="border-t pt-4">
                   <Dialog open={isAddingField} onOpenChange={setIsAddingField}>
                     <DialogTrigger asChild>
-                      <Button className="w-full bg-green-600 hover:bg-green-700">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Adaugă teren nou
-                      </Button>
+                      
                     </DialogTrigger>
                     <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                       <DialogHeader>
