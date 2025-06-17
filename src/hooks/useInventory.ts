@@ -8,6 +8,16 @@ import { Tables } from '@/integrations/supabase/types';
 // Folosim tipul din Supabase pentru consistență
 type InventoryItem = Tables<'inventory'>;
 
+// Tip pentru adăugarea de elemente noi - doar câmpurile esențiale
+type NewInventoryItem = {
+  nume_element: string;
+  categorie_element: 'equipment' | 'chemical' | 'crop' | 'material' | 'fuel';
+  cantitate_status?: string | null;
+  locatia?: string | null;
+  pret?: number | null;
+  tip_tranzactie?: 'income' | 'expense' | null;
+};
+
 export const useInventory = () => {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +54,7 @@ export const useInventory = () => {
   };
 
   // Adaugă element în inventar
-  const addInventoryItem = async (item: Omit<InventoryItem, 'id' | 'created_at' | 'updated_at' | 'user_id'>) => {
+  const addInventoryItem = async (item: NewInventoryItem) => {
     if (!user) {
       toast({
         title: "Eroare",
