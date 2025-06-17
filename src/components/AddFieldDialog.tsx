@@ -15,12 +15,10 @@ interface AddFieldDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const AddFieldDialog = ({
-  open,
-  onOpenChange
-}: AddFieldDialogProps) => {
+const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
   const { toast } = useToast();
   const { addField } = useAppContext();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldData, setFieldData] = useState({
     name: '',
     parcel_code: '',
@@ -37,9 +35,12 @@ const AddFieldDialog = ({
     color: '#22c55e'
   });
 
-  const handleAddField = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Button clicked, submitting form...', fieldData);
+    
+    if (isSubmitting) return;
+    
+    console.log('Form submitted with data:', fieldData);
     
     if (!fieldData.name || !fieldData.size) {
       toast({
@@ -50,25 +51,27 @@ const AddFieldDialog = ({
       return;
     }
 
-    const newField = {
-      name: fieldData.name,
-      parcel_code: fieldData.parcel_code || '',
-      size: parseFloat(fieldData.size),
-      crop: fieldData.crop || '',
-      status: fieldData.status,
-      location: fieldData.location || '',
-      coordinates: null,
-      planting_date: fieldData.planting_date || '',
-      harvest_date: fieldData.harvest_date || '',
-      work_type: fieldData.work_type || '',
-      costs: fieldData.costs ? parseFloat(fieldData.costs) : 0,
-      inputs: fieldData.inputs || '',
-      color: fieldData.color,
-      soil_data: {}
-    };
+    setIsSubmitting(true);
 
     try {
-      console.log('Attempting to add field:', newField);
+      const newField = {
+        name: fieldData.name,
+        parcel_code: fieldData.parcel_code || '',
+        size: parseFloat(fieldData.size),
+        crop: fieldData.crop || '',
+        status: fieldData.status,
+        location: fieldData.location || '',
+        coordinates: null,
+        planting_date: fieldData.planting_date || null,
+        harvest_date: fieldData.harvest_date || null,
+        work_type: fieldData.work_type || '',
+        costs: fieldData.costs ? parseFloat(fieldData.costs) : 0,
+        inputs: fieldData.inputs || '',
+        color: fieldData.color,
+        soil_data: {}
+      };
+
+      console.log('Adding field to database:', newField);
       await addField(newField);
       
       // Reset form
@@ -92,15 +95,17 @@ const AddFieldDialog = ({
       
       toast({
         title: "Succes",
-        description: "Terenul a fost adăugat cu succes."
+        description: "Terenul a fost adăugat cu succes în baza de date."
       });
     } catch (error) {
       console.error('Error adding field:', error);
       toast({
         title: "Eroare",
-        description: "A apărut o eroare la adăugarea terenului.",
+        description: "A apărut o eroare la adăugarea terenului în baza de date.",
         variant: "destructive"
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -116,17 +121,14 @@ const AddFieldDialog = ({
         <DialogHeader>
           <DialogTitle>Adaugă teren nou</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleAddField}>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="name">Nume teren *</Label>
               <Input 
                 id="name" 
                 value={fieldData.name} 
-                onChange={e => setFieldData({
-                  ...fieldData,
-                  name: e.target.value
-                })} 
+                onChange={e => setFieldData({ ...fieldData, name: e.target.value })} 
                 placeholder="ex: Parcela Nord" 
                 required
               />
@@ -136,10 +138,7 @@ const AddFieldDialog = ({
               <Input 
                 id="parcel_code" 
                 value={fieldData.parcel_code} 
-                onChange={e => setFieldData({
-                  ...fieldData,
-                  parcel_code: e.target.value
-                })} 
+                onChange={e => setFieldData({ ...fieldData, parcel_code: e.target.value })} 
                 placeholder="ex: PN-001" 
               />
             </div>
@@ -150,10 +149,7 @@ const AddFieldDialog = ({
                 type="number" 
                 step="0.01" 
                 value={fieldData.size} 
-                onChange={e => setFieldData({
-                  ...fieldData,
-                  size: e.target.value
-                })} 
+                onChange={e => setFieldData({ ...fieldData, size: e.target.value })} 
                 placeholder="ex: 5.5" 
                 required
               />
@@ -162,10 +158,7 @@ const AddFieldDialog = ({
               <Label htmlFor="crop">Cultură</Label>
               <Select 
                 value={fieldData.crop} 
-                onValueChange={value => setFieldData({
-                  ...fieldData,
-                  crop: value
-                })}
+                onValueChange={value => setFieldData({ ...fieldData, crop: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selectează cultura" />
@@ -186,10 +179,7 @@ const AddFieldDialog = ({
               <Label htmlFor="status">Status</Label>
               <Select 
                 value={fieldData.status} 
-                onValueChange={value => setFieldData({
-                  ...fieldData,
-                  status: value
-                })}
+                onValueChange={value => setFieldData({ ...fieldData, status: value })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -208,10 +198,7 @@ const AddFieldDialog = ({
                 id="planting_date" 
                 type="date" 
                 value={fieldData.planting_date} 
-                onChange={e => setFieldData({
-                  ...fieldData,
-                  planting_date: e.target.value
-                })} 
+                onChange={e => setFieldData({ ...fieldData, planting_date: e.target.value })} 
               />
             </div>
             <div>
@@ -220,10 +207,7 @@ const AddFieldDialog = ({
                 id="harvest_date" 
                 type="date" 
                 value={fieldData.harvest_date} 
-                onChange={e => setFieldData({
-                  ...fieldData,
-                  harvest_date: e.target.value
-                })} 
+                onChange={e => setFieldData({ ...fieldData, harvest_date: e.target.value })} 
               />
             </div>
             
@@ -233,40 +217,36 @@ const AddFieldDialog = ({
                 id="color" 
                 type="color" 
                 value={fieldData.color} 
-                onChange={e => setFieldData({
-                  ...fieldData,
-                  color: e.target.value
-                })} 
+                onChange={e => setFieldData({ ...fieldData, color: e.target.value })} 
               />
             </div>
             <div className="md:col-span-2">
-              <Label htmlFor="inputs">Lucrari efectuate</Label>
+              <Label htmlFor="inputs">Lucrări efectuate</Label>
               <Textarea 
                 id="inputs" 
                 value={fieldData.inputs} 
-                onChange={e => setFieldData({
-                  ...fieldData,
-                  inputs: e.target.value
-                })} 
+                onChange={e => setFieldData({ ...fieldData, inputs: e.target.value })} 
                 placeholder="Descriere inputuri: semințe, îngrășăminte, tratamente..." 
               />
             </div>
           </div>
           
-          <div className="flex space-x-2 mt-6">
+          <div className="flex space-x-2 pt-4">
             <Button 
               type="button"
               onClick={() => onOpenChange(false)} 
               variant="outline" 
               className="flex-1"
+              disabled={isSubmitting}
             >
               Anulează
             </Button>
             <Button 
               type="submit" 
               className="flex-1 bg-green-600 hover:bg-green-700"
+              disabled={isSubmitting}
             >
-              Adaugă terenul
+              {isSubmitting ? 'Se adaugă...' : 'Adaugă terenul'}
             </Button>
           </div>
         </form>

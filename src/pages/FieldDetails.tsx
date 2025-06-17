@@ -13,21 +13,15 @@ import EditFieldDialog from '@/components/EditFieldDialog';
 import AddPhotoDialog from '@/components/AddPhotoDialog';
 import SoilSection from '@/components/SoilSection';
 import { useAppContext } from '@/contexts/AppContext';
-import { useAIRecommendations } from '@/hooks/useAIRecommendations';
 
 const FieldDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { fields, tasks } = useAppContext();
-  const { getFieldProgress, getFieldStatus } = useAIRecommendations();
   const [isEditingField, setIsEditingField] = useState(false);
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
 
   const field = id ? fields.find(f => f.id === id) : null;
-
-  // Get AI-powered field status and progress
-  const fieldStatus = field ? getFieldStatus(field.id) : { status: 'Necunoscut', description: 'Date indisponibile', color: 'gray' };
-  const fieldProgress = field ? getFieldProgress(field.id) : { developmentProgress: 0, daysToHarvest: 0 };
 
   // Get completed tasks for this field
   const completedActivities = tasks.filter(task => 
@@ -62,6 +56,42 @@ const FieldDetails = () => {
     );
   }
 
+  // Ensure field.size is always treated as a number
+  const fieldSize = Number(field.size);
+
+  // Calculate basic progress (simplified without AI)
+  const plantingDate = field.planting_date ? new Date(field.planting_date) : null;
+  const harvestDate = field.harvest_date ? new Date(field.harvest_date) : null;
+  const today = new Date();
+
+  let developmentProgress = 50; // Default
+  let daysToHarvest = 60; // Default
+
+  if (plantingDate && harvestDate) {
+    const totalDays = Math.floor((harvestDate.getTime() - plantingDate.getTime()) / (1000 * 60 * 60 * 24));
+    const daysPassed = Math.floor((today.getTime() - plantingDate.getTime()) / (1000 * 60 * 60 * 24));
+    daysToHarvest = Math.floor((harvestDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    developmentProgress = Math.min(100, Math.max(0, (daysPassed / totalDays) * 100));
+    daysToHarvest = Math.max(0, daysToHarvest);
+  }
+
+  // Simple field status
+  let fieldStatus = 'Activ';
+  let statusColor = 'green';
+  if (plantingDate && harvestDate) {
+    if (today < plantingDate) {
+      fieldStatus = 'Pregătire';
+      statusColor = 'blue';
+    } else if (today > harvestDate) {
+      fieldStatus = 'Recoltat';
+      statusColor = 'gray';
+    } else {
+      fieldStatus = 'În dezvoltare';
+      statusColor = 'green';
+    }
+  }
+
   const getStatusColor = (color: string) => {
     switch (color) {
       case 'green': return 'bg-green-100 text-green-800';
@@ -71,9 +101,6 @@ const FieldDetails = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
-
-  // Ensure field.size is always treated as a number
-  const fieldSize = Number(field.size);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
@@ -153,14 +180,14 @@ const FieldDetails = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-green-200" data-ai-zone="ai-field-status">
+          <Card className="bg-white/80 backdrop-blur-sm border-green-200">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2 mb-2">
-                <div className={`w-5 h-5 rounded-full ${fieldStatus.color === 'green' ? 'bg-green-500' : fieldStatus.color === 'yellow' ? 'bg-yellow-500' : fieldStatus.color === 'red' ? 'bg-red-500' : fieldStatus.color === 'blue' ? 'bg-blue-500' : 'bg-gray-500'}`}></div>
+                <div className={`w-5 h-5 rounded-full ${statusColor === 'green' ? 'bg-green-500' : statusColor === 'yellow' ? 'bg-yellow-500' : statusColor === 'red' ? 'bg-red-500' : statusColor === 'blue' ? 'bg-blue-500' : 'bg-gray-500'}`}></div>
                 <span className="text-sm font-medium text-gray-700">Status</span>
               </div>
-              <Badge className={getStatusColor(fieldStatus.color)}>{fieldStatus.status}</Badge>
-              <p className="text-sm text-gray-600 mt-1">{fieldStatus.description}</p>
+              <Badge className={getStatusColor(statusColor)}>{fieldStatus}</Badge>
+              <p className="text-sm text-gray-600 mt-1">Monitorizare continuă</p>
             </CardContent>
           </Card>
         </div>
@@ -198,7 +225,7 @@ const FieldDetails = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-green-200" data-ai-zone="ai-season-progress">
+              <Card className="bg-white border-green-200">
                 <CardHeader>
                   <CardTitle className="text-green-800">Progres Sezon</CardTitle>
                 </CardHeader>
@@ -207,17 +234,17 @@ const FieldDetails = () => {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Progres dezvoltare</span>
-                        <span>{fieldProgress.developmentProgress}%</span>
+                        <span>{Math.round(developmentProgress)}%</span>
                       </div>
-                      <Progress value={fieldProgress.developmentProgress} className="h-2" />
+                      <Progress value={developmentProgress} className="h-2" />
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Zile până la recoltare</span>
-                        <span>{fieldProgress.daysToHarvest} zile</span>
+                        <span>{daysToHarvest} zile</span>
                       </div>
                       <Progress 
-                        value={Math.max(0, 100 - (fieldProgress.daysToHarvest / 120) * 100)} 
+                        value={Math.max(0, 100 - (daysToHarvest / 120) * 100)} 
                         className="h-2" 
                       />
                     </div>
