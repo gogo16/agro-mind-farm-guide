@@ -13,26 +13,37 @@ import AddPhotoDialog from '@/components/AddPhotoDialog';
 import SoilSection from '@/components/SoilSection';
 import { useAppContext } from '@/contexts/AppContext';
 import { useAIRecommendations } from '@/hooks/useAIRecommendations';
-
 const FieldDetails = () => {
-  const { id } = useParams();
+  const {
+    id
+  } = useParams();
   const navigate = useNavigate();
-  const { fields, tasks } = useAppContext();
-  const { getFieldProgress, getFieldStatus } = useAIRecommendations();
+  const {
+    fields,
+    tasks
+  } = useAppContext();
+  const {
+    getFieldProgress,
+    getFieldStatus
+  } = useAIRecommendations();
   const [isEditingField, setIsEditingField] = useState(false);
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
-
   const fieldId = id ? parseInt(id, 10) : null;
   const field = fieldId ? fields.find(f => f.id === fieldId) : null;
 
   // Get AI-powered field status and progress
-  const fieldStatus = fieldId ? getFieldStatus(fieldId) : { status: 'Necunoscut', description: 'Date indisponibile', color: 'gray' };
-  const fieldProgress = fieldId ? getFieldProgress(fieldId) : { developmentProgress: 0, daysToHarvest: 0 };
+  const fieldStatus = fieldId ? getFieldStatus(fieldId) : {
+    status: 'Necunoscut',
+    description: 'Date indisponibile',
+    color: 'gray'
+  };
+  const fieldProgress = fieldId ? getFieldProgress(fieldId) : {
+    developmentProgress: 0,
+    daysToHarvest: 0
+  };
 
   // Get completed tasks for this field
-  const completedActivities = tasks.filter(task => 
-    task.field === field?.name && task.status === 'completed'
-  ).map(task => ({
+  const completedActivities = tasks.filter(task => task.field === field?.name && task.status === 'completed').map(task => ({
     id: task.id,
     date: task.dueDate || new Date().toISOString().split('T')[0],
     activity: task.title,
@@ -42,13 +53,9 @@ const FieldDetails = () => {
   }));
 
   // Get the last completed task for work type
-  const lastCompletedTask = tasks
-    .filter(task => task.field === field?.name && task.status === 'completed')
-    .sort((a, b) => new Date(b.dueDate || b.date).getTime() - new Date(a.dueDate || a.date).getTime())[0];
-
+  const lastCompletedTask = tasks.filter(task => task.field === field?.name && task.status === 'completed').sort((a, b) => new Date(b.dueDate || b.date).getTime() - new Date(a.dueDate || a.date).getTime())[0];
   if (!field) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+    return <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
         <Navigation />
         <div className="container mx-auto px-4 py-6">
           <div className="text-center">
@@ -58,22 +65,23 @@ const FieldDetails = () => {
             </Button>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   const getStatusColor = (color: string) => {
     switch (color) {
-      case 'green': return 'bg-green-100 text-green-800';
-      case 'yellow': return 'bg-yellow-100 text-yellow-800';
-      case 'red': return 'bg-red-100 text-red-800';
-      case 'blue': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'green':
+        return 'bg-green-100 text-green-800';
+      case 'yellow':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'red':
+        return 'bg-red-100 text-red-800';
+      case 'blue':
+        return 'bg-blue-100 text-blue-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+  return <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
@@ -92,28 +100,14 @@ const FieldDetails = () => {
             </div>
           </div>
           <div className="flex space-x-2">
-            <AddPhotoDialog 
-              fieldId={field.id} 
-              isOpen={isAddingPhoto} 
-              onOpenChange={setIsAddingPhoto} 
-              trigger={
-                <Button variant="outline">
+            <AddPhotoDialog fieldId={field.id} isOpen={isAddingPhoto} onOpenChange={setIsAddingPhoto} trigger={<Button variant="outline">
                   <Camera className="h-4 w-4 mr-2" />
                   Adaugă poză
-                </Button>
-              } 
-            />
-            <EditFieldDialog 
-              field={field} 
-              isOpen={isEditingField} 
-              onOpenChange={setIsEditingField} 
-              trigger={
-                <Button className="bg-green-600 hover:bg-green-700">
+                </Button>} />
+            <EditFieldDialog field={field} isOpen={isEditingField} onOpenChange={setIsEditingField} trigger={<Button className="bg-green-600 hover:bg-green-700">
                   <Edit className="h-4 w-4 mr-2" />
                   Editează
-                </Button>
-              } 
-            />
+                </Button>} />
           </div>
         </div>
 
@@ -197,40 +191,12 @@ const FieldDetails = () => {
                       <p className="text-sm text-gray-600">Istoric îngrășăminte/chimicale</p>
                       <p className="font-medium">{field.inputs || 'N/A'}</p>
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-600">ROI</p>
-                      <p className="font-medium text-green-600">{field.roi ? `${field.roi}%` : 'N/A'}</p>
-                    </div>
+                    
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-green-200" data-ai-zone="ai-season-progress">
-                <CardHeader>
-                  <CardTitle className="text-green-800">Progres Sezon</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Progres dezvoltare</span>
-                        <span>{fieldProgress.developmentProgress}%</span>
-                      </div>
-                      <Progress value={fieldProgress.developmentProgress} className="h-2" />
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Zile până la recoltare</span>
-                        <span>{fieldProgress.daysToHarvest} zile</span>
-                      </div>
-                      <Progress 
-                        value={Math.max(0, 100 - (fieldProgress.daysToHarvest / 120) * 100)} 
-                        className="h-2" 
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              
             </div>
           </TabsContent>
 
@@ -245,8 +211,7 @@ const FieldDetails = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {completedActivities.length > 0 ? completedActivities.map(activity => (
-                  <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
+                {completedActivities.length > 0 ? completedActivities.map(activity => <div key={activity.id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex justify-between items-start mb-2">
                       <h4 className="font-semibold text-gray-900">{activity.activity}</h4>
                       <Badge variant="secondary" className="text-xs">{activity.date}</Badge>
@@ -256,14 +221,11 @@ const FieldDetails = () => {
                       <span className="text-gray-500">Sarcină completată</span>
                       <span className="font-medium text-green-600">Finalizat</span>
                     </div>
-                  </div>
-                )) : (
-                  <div className="text-center py-8 text-gray-500">
+                  </div>) : <div className="text-center py-8 text-gray-500">
                     <History className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                     <p>Nu există activități completate pentru acest teren</p>
                     <p className="text-sm">Activitățile completate vor apărea aici</p>
-                  </div>
-                )}
+                  </div>}
               </CardContent>
             </Card>
           </TabsContent>
@@ -277,8 +239,6 @@ const FieldDetails = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default FieldDetails;
