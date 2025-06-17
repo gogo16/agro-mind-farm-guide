@@ -250,7 +250,8 @@ const FieldDetails = () => {
           </TabsContent>
 
           <TabsContent value="soil" className="space-y-6">
-            <SoilSection fieldId={field.id} />
+           <SoilSection fieldId={Number(field.id)} />
+
           </TabsContent>
         </Tabs>
 
