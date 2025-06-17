@@ -72,8 +72,8 @@ const FieldDetails = () => {
     }
   };
 
-  // Convert size to number for consistent usage - ensure it's always a number
-  const fieldSize = typeof field.size === 'string' ? parseFloat(field.size) : Number(field.size);
+  // Ensure field.size is always treated as a number
+  const fieldSize = Number(field.size);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
