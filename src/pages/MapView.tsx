@@ -10,14 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, MapPin, Layers } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
+
 const MapView = () => {
-  const {
-    toast
-  } = useToast();
-  const {
-    fields,
-    addField
-  } = useAppContext();
+  const { toast } = useToast();
+  const { fields, addField } = useAppContext();
   const [isAddingField, setIsAddingField] = useState(false);
   const [selectedCoordinates, setSelectedCoordinates] = useState<{
     lat: number;
@@ -64,6 +60,7 @@ const MapView = () => {
     name: 'Turcoaz',
     value: '#06b6d4'
   }];
+
   const handleMapClick = (coordinates: {
     lat: number;
     lng: number;
@@ -71,6 +68,7 @@ const MapView = () => {
     setSelectedCoordinates(coordinates);
     setIsAddingField(true);
   };
+
   const handleAddField = async () => {
     if (!fieldForm.name || !fieldForm.crop || !fieldForm.size) {
       toast({
@@ -101,7 +99,6 @@ const MapView = () => {
         coordinates: selectedCoordinates,
         costs: 0,
         inputs: '',
-        roi: 0,
         work_type: '',
         status: 'active',
         soil_data: {}
@@ -142,6 +139,7 @@ const MapView = () => {
     acc[crop].push(field);
     return acc;
   }, {} as Record<string, typeof fields>);
+
   useEffect(() => {
     // Get user location for map center
     if (navigator.geolocation) {
@@ -156,7 +154,9 @@ const MapView = () => {
       });
     }
   }, []);
-  return <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
@@ -366,6 +366,8 @@ const MapView = () => {
           
         </Card>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default MapView;

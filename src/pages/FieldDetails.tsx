@@ -105,10 +105,7 @@ const FieldDetails = () => {
               } 
             />
             <EditFieldDialog 
-              field={{ 
-                ...field, 
-                size: fieldSize
-              }} 
+              field={field} 
               isOpen={isEditingField} 
               onOpenChange={setIsEditingField} 
               trigger={
