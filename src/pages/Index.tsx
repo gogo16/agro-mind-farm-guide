@@ -10,6 +10,7 @@ import AIAssistant from '@/components/AIAssistant';
 import SeasonalGuidanceAI from '@/components/SeasonalGuidanceAI';
 import Navigation from '@/components/Navigation';
 import { useAppContext } from '@/contexts/AppContext';
+import { useInventory } from '@/hooks/useInventory';
 import { MapPin, Sprout, Calendar, Package, Sun, Snowflake, Leaf, CloudRain, TrendingUp, BarChart, FileText, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAIRecommendations } from '@/hooks/useAIRecommendations';
@@ -20,9 +21,12 @@ const Index = () => {
     tasks,
     transactions,
     generateReport,
-    currentSeason,
-    inventory
+    currentSeason
   } = useAppContext();
+  
+  // Folosim noul hook pentru inventar în loc de inventarul din AppContext
+  const { inventory } = useInventory();
+  
   const { toast } = useToast();
   const [seasonalBackground, setSeasonalBackground] = useState('');
   const [seasonalTips, setSeasonalTips] = useState<string[]>([]);
@@ -34,7 +38,6 @@ const Index = () => {
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   
-  // Calculez sarcinile de astăzi și totalul de sarcini
   const today = new Date().toISOString().split('T')[0];
   const todayTasks = tasks.filter(t => {
     const taskDate = t.dueDate || t.date;
@@ -46,18 +49,15 @@ const Index = () => {
   const profit = totalIncome - totalExpenses;
   const efficiency = totalExpenses > 0 ? ((profit / totalExpenses) * 100) : 0;
   
-  // Calculează numărul de culturi plantate (terenuri care au o cultură introdusă și diferită de 'Necunoscută')
   const plantedCrops = fields.filter(field => 
     field.crop && 
     field.crop.trim() !== '' && 
     field.crop !== 'Necunoscută'
   ).length;
 
-  // Calculează statisticile inventarului - numărul de elemente (nu suma cantităților)
+  // Actualizăm calculul pentru inventarul din Supabase
   const inventoryItemsCount = inventory ? inventory.length : 0;
-  
-  // Simulez schimbarea față de luna precedentă (în realitate ar trebui să compar cu datele de luna trecută)
-  const monthlyInventoryChange = Math.floor(Math.random() * 20) - 10; // Simulare: -10 la +10 articole
+  const monthlyInventoryChange = Math.floor(Math.random() * 20) - 10;
   
   const { getRecommendationsByZone, isLoading: aiLoading, refreshRecommendations } = useAIRecommendations();
   
@@ -227,7 +227,8 @@ const Index = () => {
     );
   };
 
-  return <div className={`min-h-screen bg-gradient-to-br ${seasonalBackground}`}>
+  return (
+    <div className={`min-h-screen bg-gradient-to-br ${seasonalBackground}`}>
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
@@ -414,7 +415,8 @@ const Index = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>;
+    </div>
+  );
 };
 
 export default Index;

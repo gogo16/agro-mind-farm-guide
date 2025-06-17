@@ -21,7 +21,7 @@ interface WeatherData {
 interface Field {
   id: number;
   name: string;
-  parcelCode: string; // New field for parcel code
+  parcelCode: string;
   size: number;
   crop: string;
   status: string;
@@ -33,8 +33,8 @@ interface Field {
   costs?: number;
   inputs?: string;
   roi?: number;
-  color?: string; // Added color property
-  weather?: WeatherData; // Added weather property
+  color?: string;
+  weather?: WeatherData;
 }
 
 interface WorkHistory {
@@ -86,14 +86,14 @@ interface Task {
   priority: 'high' | 'medium' | 'low';
   date: string;
   time: string;
-  dueDate?: string; // Added dueDate property
-  dueTime?: string; // Added dueTime property
-  status: 'pending' | 'completed' | 'in-progress'; // Added 'in-progress' status
+  dueDate?: string;
+  dueTime?: string;
+  status: 'pending' | 'completed' | 'in-progress';
   aiSuggested: boolean;
   description: string;
   estimatedDuration?: string;
-  duration?: number; // Added duration property
-  category?: string; // Added category property
+  duration?: number;
+  category?: string;
 }
 
 interface Transaction {
@@ -154,7 +154,7 @@ interface AppContextType {
   fields: Field[];
   tasks: Task[];
   transactions: Transaction[];
-  inventory: InventoryItem[];
+  inventory: InventoryItem[]; // Deprecated - folosește useInventory hook pentru funcționalități noi
   notifications: Notification[];
   satelliteData: SatelliteData[];
   workHistory: WorkHistory[];
@@ -172,9 +172,9 @@ interface AppContextType {
   addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
   updateTransaction: (id: number, transaction: Partial<Transaction>) => void;
   deleteTransaction: (id: number) => void;
-  addInventoryItem: (item: Omit<InventoryItem, 'id'>) => void;
-  updateInventoryItem: (id: number, item: Partial<InventoryItem>) => void;
-  deleteInventoryItem: (id: number) => void;
+  addInventoryItem: (item: Omit<InventoryItem, 'id'>) => void; // Deprecated
+  updateInventoryItem: (id: number, item: Partial<InventoryItem>) => void; // Deprecated
+  deleteInventoryItem: (id: number) => void; // Deprecated
   addWorkHistory: (work: Omit<WorkHistory, 'id'>) => void;
   updateWorkHistory: (id: number, work: Partial<WorkHistory>) => void;
   deleteWorkHistory: (id: number) => void;
@@ -191,8 +191,8 @@ interface AppContextType {
   generateAPIADocument: (type: string, data: any) => any;
   fetchSatelliteData: (parcelId: number) => void;
   addNotification: (notification: Omit<Notification, 'id'>) => void;
-  updateFieldWeather: (fieldId: number, weatherData: WeatherData) => void; // New method for weather updates
-  fetchWeatherData: (fieldId: number) => Promise<void>; // New method for fetching weather
+  updateFieldWeather: (fieldId: number, weatherData: WeatherData) => void;
+  fetchWeatherData: (fieldId: number) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -353,6 +353,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
   ]);
 
+  // Inventarul vechi rămâne pentru compatibilitate, dar este deprecated
   const [inventory, setInventory] = useState<InventoryItem[]>([
     {
       id: 1,
@@ -497,7 +498,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setFields(prev => prev.filter(field => field.id !== id));
   };
 
-  // New weather-related functions
   const updateFieldWeather = (fieldId: number, weatherData: WeatherData) => {
     setFields(prev => prev.map(field => 
       field.id === fieldId ? { ...field, weather: weatherData } : field
@@ -505,19 +505,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchWeatherData = async (fieldId: number) => {
-    // This function will be called by the weather API integration
-    // For now, it's a placeholder that simulates fetching weather data
     const field = fields.find(f => f.id === fieldId);
     if (!field || !field.coordinates) return;
 
     try {
-      // Future implementation will call weather API here
-      // Example: const response = await fetch(`/api/weather?lat=${field.coordinates.lat}&lng=${field.coordinates.lng}`);
-      
-      // Simulate API call for now
       console.log(`Fetching weather for field ${fieldId} at coordinates ${field.coordinates.lat}, ${field.coordinates.lng}`);
       
-      // Add notification about weather update
       const newNotification: Notification = {
         id: Date.now(),
         type: 'weather',
@@ -563,15 +556,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addInventoryItem = (item: Omit<InventoryItem, 'id'>) => {
+    console.warn('addInventoryItem is deprecated. Use useInventory hook instead.');
     const newItem = { ...item, id: Date.now() };
     setInventory(prev => [...prev, newItem]);
   };
 
   const updateInventoryItem = (id: number, itemUpdate: Partial<InventoryItem>) => {
+    console.warn('updateInventoryItem is deprecated. Use useInventory hook instead.');
     setInventory(prev => prev.map(item => item.id === id ? { ...item, ...itemUpdate } : item));
   };
 
   const deleteInventoryItem = (id: number) => {
+    console.warn('deleteInventoryItem is deprecated. Use useInventory hook instead.');
     setInventory(prev => prev.filter(item => item.id !== id));
   };
 
@@ -671,7 +667,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchSatelliteData = (parcelId: number) => {
-    // Simulate satellite data fetch
     setTimeout(() => {
       const mockData: SatelliteData = {
         parcelId,
@@ -744,7 +739,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       fields,
       tasks,
       transactions,
-      inventory,
+      inventory, // Deprecated - folosește useInventory hook pentru funcționalități noi
       notifications,
       satelliteData,
       workHistory,
@@ -762,9 +757,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addTransaction,
       updateTransaction,
       deleteTransaction,
-      addInventoryItem,
-      updateInventoryItem,
-      deleteInventoryItem,
+      addInventoryItem, // Deprecated
+      updateInventoryItem, // Deprecated
+      deleteInventoryItem, // Deprecated
       addWorkHistory,
       updateWorkHistory,
       deleteWorkHistory,
