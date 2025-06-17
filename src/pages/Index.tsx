@@ -1,17 +1,16 @@
+
 import React, { useEffect, useState } from 'react';
 import Navigation from '@/components/Navigation';
 import FieldsOverview from '@/components/FieldsOverview';
 import TasksWidget from '@/components/TasksWidget';
 import WeatherWidget from '@/components/WeatherWidget';
-import AIRecommendationsCard from '@/components/AIRecommendationsCard';
 import NotificationCenter from '@/components/NotificationCenter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
+
 const Index = () => {
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
   const {
     tasks,
     fields,
@@ -19,6 +18,7 @@ const Index = () => {
     markNotificationAsRead
   } = useAppContext();
   const [greeting, setGreeting] = useState('');
+
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour < 12) {
@@ -53,6 +53,7 @@ const Index = () => {
     pendingTasks: tasks.filter(t => t.status === 'pending').length,
     completedTasks: tasks.filter(t => t.status === 'completed').length
   };
+
   const handleNotificationClick = async (notificationId: string) => {
     await markNotificationAsRead(notificationId);
     toast({
@@ -60,7 +61,9 @@ const Index = () => {
       description: "Notificarea a fost marcată ca citită."
     });
   };
-  return <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
@@ -106,9 +109,6 @@ const Index = () => {
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Tasks for Today */}
-          
-
           {/* Notifications */}
           <NotificationCenter />
         </div>
@@ -116,7 +116,23 @@ const Index = () => {
         {/* Secondary Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <TasksWidget />
-          <AIRecommendationsCard zoneId="ai-seasonal-guidance" title="Recomandări AI" icon={<span>🤖</span>} gradientClass="from-purple-500 to-pink-600" />
+          
+          {/* Simple Tips Card instead of AI */}
+          <Card className="bg-gradient-to-r from-purple-500 to-pink-600 text-white border-0">
+            <CardHeader>
+              <CardTitle>💡 Sfaturi Agricole</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="bg-white/10 rounded-lg p-3">
+                <p className="text-sm font-medium mb-1">Sezon de iarnă</p>
+                <p className="text-xs">Pregătește planul de însămânțare pentru primăvara viitoare.</p>
+              </div>
+              <div className="bg-white/10 rounded-lg p-3">
+                <p className="text-sm font-medium mb-1">Monitorizare utilaje</p>
+                <p className="text-xs">Verifică și întreține utilajele agricole în perioada de repaus.</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Weather and Fields */}
@@ -127,6 +143,8 @@ const Index = () => {
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Index;

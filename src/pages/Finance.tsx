@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import MarketPricesTab from '@/components/MarketPricesTab';
-import AIRecommendationsCard from '@/components/AIRecommendationsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
