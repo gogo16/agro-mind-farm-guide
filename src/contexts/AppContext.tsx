@@ -20,7 +20,6 @@ interface Field {
   harvest_date: string;
   costs: number;
   inputs: string;
-  roi: number;
   color: string;
   work_type: string;
   status: string;
@@ -261,11 +260,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           console.error("Error fetching fields:", fieldsError);
           toast({ title: "Eroare", description: "Failed to load fields.", variant: "destructive" });
         } else {
-          const formattedFields = (fieldsData || []).map(field => ({
-            ...field,
-            notes: field.inputs || '',
-          }));
-          setFields(formattedFields);
+          setFields(fieldsData || []);
         }
 
         const { data: tasksData, error: tasksError } = await supabase
@@ -371,11 +366,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const formattedField = {
-      ...data,
-      notes: data.inputs || '',
-    };
-    setFields(prev => [...prev, formattedField]);
+    setFields(prev => [...prev, data]);
   };
 
   const updateField = async (id: string, updates: Partial<Field>) => {
