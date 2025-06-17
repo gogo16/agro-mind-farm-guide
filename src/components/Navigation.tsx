@@ -16,10 +16,12 @@ import {
 } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
 import UserProfile from './UserProfile';
+import { useAIRecommendations } from '@/hooks/useAIRecommendations';
 
 const Navigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { refreshRecommendations, isLoading: aiLoading } = useAIRecommendations();
 
   const menuItems = [
     { icon: Home, label: 'Acasă', path: '/' },
@@ -69,6 +71,15 @@ const Navigation = () => {
 
           {/* Right side actions */}
           <div className="flex items-center space-x-2">
+            <Button 
+              onClick={refreshRecommendations}
+              disabled={aiLoading}
+              size="sm"
+              className="bg-purple-600 hover:bg-purple-700 h-8 w-8 p-0"
+              title="Refresh AI"
+            >
+              🔄
+            </Button>
             <NotificationCenter />
             <UserProfile />
 

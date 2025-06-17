@@ -13,21 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 
 interface VisualCropJournalProps {
-  fieldId?: string;
+  fieldId?: number;
 }
-
-// Type for combined photos (database + mock)
-type CombinedPhoto = {
-  id: string | number;
-  date: string;
-  field_name?: string;
-  field_id?: string;
-  activity: string;
-  crop_stage: string;
-  weather_conditions: string;
-  notes: string;
-  image_url: string;
-};
 
 const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
   const { toast } = useToast();
@@ -35,52 +22,41 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
   const [selectedField, setSelectedField] = useState('');
   
-  // Helper function to get field name from field_id
-  const getFieldName = (fieldIdToFind?: string) => {
-    if (!fieldIdToFind) return 'N/A';
-    const field = fields.find(f => f.id === fieldIdToFind);
-    return field ? field.name : 'N/A';
-  };
-
   // Filtrează pozele pentru terenul specific dacă este specificat fieldId
   const displayedPhotos = fieldId 
-    ? (fieldPhotos || []).filter((photo: any) => photo.field_id === fieldId)
+    ? (fieldPhotos || []).filter((photo: any) => photo.fieldId === fieldId)
     : (fieldPhotos || []);
 
-  // Mock data for demonstration
   const [photos] = useState([
     {
       id: 1,
       date: '2024-06-01',
-      field_name: 'Parcela Nord',
+      fieldName: 'Parcela Nord',
       activity: 'Semănat',
-      crop_stage: 'Pregătire sol',
-      weather_conditions: 'Însorit, 22°C',
+      cropStage: 'Pregătire sol',
+      weather: 'Însorit, 22°C',
       notes: 'Sol în condiții optime pentru semănat',
-      image_url: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=400',
-      field_id: '1'
+      imageUrl: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=400'
     },
     {
       id: 2,
       date: '2024-05-15',
-      field_name: 'Câmp Sud',
+      fieldName: 'Câmp Sud',
       activity: 'Tratament fitosanitar',
-      crop_stage: 'Creștere',
-      weather_conditions: 'Noros, 18°C',
+      cropStage: 'Creștere',
+      weather: 'Noros, 18°C',
       notes: 'Aplicat fungicid preventiv',
-      image_url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400',
-      field_id: '2'
+      imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400'
     },
     {
       id: 3,
       date: '2024-05-01',
-      field_name: 'Livada Est',
+      fieldName: 'Livada Est',
       activity: 'Fertilizare',
-      crop_stage: 'Dezvoltare',
-      weather_conditions: 'Ploios, 15°C',
+      cropStage: 'Dezvoltare',
+      weather: 'Ploios, 15°C',
       notes: 'Îngrășământ NPK aplicat înainte de ploaie',
-      image_url: 'https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?w=400',
-      field_id: '3'
+      imageUrl: 'https://images.unsplash.com/photo-1615729947596-a598e5de0ab3?w=400'
     }
   ]);
 
@@ -103,10 +79,7 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
   };
 
   // Combină pozele default cu cele adăugate de utilizator
-  const allPhotos: CombinedPhoto[] = [
-    ...photos.map(p => ({ ...p, id: p.id.toString() })),
-    ...displayedPhotos.map((p: any) => ({ ...p, field_name: getFieldName(p.field_id) }))
-  ];
+  const allPhotos = [...photos, ...displayedPhotos];
 
   return (
     <Card className="bg-white border-green-200">
@@ -204,13 +177,13 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
               <div key={photo.id} className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="aspect-video bg-gray-100 relative">
                   <img 
-                    src={photo.image_url} 
-                    alt={`${photo.activity} - ${photo.field_name || getFieldName(photo.field_id)}`}
+                    src={photo.imageUrl} 
+                    alt={`${photo.activity} - ${photo.fieldName}`}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-2 left-2">
                     <Badge className="bg-white/90 text-gray-800">
-                      {photo.field_name || getFieldName(photo.field_id)}
+                      {photo.fieldName}
                     </Badge>
                   </div>
                 </div>
@@ -225,12 +198,12 @@ const VisualCropJournal = ({ fieldId }: VisualCropJournalProps) => {
                   <div className="flex items-center space-x-4 mb-2">
                     <div className="flex items-center space-x-1">
                       <Sprout className="h-3 w-3 text-green-600" />
-                      <span className="text-xs text-gray-600">{photo.crop_stage}</span>
+                      <span className="text-xs text-gray-600">{photo.cropStage}</span>
                     </div>
-                    {photo.weather_conditions && (
+                    {photo.weather && (
                       <div className="flex items-center space-x-1">
                         <Cloud className="h-3 w-3 text-blue-600" />
-                        <span className="text-xs text-gray-600">{photo.weather_conditions}</span>
+                        <span className="text-xs text-gray-600">{photo.weather}</span>
                       </div>
                     )}
                   </div>

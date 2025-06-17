@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import MarketPricesTab from '@/components/MarketPricesTab';
+import AIRecommendationsCard from '@/components/AIRecommendationsCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,10 +14,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DollarSign, TrendingUp, TrendingDown, Calculator, Plus, ArrowUpRight, ArrowDownRight, Trash2, Edit, BarChart3, Calendar, Target, Lightbulb, Sprout, Wrench } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
+import { useAIRecommendations } from '@/hooks/useAIRecommendations';
 
 const Finance = () => {
   const { toast } = useToast();
   const { transactions, fields, addTransaction, updateTransaction, deleteTransaction } = useAppContext();
+  const { getRecommendationsByZone, isLoading } = useAIRecommendations();
   const [isAddingTransaction, setIsAddingTransaction] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [newTransaction, setNewTransaction] = useState({
@@ -24,17 +27,17 @@ const Finance = () => {
     amount: '',
     description: '',
     category: '',
-    field_id: '',
+    field: '',
     date: ''
   });
 
   const totalIncome = transactions
     .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + Number(t.amount), 0);
+    .reduce((sum, t) => sum + t.amount, 0);
 
   const totalExpenses = transactions
     .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + Number(t.amount), 0);
+    .reduce((sum, t) => sum + t.amount, 0);
 
   const profit = totalIncome - totalExpenses;
   const roi = totalExpenses > 0 ? ((profit / totalExpenses) * 100).toFixed(1) : '0';
@@ -77,11 +80,11 @@ const Finance = () => {
       amount: parseFloat(newTransaction.amount),
       description: newTransaction.description,
       category: newTransaction.category || 'General',
-      field_id: newTransaction.field_id || null,
+      field: newTransaction.field || 'General',
       date: newTransaction.date || new Date().toISOString().split('T')[0]
     });
 
-    setNewTransaction({ type: '', amount: '', description: '', category: '', field_id: '', date: '' });
+    setNewTransaction({ type: '', amount: '', description: '', category: '', field: '', date: '' });
     setIsAddingTransaction(false);
 
     toast({
@@ -106,7 +109,7 @@ const Finance = () => {
 
     updateTransaction(editingTransaction.id, {
       ...editingTransaction,
-      amount: parseFloat(editingTransaction.amount.toString())
+      amount: parseFloat(editingTransaction.amount)
     });
 
     toast({
@@ -117,7 +120,7 @@ const Finance = () => {
     setEditingTransaction(null);
   };
 
-  const handleDeleteTransaction = (id: string) => {
+  const handleDeleteTransaction = (id: number) => {
     deleteTransaction(id);
     toast({
       title: "Tranzacție ștersă",
@@ -275,16 +278,16 @@ const Finance = () => {
                             </Select>
                           </div>
                           <div>
-                            <Label htmlFor="field_id">Teren</Label>
-                            <Select onValueChange={(value) => setNewTransaction({...newTransaction, field_id: value})}>
+                            <Label htmlFor="field">Teren</Label>
+                            <Select onValueChange={(value) => setNewTransaction({...newTransaction, field: value})}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Selectează terenul" />
                               </SelectTrigger>
                               <SelectContent>
                                 {fields.map((field) => (
-                                  <SelectItem key={field.id} value={field.id}>{field.name}</SelectItem>
+                                  <SelectItem key={field.id} value={field.name}>{field.name}</SelectItem>
                                 ))}
-                                <SelectItem value="">General</SelectItem>
+                                <SelectItem value="General">General</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -310,65 +313,62 @@ const Finance = () => {
                     </Dialog>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {transactions.slice(0, 8).map((transaction) => {
-                      const fieldName = transaction.field_id ? fields.find(f => f.id === transaction.field_id)?.name || 'General' : 'General';
-                      return (
-                        <div key={transaction.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <div className={`p-2 rounded-lg ${
-                              transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'
-                            }`}>
-                              {transaction.type === 'income' ? (
-                                <ArrowUpRight className="h-4 w-4 text-green-600" />
-                              ) : (
-                                <ArrowDownRight className="h-4 w-4 text-red-600" />
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <p className="font-medium text-gray-900">{transaction.description}</p>
-                              <div className="flex items-center space-x-2 mt-1">
-                                <Badge variant="secondary" className="text-xs">{transaction.category}</Badge>
-                                <span className="text-xs text-gray-500">{fieldName}</span>
-                                <span className="text-xs text-gray-500">{transaction.date}</span>
-                              </div>
-                            </div>
+                    {transactions.slice(0, 8).map((transaction) => (
+                      <div key={transaction.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-2 rounded-lg ${
+                            transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'
+                          }`}>
+                            {transaction.type === 'income' ? (
+                              <ArrowUpRight className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <ArrowDownRight className="h-4 w-4 text-red-600" />
+                            )}
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <div className="text-right">
-                              <p className={`font-semibold ${
-                                transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                {transaction.type === 'income' ? '+' : '-'}{Number(transaction.amount).toLocaleString()} RON
-                              </p>
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-900">{transaction.description}</p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <Badge variant="secondary" className="text-xs">{transaction.category}</Badge>
+                              <span className="text-xs text-gray-500">{transaction.field}</span>
+                              <span className="text-xs text-gray-500">{transaction.date}</span>
                             </div>
-                            <Button size="sm" variant="outline" onClick={() => handleEditTransaction(transaction)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Ești sigur că vrei să ștergi această tranzacție?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Această acțiune nu poate fi anulată. Tranzacția "{transaction.description}" va fi ștersă permanent.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Anulează</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteTransaction(transaction.id)} className="bg-red-600 hover:bg-red-700">
-                                    Șterge definitiv
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
                           </div>
                         </div>
-                      );
-                    })}
+                        <div className="flex items-center space-x-2">
+                          <div className="text-right">
+                            <p className={`font-semibold ${
+                              transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                            }`}>
+                              {transaction.type === 'income' ? '+' : '-'}{transaction.amount.toLocaleString()} RON
+                            </p>
+                          </div>
+                          <Button size="sm" variant="outline" onClick={() => handleEditTransaction(transaction)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="outline" className="text-red-600 border-red-200 hover:bg-red-50">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Ești sigur că vrei să ștergi această tranzacție?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Această acțiune nu poate fi anulată. Tranzacția "{transaction.description}" va fi ștersă permanent.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Anulează</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteTransaction(transaction.id)} className="bg-red-600 hover:bg-red-700">
+                                  Șterge definitiv
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    ))}
                   </CardContent>
                 </Card>
               </div>
@@ -488,39 +488,23 @@ const Finance = () => {
               </Card>
             </div>
 
-            {/* Simple Analytics Tabs */}
-            <Tabs defaultValue="analytics-simple" className="space-y-6">
+            {/* AI Recommendations Tabs */}
+            <Tabs defaultValue="analytics-ai" className="space-y-6">
               <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm">
-                <TabsTrigger value="analytics-simple">Analize</TabsTrigger>
+                <TabsTrigger value="analytics-ai">Analize</TabsTrigger>
                 <TabsTrigger value="rotation">Rotația Culturilor</TabsTrigger>
                 <TabsTrigger value="planning">Planificare</TabsTrigger>
                 <TabsTrigger value="maintenance">Mentenanță</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="analytics-simple" className="space-y-6">
+              <TabsContent value="analytics-ai" className="space-y-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0">
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <BarChart3 className="h-5 w-5" />
-                        <span>Analize Comparative</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="bg-white/10 rounded-lg p-3">
-                        <p className="text-sm font-medium mb-1">Performanță ROI</p>
-                        <p className="text-xs">
-                          Ferma ta are un ROI superior cu {Math.abs(yourPerformance.roi - nationalAverage.roi).toFixed(1)}% față de media națională.
-                        </p>
-                      </div>
-                      <div className="bg-white/10 rounded-lg p-3">
-                        <p className="text-sm font-medium mb-1">Eficiență costuri</p>
-                        <p className="text-xs">
-                          Analizează structura costurilor pentru optimizare continuă.
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <AIRecommendationsCard
+                    zoneId="ai-analytics"
+                    title="Analize Comparative"
+                    icon={<BarChart3 className="h-5 w-5" />}
+                    gradientClass="from-blue-500 to-purple-600"
+                  />
                   
                   <Card className="bg-white border-blue-200">
                     <CardHeader>
@@ -549,78 +533,30 @@ const Finance = () => {
               </TabsContent>
 
               <TabsContent value="rotation" className="space-y-6">
-                <Card className="bg-gradient-to-r from-green-500 to-teal-600 text-white border-0">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Sprout className="h-5 w-5" />
-                      <span>Optimizare Rotația Culturilor</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="bg-white/10 rounded-lg p-3">
-                      <p className="text-sm font-medium mb-1">Rotație recomandată</p>
-                      <p className="text-xs">
-                        Pentru anul următor: porumb → soia → grâu pentru optimizarea solului.
-                      </p>
-                    </div>
-                    <div className="bg-white/10 rounded-lg p-3">
-                      <p className="text-sm font-medium mb-1">Beneficii estimate</p>
-                      <p className="text-xs">
-                        Creșterea randamentului cu 12% și reducerea costurilor cu fertilizatori.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <AIRecommendationsCard
+                  zoneId="ai-crop-rotation"
+                  title="Optimizare Rotația Culturilor"
+                  icon={<Sprout className="h-5 w-5" />}
+                  gradientClass="from-green-500 to-teal-600"
+                />
               </TabsContent>
 
               <TabsContent value="planning" className="space-y-6">
-                <Card className="bg-gradient-to-r from-orange-500 to-red-600 text-white border-0">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Calendar className="h-5 w-5" />
-                      <span>Planificare Sezonieră</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="bg-white/10 rounded-lg p-3">
-                      <p className="text-sm font-medium mb-1">Priorități următoare 30 zile</p>
-                      <p className="text-xs">
-                        Pregătirea solului, comandarea semințelor și planificarea tratamentelor.
-                      </p>
-                    </div>
-                    <div className="bg-white/10 rounded-lg p-3">
-                      <p className="text-sm font-medium mb-1">Buget trimestru</p>
-                      <p className="text-xs">
-                        Alocare recomandată: 40% fertilizatori, 30% semințe, 30% combustibil.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <AIRecommendationsCard
+                  zoneId="ai-seasonal-planning"
+                  title="Planificare Sezonieră"
+                  icon={<Calendar className="h-5 w-5" />}
+                  gradientClass="from-orange-500 to-red-600"
+                />
               </TabsContent>
 
               <TabsContent value="maintenance" className="space-y-6">
-                <Card className="bg-gradient-to-r from-gray-500 to-slate-600 text-white border-0">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Wrench className="h-5 w-5" />
-                      <span>Mentenanța Utilajelor</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="bg-white/10 rounded-lg p-3">
-                      <p className="text-sm font-medium mb-1">Mentenanță programată</p>
-                      <p className="text-xs">
-                        Revizii tractoare și combine înainte de sezonul de vară.
-                      </p>
-                    </div>
-                    <div className="bg-white/10 rounded-lg p-3">
-                      <p className="text-sm font-medium mb-1">Costuri estimate</p>
-                      <p className="text-xs">
-                        Buget recomandat: 8.500 RON pentru mentenanța anuală.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <AIRecommendationsCard
+                  zoneId="ai-equipment-maintenance"
+                  title="Mentenanța Utilajelor"
+                  icon={<Wrench className="h-5 w-5" />}
+                  gradientClass="from-gray-500 to-slate-600"
+                />
               </TabsContent>
             </Tabs>
           </TabsContent>

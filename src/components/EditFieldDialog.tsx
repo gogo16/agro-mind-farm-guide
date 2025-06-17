@@ -11,23 +11,23 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
 
 interface Field {
-  id: string;
+  id: number;
   name: string;
-  parcel_code?: string;
+  parcelCode: string;
   size: number;
-  crop?: string;
-  status?: string;
+  crop: string;
+  status: string;
   location?: string;
-  coordinates?: any;
+  coordinates?: { lat: number; lng: number } | Array<{ lat: number; lng: number }>;
   coordinatesType?: string;
-  planting_date?: string;
-  harvest_date?: string;
-  work_type?: string;
+  plantingDate?: string;
+  harvestDate?: string;
+  workType?: string;
   costs?: number;
   inputs?: string;
+  roi?: number;
   variety?: string;
   color?: string;
-  soil_data?: any;
 }
 
 interface EditFieldDialogProps {
@@ -54,13 +54,13 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
 
   const [editedField, setEditedField] = useState({
     name: field.name,
-    parcel_code: field.parcel_code || '',
+    parcelCode: field.parcelCode,
     size: field.size.toString(),
-    crop: field.crop || '',
+    crop: field.crop,
     variety: field.variety || '',
-    planting_date: field.planting_date || '',
-    harvest_date: field.harvest_date || '',
-    work_type: field.work_type || '',
+    plantingDate: field.plantingDate || '',
+    harvestDate: field.harvestDate || '',
+    workType: field.workType || '',
     costs: field.costs?.toString() || '',
     inputs: field.inputs || '',
     coords: formatCoordinatesForDisplay(field.coordinates, field.coordinatesType),
@@ -106,7 +106,7 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
   };
 
   const handleSave = () => {
-    if (!editedField.name || !editedField.parcel_code || !editedField.size) {
+    if (!editedField.name || !editedField.parcelCode || !editedField.size) {
       toast({
         title: "Eroare",
         description: "Te rugăm să completezi toate câmpurile obligatorii.",
@@ -127,13 +127,13 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
 
     updateField(field.id, {
       name: editedField.name,
-      parcel_code: editedField.parcel_code,
+      parcelCode: editedField.parcelCode,
       size: parseFloat(editedField.size),
       crop: editedField.crop || 'Necunoscută',
       coordinates: coordValidation.coordinates,
-      planting_date: editedField.planting_date,
-      harvest_date: editedField.harvest_date,
-      work_type: editedField.work_type,
+      plantingDate: editedField.plantingDate,
+      harvestDate: editedField.harvestDate,
+      workType: editedField.workType,
       costs: editedField.costs ? parseFloat(editedField.costs) : undefined,
       inputs: editedField.inputs,
       color: editedField.color
@@ -167,11 +167,11 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
             />
           </div>
           <div>
-            <Label htmlFor="parcel_code">Cod parcelă *</Label>
+            <Label htmlFor="parcelCode">Cod parcelă *</Label>
             <Input
-              id="parcel_code"
-              value={editedField.parcel_code}
-              onChange={(e) => setEditedField({...editedField, parcel_code: e.target.value})}
+              id="parcelCode"
+              value={editedField.parcelCode}
+              onChange={(e) => setEditedField({...editedField, parcelCode: e.target.value})}
               placeholder="ex: PV-001"
             />
           </div>
@@ -212,26 +212,26 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
             />
           </div>
           <div>
-            <Label htmlFor="planting_date">Data însămânțare</Label>
+            <Label htmlFor="plantingDate">Data însămânțare</Label>
             <Input
-              id="planting_date"
+              id="plantingDate"
               type="date"
-              value={editedField.planting_date}
-              onChange={(e) => setEditedField({...editedField, planting_date: e.target.value})}
+              value={editedField.plantingDate}
+              onChange={(e) => setEditedField({...editedField, plantingDate: e.target.value})}
             />
           </div>
           <div>
-            <Label htmlFor="harvest_date">Data recoltare</Label>
+            <Label htmlFor="harvestDate">Data recoltare</Label>
             <Input
-              id="harvest_date"
+              id="harvestDate"
               type="date"
-              value={editedField.harvest_date}
-              onChange={(e) => setEditedField({...editedField, harvest_date: e.target.value})}
+              value={editedField.harvestDate}
+              onChange={(e) => setEditedField({...editedField, harvestDate: e.target.value})}
             />
           </div>
           <div>
-            <Label htmlFor="work_type">Tip lucrare</Label>
-            <Select value={editedField.work_type} onValueChange={(value) => setEditedField({...editedField, work_type: value})}>
+            <Label htmlFor="workType">Tip lucrare</Label>
+            <Select value={editedField.workType} onValueChange={(value) => setEditedField({...editedField, workType: value})}>
               <SelectTrigger>
                 <SelectValue placeholder="Selectează tipul de lucrare" />
               </SelectTrigger>

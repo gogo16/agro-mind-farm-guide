@@ -22,12 +22,12 @@ const TasksWidget = () => {
   const [lastTaskCount, setLastTaskCount] = useState(tasks.length);
   const [newTask, setNewTask] = useState({
     title: '',
-    field_name: '',
+    field: '',
     priority: 'medium' as 'high' | 'medium' | 'low',
     date: '',
     time: '',
     description: '',
-    estimated_duration: ''
+    estimatedDuration: ''
   });
 
   // Check for new tasks and show notification
@@ -69,7 +69,7 @@ const TasksWidget = () => {
   };
 
   const handleAddTask = () => {
-    if (!newTask.title || !newTask.field_name || !newTask.date) {
+    if (!newTask.title || !newTask.field || !newTask.date) {
       toast({
         title: "Eroare",
         description: "Te rugăm să completezi toate câmpurile obligatorii.",
@@ -78,49 +78,39 @@ const TasksWidget = () => {
       return;
     }
 
-    const selectedField = fields.find(f => f.name === newTask.field_name);
-
     addTask({
       title: newTask.title,
-      field_name: newTask.field_name,
-      field_id: selectedField?.id || '',
+      field: newTask.field,
       priority: newTask.priority,
       date: newTask.date,
-      time: newTask.time || '',
-      due_date: newTask.date,
-      due_time: newTask.time || '',
-      status: 'pending' as const,
-      ai_suggested: false,
-      description: newTask.description || '',
-      estimated_duration: newTask.estimated_duration || '',
-      duration: 0,
-      category: '',
-      completed_at: null
+      time: newTask.time,
+      status: 'pending',
+      aiSuggested: false,
+      description: newTask.description,
+      estimatedDuration: newTask.estimatedDuration
     });
 
     setNewTask({
       title: '',
-      field_name: '',
+      field: '',
       priority: 'medium',
       date: '',
       time: '',
       description: '',
-      estimated_duration: ''
+      estimatedDuration: ''
     });
     setIsAddingTask(false);
   };
 
-  const handleCompleteTask = (taskId: string) => {
-    updateTask(taskId, { 
-      status: 'completed'
-    });
+  const handleCompleteTask = (taskId: number) => {
+    updateTask(taskId, { status: 'completed' });
     toast({
       title: "Sarcină completată",
       description: "Sarcina a fost marcată ca finalizată.",
     });
   };
 
-  const handleDeleteTask = (taskId: string, taskTitle: string) => {
+  const handleDeleteTask = (taskId: number, taskTitle: string) => {
     deleteTask(taskId);
     toast({
       title: "Sarcină ștearsă",
@@ -138,11 +128,11 @@ const TasksWidget = () => {
   const renderTaskTooltip = (task: any) => (
     <div className="space-y-2 text-sm">
       <div><strong>Titlu:</strong> {task.title}</div>
-      <div><strong>Teren:</strong> {task.field_name}</div>
+      <div><strong>Teren:</strong> {task.field}</div>
       <div><strong>Data:</strong> {task.date}</div>
       {task.time && <div><strong>Ora:</strong> {task.time}</div>}
       <div><strong>Prioritate:</strong> {task.priority === 'high' ? 'Înaltă' : task.priority === 'medium' ? 'Medie' : 'Scăzută'}</div>
-      {task.estimated_duration && <div><strong>Durată:</strong> {task.estimated_duration}</div>}
+      {task.estimatedDuration && <div><strong>Durată:</strong> {task.estimatedDuration}</div>}
       {task.description && <div><strong>Descriere:</strong> {task.description}</div>}
     </div>
   );
@@ -175,13 +165,13 @@ const TasksWidget = () => {
                 </div>
                 <div>
                   <Label htmlFor="field">Teren *</Label>
-                  <Select value={newTask.field_name} onValueChange={(value) => setNewTask({...newTask, field_name: value})}>
+                  <Select value={newTask.field} onValueChange={(value) => setNewTask({...newTask, field: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selectează terenul" />
                     </SelectTrigger>
                     <SelectContent>
                       {fields.map(field => (
-                        <SelectItem key={field.id} value={field.name}>{field.name} ({field.parcel_code})</SelectItem>
+                        <SelectItem key={field.id} value={field.name}>{field.name} ({field.parcelCode})</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -223,8 +213,8 @@ const TasksWidget = () => {
                   <Label htmlFor="duration">Durată estimată</Label>
                   <Input
                     id="duration"
-                    value={newTask.estimated_duration}
-                    onChange={(e) => setNewTask({...newTask, estimated_duration: e.target.value})}
+                    value={newTask.estimatedDuration}
+                    onChange={(e) => setNewTask({...newTask, estimatedDuration: e.target.value})}
                     placeholder="ex: 2 ore"
                   />
                 </div>
@@ -267,14 +257,14 @@ const TasksWidget = () => {
                         <TooltipTrigger asChild>
                           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
                             <div className="flex items-center space-x-3">
-                              {task.ai_suggested && (
+                              {task.aiSuggested && (
                                 <div className="bg-blue-100 p-1 rounded">
                                   <Bot className="h-3 w-3 text-blue-600" />
                                 </div>
                               )}
                               <div>
                                 <p className="font-medium text-gray-900">{task.title}</p>
-                                <p className="text-sm text-gray-600">{task.field_name} • {task.time}</p>
+                                <p className="text-sm text-gray-600">{task.field} • {task.time}</p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -332,7 +322,7 @@ const TasksWidget = () => {
                               </div>
                               <div>
                                 <p className="font-medium text-gray-900">{task.title}</p>
-                                <p className="text-sm text-gray-600">{task.field_name} • {task.date}</p>
+                                <p className="text-sm text-gray-600">{task.field} • {task.date}</p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">

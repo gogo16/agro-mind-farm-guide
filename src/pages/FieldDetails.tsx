@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -13,22 +12,29 @@ import EditFieldDialog from '@/components/EditFieldDialog';
 import AddPhotoDialog from '@/components/AddPhotoDialog';
 import SoilSection from '@/components/SoilSection';
 import { useAppContext } from '@/contexts/AppContext';
+import { useAIRecommendations } from '@/hooks/useAIRecommendations';
 
 const FieldDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { fields, tasks } = useAppContext();
+  const { getFieldProgress, getFieldStatus } = useAIRecommendations();
   const [isEditingField, setIsEditingField] = useState(false);
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
 
-  const field = id ? fields.find(f => f.id === id) : null;
+  const fieldId = id ? parseInt(id, 10) : null;
+  const field = fieldId ? fields.find(f => f.id === fieldId) : null;
+
+  // Get AI-powered field status and progress
+  const fieldStatus = fieldId ? getFieldStatus(fieldId) : { status: 'Necunoscut', description: 'Date indisponibile', color: 'gray' };
+  const fieldProgress = fieldId ? getFieldProgress(fieldId) : { developmentProgress: 0, daysToHarvest: 0 };
 
   // Get completed tasks for this field
   const completedActivities = tasks.filter(task => 
-    task.field_name === field?.name && task.status === 'completed'
+    task.field === field?.name && task.status === 'completed'
   ).map(task => ({
     id: task.id,
-    date: task.due_date || new Date().toISOString().split('T')[0],
+    date: task.dueDate || new Date().toISOString().split('T')[0],
     activity: task.title,
     details: task.description || 'Activitate completată',
     cost: 0,
@@ -37,8 +43,8 @@ const FieldDetails = () => {
 
   // Get the last completed task for work type
   const lastCompletedTask = tasks
-    .filter(task => task.field_name === field?.name && task.status === 'completed')
-    .sort((a, b) => new Date(b.due_date || b.date).getTime() - new Date(a.due_date || a.date).getTime())[0];
+    .filter(task => task.field === field?.name && task.status === 'completed')
+    .sort((a, b) => new Date(b.dueDate || b.date).getTime() - new Date(a.dueDate || a.date).getTime())[0];
 
   if (!field) {
     return (
@@ -54,42 +60,6 @@ const FieldDetails = () => {
         </div>
       </div>
     );
-  }
-
-  // Ensure field.size is always treated as a number
-  const fieldSize = Number(field.size);
-
-  // Calculate basic progress (simplified without AI)
-  const plantingDate = field.planting_date ? new Date(field.planting_date) : null;
-  const harvestDate = field.harvest_date ? new Date(field.harvest_date) : null;
-  const today = new Date();
-
-  let developmentProgress = 50; // Default
-  let daysToHarvest = 60; // Default
-
-  if (plantingDate && harvestDate) {
-    const totalDays = Math.floor((harvestDate.getTime() - plantingDate.getTime()) / (1000 * 60 * 60 * 24));
-    const daysPassed = Math.floor((today.getTime() - plantingDate.getTime()) / (1000 * 60 * 60 * 24));
-    daysToHarvest = Math.floor((harvestDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
-    developmentProgress = Math.min(100, Math.max(0, (daysPassed / totalDays) * 100));
-    daysToHarvest = Math.max(0, daysToHarvest);
-  }
-
-  // Simple field status
-  let fieldStatus = 'Activ';
-  let statusColor = 'green';
-  if (plantingDate && harvestDate) {
-    if (today < plantingDate) {
-      fieldStatus = 'Pregătire';
-      statusColor = 'blue';
-    } else if (today > harvestDate) {
-      fieldStatus = 'Recoltat';
-      statusColor = 'gray';
-    } else {
-      fieldStatus = 'În dezvoltare';
-      statusColor = 'green';
-    }
   }
 
   const getStatusColor = (color: string) => {
@@ -108,6 +78,8 @@ const FieldDetails = () => {
       
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
+        
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <Button variant="ghost" onClick={() => navigate('/')} className="text-green-700 hover:text-green-800">
@@ -116,7 +88,7 @@ const FieldDetails = () => {
             </Button>
             <div>
               <h1 className="text-3xl font-bold text-green-800">{field.name}</h1>
-              <p className="text-green-600">{field.crop} • {fieldSize} ha • {field.parcel_code}</p>
+              <p className="text-green-600">{field.crop} • {field.size} ha • {field.parcelCode}</p>
             </div>
           </div>
           <div className="flex space-x-2">
@@ -146,6 +118,8 @@ const FieldDetails = () => {
         </div>
 
         {/* Quick Info Cards */}
+
+        {/* Quick Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="bg-white/80 backdrop-blur-sm border-green-200">
             <CardContent className="p-4">
@@ -154,7 +128,7 @@ const FieldDetails = () => {
                 <span className="text-sm font-medium text-gray-700">Cultură</span>
               </div>
               <p className="text-lg font-bold text-green-800">{field.crop}</p>
-              <p className="text-sm text-gray-600">{field.parcel_code}</p>
+              <p className="text-sm text-gray-600">{field.parcelCode}</p>
             </CardContent>
           </Card>
 
@@ -164,8 +138,8 @@ const FieldDetails = () => {
                 <MapPin className="h-5 w-5 text-blue-600" />
                 <span className="text-sm font-medium text-gray-700">Suprafață</span>
               </div>
-              <p className="text-lg font-bold text-green-800">{fieldSize} ha</p>
-              <p className="text-sm text-gray-600">{field.coordinates ? `${(field.coordinates as any).lat}, ${(field.coordinates as any).lng}` : 'N/A'}</p>
+              <p className="text-lg font-bold text-green-800">{field.size} ha</p>
+              <p className="text-sm text-gray-600">{field.coordinates ? `${field.coordinates.lat}, ${field.coordinates.lng}` : 'N/A'}</p>
             </CardContent>
           </Card>
 
@@ -175,25 +149,27 @@ const FieldDetails = () => {
                 <Calendar className="h-5 w-5 text-purple-600" />
                 <span className="text-sm font-medium text-gray-700">Plantat</span>
               </div>
-              <p className="text-lg font-bold text-green-800">{field.planting_date || 'N/A'}</p>
+              <p className="text-lg font-bold text-green-800">{field.plantingDate || 'N/A'}</p>
               <p className="text-sm text-gray-600">Data însămânțare</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-green-200">
+          <Card className="bg-white/80 backdrop-blur-sm border-green-200" data-ai-zone="ai-field-status">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2 mb-2">
-                <div className={`w-5 h-5 rounded-full ${statusColor === 'green' ? 'bg-green-500' : statusColor === 'yellow' ? 'bg-yellow-500' : statusColor === 'red' ? 'bg-red-500' : statusColor === 'blue' ? 'bg-blue-500' : 'bg-gray-500'}`}></div>
+                <div className={`w-5 h-5 rounded-full ${fieldStatus.color === 'green' ? 'bg-green-500' : fieldStatus.color === 'yellow' ? 'bg-yellow-500' : fieldStatus.color === 'red' ? 'bg-red-500' : fieldStatus.color === 'blue' ? 'bg-blue-500' : 'bg-gray-500'}`}></div>
                 <span className="text-sm font-medium text-gray-700">Status</span>
               </div>
-              <Badge className={getStatusColor(statusColor)}>{fieldStatus}</Badge>
-              <p className="text-sm text-gray-600 mt-1">Monitorizare continuă</p>
+              <Badge className={getStatusColor(fieldStatus.color)}>{fieldStatus.status}</Badge>
+              <p className="text-sm text-gray-600 mt-1">{fieldStatus.description}</p>
             </CardContent>
           </Card>
         </div>
 
         {/* Detailed Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
+          {/* Tabs list and overview content */}
+          
           <TabsList className="grid w-full grid-cols-4 lg:w-[480px] bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="overview">Prezentare</TabsTrigger>
             <TabsTrigger value="activities">Istoric Activități</TabsTrigger>
@@ -211,21 +187,25 @@ const FieldDetails = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-600">Cod parcelă</p>
-                      <p className="font-medium">{field.parcel_code}</p>
+                      <p className="font-medium">{field.parcelCode}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Tip lucrare</p>
-                      <p className="font-medium">{lastCompletedTask?.title || field.work_type || 'N/A'}</p>
+                      <p className="font-medium">{lastCompletedTask?.title || field.workType || 'N/A'}</p>
                     </div>
-                    <div className="col-span-2">
+                    <div>
                       <p className="text-sm text-gray-600">Istoric îngrășăminte/chimicale</p>
                       <p className="font-medium">{field.inputs || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">ROI</p>
+                      <p className="font-medium text-green-600">{field.roi ? `${field.roi}%` : 'N/A'}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-white border-green-200">
+              <Card className="bg-white border-green-200" data-ai-zone="ai-season-progress">
                 <CardHeader>
                   <CardTitle className="text-green-800">Progres Sezon</CardTitle>
                 </CardHeader>
@@ -234,17 +214,17 @@ const FieldDetails = () => {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Progres dezvoltare</span>
-                        <span>{Math.round(developmentProgress)}%</span>
+                        <span>{fieldProgress.developmentProgress}%</span>
                       </div>
-                      <Progress value={developmentProgress} className="h-2" />
+                      <Progress value={fieldProgress.developmentProgress} className="h-2" />
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Zile până la recoltare</span>
-                        <span>{daysToHarvest} zile</span>
+                        <span>{fieldProgress.daysToHarvest} zile</span>
                       </div>
                       <Progress 
-                        value={Math.max(0, 100 - (daysToHarvest / 120) * 100)} 
+                        value={Math.max(0, 100 - (fieldProgress.daysToHarvest / 120) * 100)} 
                         className="h-2" 
                       />
                     </div>
@@ -253,6 +233,8 @@ const FieldDetails = () => {
               </Card>
             </div>
           </TabsContent>
+
+          {/* Activities and journal tabs */}
 
           <TabsContent value="activities" className="space-y-6">
             <Card className="bg-white border-green-200">

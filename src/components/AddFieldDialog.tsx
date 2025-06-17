@@ -1,258 +1,356 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/contexts/AppContext';
-import { Plus } from 'lucide-react';
-
-interface AddFieldDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
-
-const AddFieldDialog = ({ open, onOpenChange }: AddFieldDialogProps) => {
-  const { toast } = useToast();
-  const { addField } = useAppContext();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [fieldData, setFieldData] = useState({
+const AddFieldDialog = () => {
+  const {
+    toast
+  } = useToast();
+  const {
+    addField
+  } = useAppContext();
+  const [isAddingField, setIsAddingField] = useState(false);
+  const [newField, setNewField] = useState({
     name: '',
-    parcel_code: '',
+    parcelCode: '',
     size: '',
     crop: '',
-    status: 'active',
-    location: '',
-    planting_date: '',
-    harvest_date: '',
-    work_type: '',
+    variety: '',
+    coords: '',
+    plantingDate: '',
+    harvestDate: '',
+    workType: '',
     costs: '',
     inputs: '',
-    notes: '',
     color: '#22c55e'
   });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (isSubmitting) return;
-    
-    console.log('Form submitted with data:', fieldData);
-    
-    if (!fieldData.name || !fieldData.size) {
+  const validateCoordinates = (coordsString: string) => {
+    if (!coordsString.trim()) return {
+      isValid: true,
+      coordinates: undefined
+    };
+    try {
+      // Împarte coordonatele pe linii noi sau puncte și virgule
+      const coordPairs = coordsString.split(/[\n;]/).map(line => line.trim()).filter(line => line);
+      if (coordPairs.length === 1) {
+        // Un singur punct (centru)
+        const [lat, lng] = coordPairs[0].split(',').map(coord => parseFloat(coord.trim()));
+        if (isNaN(lat) || isNaN(lng)) {
+          return {
+            isValid: false,
+            error: 'Coordonatele trebuie să fie în format: latitudine,longitudine'
+          };
+        }
+        return {
+          isValid: true,
+          coordinates: {
+            lat,
+            lng
+          },
+          type: 'point'
+        };
+      } else if (coordPairs.length >= 3) {
+        // Poligon (minimum 3 puncte)
+        const coordinates = [];
+        for (const pair of coordPairs) {
+          const [lat, lng] = pair.split(',').map(coord => parseFloat(coord.trim()));
+          if (isNaN(lat) || isNaN(lng)) {
+            return {
+              isValid: false,
+              error: 'Toate coordonatele trebuie să fie în format: latitudine,longitudine'
+            };
+          }
+          coordinates.push({
+            lat,
+            lng
+          });
+        }
+        return {
+          isValid: true,
+          coordinates: coordinates,
+          type: 'polygon'
+        };
+      } else {
+        return {
+          isValid: false,
+          error: 'Pentru un poligon sunt necesare minimum 3 puncte'
+        };
+      }
+    } catch (error) {
+      return {
+        isValid: false,
+        error: 'Format invalid de coordonate'
+      };
+    }
+  };
+  const handleAddField = () => {
+    if (!newField.name || !newField.parcelCode || !newField.size) {
       toast({
         title: "Eroare",
-        description: "Te rugăm să completezi numele și suprafața terenului.",
+        description: "Te rugăm să completezi toate câmpurile obligatorii.",
         variant: "destructive"
       });
       return;
     }
 
-    setIsSubmitting(true);
-
-    try {
-      const newField = {
-        name: fieldData.name,
-        parcel_code: fieldData.parcel_code || '',
-        size: parseFloat(fieldData.size),
-        crop: fieldData.crop || '',
-        status: fieldData.status,
-        location: fieldData.location || '',
-        coordinates: null,
-        planting_date: fieldData.planting_date || null,
-        harvest_date: fieldData.harvest_date || null,
-        work_type: fieldData.work_type || '',
-        costs: fieldData.costs ? parseFloat(fieldData.costs) : 0,
-        inputs: fieldData.inputs || '',
-        color: fieldData.color,
-        soil_data: {}
-      };
-
-      console.log('Adding field to database:', newField);
-      await addField(newField);
-      
-      // Reset form
-      setFieldData({
-        name: '',
-        parcel_code: '',
-        size: '',
-        crop: '',
-        status: 'active',
-        location: '',
-        planting_date: '',
-        harvest_date: '',
-        work_type: '',
-        costs: '',
-        inputs: '',
-        notes: '',
-        color: '#22c55e'
-      });
-      
-      onOpenChange(false);
-      
+    // Validează coordonatele
+    const coordValidation = validateCoordinates(newField.coords);
+    if (!coordValidation.isValid) {
       toast({
-        title: "Succes",
-        description: "Terenul a fost adăugat cu succes în baza de date."
-      });
-    } catch (error) {
-      console.error('Error adding field:', error);
-      toast({
-        title: "Eroare",
-        description: "A apărut o eroare la adăugarea terenului în baza de date.",
+        title: "Eroare coordonate",
+        description: coordValidation.error,
         variant: "destructive"
       });
-    } finally {
-      setIsSubmitting(false);
+      return;
     }
-  };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    // Creează obiectul teren cu toate datele necesare pentru toate secțiunile
+    const fieldData = {
+      name: newField.name,
+      parcelCode: newField.parcelCode,
+      size: parseFloat(newField.size),
+      crop: newField.crop || 'Necunoscută',
+      variety: newField.variety,
+      status: 'healthy',
+      location: newField.name,
+      coordinates: coordValidation.coordinates,
+      coordinatesType: coordValidation.type || 'point',
+      plantingDate: newField.plantingDate,
+      harvestDate: newField.harvestDate,
+      workType: newField.workType,
+      costs: newField.costs ? parseFloat(newField.costs) : undefined,
+      inputs: newField.inputs,
+      roi: 0,
+      color: newField.color,
+      // Date pentru secțiunile aplicației
+      mapData: {
+        geometry: coordValidation.coordinates,
+        type: coordValidation.type || 'point',
+        color: newField.color,
+        style: {
+          fillColor: newField.color,
+          fillOpacity: 0.3,
+          strokeColor: newField.color,
+          strokeWeight: 2
+        }
+      },
+      // Date pentru inventar
+      inventoryData: {
+        inputs: newField.inputs,
+        costs: newField.costs ? parseFloat(newField.costs) : 0,
+        workType: newField.workType
+      },
+      // Date pentru documente și APIA/AFIR
+      documentData: {
+        parcelCode: newField.parcelCode,
+        size: parseFloat(newField.size),
+        crop: newField.crop || 'Necunoscută',
+        variety: newField.variety,
+        coordinates: coordValidation.coordinates,
+        coordinatesType: coordValidation.type || 'point'
+      },
+      // Date pentru calendar
+      calendarData: {
+        plantingDate: newField.plantingDate,
+        harvestDate: newField.harvestDate,
+        workType: newField.workType,
+        crop: newField.crop || 'Necunoscută'
+      },
+      // Date pentru AI
+      aiData: {
+        crop: newField.crop || 'Necunoscută',
+        variety: newField.variety,
+        size: parseFloat(newField.size),
+        plantingDate: newField.plantingDate,
+        harvestDate: newField.harvestDate,
+        inputs: newField.inputs,
+        soilType: 'unknown',
+        // va fi actualizat ulterior
+        climateZone: 'temperate' // va fi actualizat ulterior
+      }
+    };
+    addField(fieldData);
+    toast({
+      title: "Succes",
+      description: `Terenul "${newField.name}" (${newField.parcelCode}) a fost adăugat cu succes.`
+    });
+    setNewField({
+      name: '',
+      parcelCode: '',
+      size: '',
+      crop: '',
+      variety: '',
+      coords: '',
+      plantingDate: '',
+      harvestDate: '',
+      workType: '',
+      costs: '',
+      inputs: '',
+      color: '#22c55e'
+    });
+    setIsAddingField(false);
+  };
+  return <Dialog open={isAddingField} onOpenChange={setIsAddingField}>
       <DialogTrigger asChild>
         <Button size="sm" className="bg-green-600 hover:bg-green-700">
           <Plus className="h-4 w-4 mr-1" />
           Adaugă teren
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Adaugă teren nou</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Nume teren *</Label>
-              <Input 
-                id="name" 
-                value={fieldData.name} 
-                onChange={e => setFieldData({ ...fieldData, name: e.target.value })} 
-                placeholder="ex: Parcela Nord" 
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="parcel_code">Cod parcelă</Label>
-              <Input 
-                id="parcel_code" 
-                value={fieldData.parcel_code} 
-                onChange={e => setFieldData({ ...fieldData, parcel_code: e.target.value })} 
-                placeholder="ex: PN-001" 
-              />
-            </div>
-            <div>
-              <Label htmlFor="size">Suprafață (ha) *</Label>
-              <Input 
-                id="size" 
-                type="number" 
-                step="0.01" 
-                value={fieldData.size} 
-                onChange={e => setFieldData({ ...fieldData, size: e.target.value })} 
-                placeholder="ex: 5.5" 
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="crop">Cultură</Label>
-              <Select 
-                value={fieldData.crop} 
-                onValueChange={value => setFieldData({ ...fieldData, crop: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selectează cultura" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="grau">Grâu</SelectItem>
-                  <SelectItem value="porumb">Porumb</SelectItem>
-                  <SelectItem value="rapita">Rapiță</SelectItem>
-                  <SelectItem value="floarea-soarelui">Floarea soarelui</SelectItem>
-                  <SelectItem value="soia">Soia</SelectItem>
-                  <SelectItem value="orz">Orz</SelectItem>
-                  <SelectItem value="ovaz">Ovăz</SelectItem>
-                  <SelectItem value="alte-cereale">Alte cereale</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select 
-                value={fieldData.status} 
-                onValueChange={value => setFieldData({ ...fieldData, status: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Activ</SelectItem>
-                  <SelectItem value="fallow">În odihnă</SelectItem>
-                  <SelectItem value="planned">Planificat</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label htmlFor="planting_date">Data plantării</Label>
-              <Input 
-                id="planting_date" 
-                type="date" 
-                value={fieldData.planting_date} 
-                onChange={e => setFieldData({ ...fieldData, planting_date: e.target.value })} 
-              />
-            </div>
-            <div>
-              <Label htmlFor="harvest_date">Data recoltării</Label>
-              <Input 
-                id="harvest_date" 
-                type="date" 
-                value={fieldData.harvest_date} 
-                onChange={e => setFieldData({ ...fieldData, harvest_date: e.target.value })} 
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="color">Culoare</Label>
-              <Input 
-                id="color" 
-                type="color" 
-                value={fieldData.color} 
-                onChange={e => setFieldData({ ...fieldData, color: e.target.value })} 
-              />
-            </div>
-            <div className="md:col-span-2">
-              <Label htmlFor="inputs">Lucrări efectuate</Label>
-              <Textarea 
-                id="inputs" 
-                value={fieldData.inputs} 
-                onChange={e => setFieldData({ ...fieldData, inputs: e.target.value })} 
-                placeholder="Descriere inputuri: semințe, îngrășăminte, tratamente..." 
-              />
-            </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="name">Nume teren *</Label>
+            <Input id="name" value={newField.name} onChange={e => setNewField({
+            ...newField,
+            name: e.target.value
+          })} placeholder="ex: Parcela Vest" />
+          </div>
+          <div>
+            <Label htmlFor="parcelCode">Cod parcelă *</Label>
+            <Input id="parcelCode" value={newField.parcelCode} onChange={e => setNewField({
+            ...newField,
+            parcelCode: e.target.value
+          })} placeholder="ex: PV-001" />
+          </div>
+          <div>
+            <Label htmlFor="size">Suprafață (ha) *</Label>
+            <Input id="size" type="number" value={newField.size} onChange={e => setNewField({
+            ...newField,
+            size: e.target.value
+          })} placeholder="ex: 10.5" />
+          </div>
+          <div>
+            <Label htmlFor="crop">Cultură</Label>
+            <Select onValueChange={value => setNewField({
+            ...newField,
+            crop: value
+          })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selectează cultura" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Grâu">Grâu</SelectItem>
+                <SelectItem value="Porumb">Porumb</SelectItem>
+                <SelectItem value="Floarea-soarelui">Floarea-soarelui</SelectItem>
+                <SelectItem value="Soia">Soia</SelectItem>
+                <SelectItem value="Rapiță">Rapiță</SelectItem>
+                <SelectItem value="Orz">Orz</SelectItem>
+                <SelectItem value="Ovăz">Ovăz</SelectItem>
+                <SelectItem value="Secară">Secară</SelectItem>
+                <SelectItem value="Mazăre">Mazăre</SelectItem>
+                <SelectItem value="Fasole">Fasole</SelectItem>
+                <SelectItem value="Lucernă">Lucernă</SelectItem>
+                <SelectItem value="Trifoiul">Trifoiul</SelectItem>
+                <SelectItem value="Cartof">Cartof</SelectItem>
+                <SelectItem value="Sfeclă de zahăr">Sfeclă de zahăr</SelectItem>
+                <SelectItem value="Morcov">Morcov</SelectItem>
+                <SelectItem value="Ceapă">Ceapă</SelectItem>
+                <SelectItem value="Usturoi">Usturoi</SelectItem>
+                <SelectItem value="Varză">Varză</SelectItem>
+                <SelectItem value="Roșii">Roșii</SelectItem>
+                <SelectItem value="Ardei">Ardei</SelectItem>
+                <SelectItem value="Castraveti">Castraveti</SelectItem>
+                <SelectItem value="Dovleci">Dovleci</SelectItem>
+                <SelectItem value="Pepeni">Pepeni</SelectItem>
+                <SelectItem value="Capsuni">Capsuni</SelectItem>
+                <SelectItem value="Zmeură">Zmeură</SelectItem>
+                <SelectItem value="Mure">Mure</SelectItem>
+                <SelectItem value="Altul">Altul</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="variety">Varietate</Label>
+            <Input id="variety" value={newField.variety} onChange={e => setNewField({
+            ...newField,
+            variety: e.target.value
+          })} placeholder="ex: Antonius, Glosa" />
+          </div>
+          <div>
+            <Label htmlFor="plantingDate">Data însămânțare</Label>
+            <Input id="plantingDate" type="date" value={newField.plantingDate} onChange={e => setNewField({
+            ...newField,
+            plantingDate: e.target.value
+          })} />
+          </div>
+          <div>
+            <Label htmlFor="harvestDate">Data recoltare</Label>
+            <Input id="harvestDate" type="date" value={newField.harvestDate} onChange={e => setNewField({
+            ...newField,
+            harvestDate: e.target.value
+          })} />
           </div>
           
-          <div className="flex space-x-2 pt-4">
-            <Button 
-              type="button"
-              onClick={() => onOpenChange(false)} 
-              variant="outline" 
-              className="flex-1"
-              disabled={isSubmitting}
-            >
-              Anulează
-            </Button>
-            <Button 
-              type="submit" 
-              className="flex-1 bg-green-600 hover:bg-green-700"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Se adaugă...' : 'Adaugă terenul'}
-            </Button>
+          
+          
+          <div>
+            <Label htmlFor="color">Culoare pe hartă</Label>
+            <Select onValueChange={value => setNewField({
+            ...newField,
+            color: value
+          })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selectează culoarea" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="#22c55e">Verde</SelectItem>
+                <SelectItem value="#3b82f6">Albastru</SelectItem>
+                <SelectItem value="#f59e0b">Portocaliu</SelectItem>
+                <SelectItem value="#ef4444">Roșu</SelectItem>
+                <SelectItem value="#8b5cf6">Violet</SelectItem>
+                <SelectItem value="#ec4899">Roz</SelectItem>
+                <SelectItem value="#06b6d4">Cyan</SelectItem>
+                <SelectItem value="#84cc16">Verde deschis</SelectItem>
+                <SelectItem value="#f97316">Portocaliu închis</SelectItem>
+                <SelectItem value="#6366f1">Indigo</SelectItem>
+                <SelectItem value="#a855f7">Mov</SelectItem>
+                <SelectItem value="#10b981">Emerald</SelectItem>
+                <SelectItem value="#f59e0b">Galben</SelectItem>
+                <SelectItem value="#64748b">Gri</SelectItem>
+                <SelectItem value="#7c2d12">Maro</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </form>
+          <div className="col-span-2">
+            <Label htmlFor="inputs">Îngrășăminte folosite</Label>
+            <Input id="inputs" value={newField.inputs} onChange={e => setNewField({
+            ...newField,
+            inputs: e.target.value
+          })} placeholder="ex: NPK 16:16:16, Uree" />
+          </div>
+          <div className="col-span-2">
+            <Label htmlFor="coords" className="flex items-center space-x-2">
+              <MapPin className="h-4 w-4" />
+              <span>Coordonate GPS</span>
+            </Label>
+            <Textarea id="coords" value={newField.coords} onChange={e => setNewField({
+            ...newField,
+            coords: e.target.value
+          })} placeholder="Pentru un punct: 45.7489, 21.2087&#10;Pentru un poligon (min. 3 puncte):&#10;45.7489, 21.2087&#10;45.7490, 21.2088&#10;45.7491, 21.2089" className="min-h-[80px]" />
+            <p className="text-xs text-gray-600 mt-1">
+              Format: latitudine,longitudine. Pentru poligon, introduceți minimum 3 puncte pe linii separate.
+            </p>
+          </div>
+        </div>
+        <div className="flex space-x-2 mt-4">
+          <Button onClick={() => setIsAddingField(false)} variant="outline" className="flex-1">
+            Anulează
+          </Button>
+          <Button onClick={handleAddField} className="flex-1 bg-green-600 hover:bg-green-700">
+            Adaugă teren
+          </Button>
+        </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 };
-
 export default AddFieldDialog;

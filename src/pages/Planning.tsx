@@ -1,41 +1,87 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar as CalendarIcon, Clock, Plus, MapPin, AlertTriangle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Plus, CheckCircle2, AlertCircle, Sprout, Wrench, Target } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
+import { format, isToday, parseISO, isSameDay } from 'date-fns';
+import { ro } from 'date-fns/locale';
 const Planning = () => {
+  const {
+    fields,
+    tasks,
+    addTask,
+    notifications,
+    markNotificationAsRead,
+    addNotification
+  } = useAppContext();
   const {
     toast
   } = useToast();
-  const {
-    tasks,
-    fields,
-    addTask,
-    addNotification
-  } = useAppContext();
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
-    field_name: '',
-    date: '',
-    time: '',
-    due_date: '',
-    due_time: '',
-    priority: 'medium' as 'high' | 'medium' | 'low',
-    category: '',
-    estimated_duration: ''
+    field: '',
+    dueDate: '',
+    dueTime: '',
+    priority: 'medium',
+    duration: '',
+    category: 'maintenance'
   });
-  const handleAddTask = async () => {
-    if (!newTask.title || !newTask.field_name || !newTask.date) {
+
+  // Actualizare automată a notificărilor pentru sarcinile zilei curente
+  useEffect(() => {
+    const updateDailyNotifications = () => {
+      const today = new Date().toISOString().split('T')[0];
+      const todayTasks = tasks.filter(task => {
+        const taskDate = task.dueDate || task.date;
+        return taskDate === today && task.status === 'pending';
+      });
+
+      // Adaugă notificări pentru sarcinile de astăzi
+      todayTasks.forEach(task => {
+        const notificationExists = notifications.some(n => n.type === 'task' && n.message.includes(task.title) && n.date === today);
+        if (!notificationExists) {
+          addNotification({
+            type: 'task',
+            title: 'Sarcină programată astăzi',
+            message: `"${task.title}" este programată pentru astăzi pe ${task.field}`,
+            date: today,
+            isRead: false,
+            priority: task.priority
+          });
+        }
+      });
+    };
+    updateDailyNotifications();
+
+    // Actualizare la fiecare schimbare de zi (la miezul nopții)
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    const timeUntilMidnight = tomorrow.getTime() - now.getTime();
+    const timeoutId = setTimeout(() => {
+      updateDailyNotifications();
+      // Apoi actualizare zilnică
+      const intervalId = setInterval(updateDailyNotifications, 24 * 60 * 60 * 1000);
+      return () => clearInterval(intervalId);
+    }, timeUntilMidnight);
+    return () => clearTimeout(timeoutId);
+  }, [tasks, notifications, addNotification]);
+  const handleAddTask = () => {
+    if (!newTask.title || !newTask.field || !newTask.dueDate) {
       toast({
         title: "Eroare",
         description: "Te rugăm să completezi toate câmpurile obligatorii.",
@@ -43,346 +89,357 @@ const Planning = () => {
       });
       return;
     }
-    const selectedField = fields.find(f => f.name === newTask.field_name);
-    try {
-      await addTask({
-        title: newTask.title,
-        description: newTask.description,
-        field_name: newTask.field_name,
-        field_id: selectedField?.id || null,
-        date: newTask.date,
-        time: newTask.time,
-        due_date: newTask.due_date || newTask.date,
-        due_time: newTask.due_time || newTask.time,
-        priority: newTask.priority,
-        status: 'pending',
-        ai_suggested: false,
-        estimated_duration: newTask.estimated_duration,
-        duration: parseInt(newTask.estimated_duration) || null,
-        category: newTask.category,
-        completed_at: null
-      });
-
-      // Add notification for high priority tasks
-      if (newTask.priority === 'high') {
-        await addNotification({
-          type: 'task',
-          title: 'Sarcină urgentă adăugată',
-          message: `Sarcina "${newTask.title}" a fost programată pentru ${newTask.date}`,
-          read: false,
-          is_read: false,
-          priority: newTask.priority,
-          read_at: null
-        });
-      }
-      setNewTask({
-        title: '',
-        description: '',
-        field_name: '',
-        date: '',
-        time: '',
-        due_date: '',
-        due_time: '',
-        priority: 'medium',
-        category: '',
-        estimated_duration: ''
-      });
-      setIsAddingTask(false);
-      toast({
-        title: "Succes",
-        description: "Sarcina a fost adăugată cu succes."
-      });
-    } catch (error) {
-      console.error('Error adding task:', error);
-      toast({
-        title: "Eroare",
-        description: "A apărut o eroare la adăugarea sarcinii.",
-        variant: "destructive"
-      });
-    }
+    addTask({
+      title: newTask.title,
+      description: newTask.description,
+      field: newTask.field,
+      date: newTask.dueDate,
+      time: newTask.dueTime || '08:00',
+      dueDate: newTask.dueDate,
+      dueTime: newTask.dueTime,
+      priority: newTask.priority as 'low' | 'medium' | 'high',
+      status: 'pending',
+      aiSuggested: false,
+      estimatedDuration: newTask.duration ? `${newTask.duration} ore` : undefined,
+      duration: newTask.duration ? parseInt(newTask.duration) : undefined,
+      category: newTask.category
+    });
+    toast({
+      title: "Succes",
+      description: `Sarcina "${newTask.title}" a fost adăugată cu succes.`
+    });
+    setNewTask({
+      title: '',
+      description: '',
+      field: '',
+      dueDate: '',
+      dueTime: '',
+      priority: 'medium',
+      duration: '',
+      category: 'maintenance'
+    });
+    setIsAddingTask(false);
   };
-
-  // Group tasks by status
-  const pendingTasks = tasks.filter(task => task.status === 'pending');
-  const completedTasks = tasks.filter(task => task.status === 'completed');
-  const inProgressTasks = tasks.filter(task => task.status === 'in_progress');
-
-  // Get upcoming tasks (next 7 days)
-  const today = new Date();
-  const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const upcomingTasks = pendingTasks.filter(task => {
-    const taskDate = new Date(task.due_date || task.date);
-    return taskDate >= today && taskDate <= nextWeek;
-  }).sort((a, b) => new Date(a.due_date || a.date).getTime() - new Date(b.due_date || b.date).getTime());
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 border-red-200';
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-amber-100 text-amber-800 border-amber-200';
       case 'low':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 border-green-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'Plantare':
-        return <Sprout className="h-4 w-4" />;
-      case 'Mentenanță':
-        return <Wrench className="h-4 w-4" />;
-      case 'Recoltare':
-        return <Target className="h-4 w-4" />;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'in-progress':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'pending':
+        return 'bg-gray-100 text-gray-800 border-gray-200';
       default:
-        return <Calendar className="h-4 w-4" />;
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
+
+  // Filtrare sarcini pentru data curentă
+  const today = new Date().toISOString().split('T')[0];
+  const todayTasks = tasks.filter(task => {
+    const taskDate = task.dueDate || task.date;
+    return taskDate === today;
+  });
+
+  // Filtrare sarcini pentru data selectată în calendar
+  const selectedDateTasks = tasks.filter(task => {
+    const taskDate = task.dueDate || task.date;
+    const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+    return taskDate === selectedDateStr;
+  });
+
+  // Verifică dacă o zi are sarcini programate
+  const hasTasksOnDate = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return tasks.some(task => {
+      const taskDate = task.dueDate || task.date;
+      return taskDate === dateStr;
+    });
+  };
+  const pendingTasks = tasks.filter(task => task.status === 'pending');
+  const inProgressTasks = tasks.filter(task => task.status === 'in-progress');
+  const completedTasks = tasks.filter(task => task.status === 'completed');
   return <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-green-800">Planificare Activități</h1>
-            <p className="text-green-600">Organizează și monitorizează sarcinile fermei</p>
-          </div>
-
-          <Dialog open={isAddingTask} onOpenChange={setIsAddingTask}>
-            <DialogTrigger asChild>
-              <Button className="bg-green-600 hover:bg-green-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Adaugă Sarcină
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Adaugă Sarcină Nouă</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="title">Titlu sarcină *</Label>
-                  <Input id="title" value={newTask.title} onChange={e => setNewTask(prev => ({
-                  ...prev,
-                  title: e.target.value
-                }))} placeholder="Ex: Aplicare îngrășământ" />
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Descriere</Label>
-                  <Textarea id="description" value={newTask.description} onChange={e => setNewTask(prev => ({
-                  ...prev,
-                  description: e.target.value
-                }))} placeholder="Detalii despre sarcină..." />
-                </div>
-
-                <div>
-                  <Label htmlFor="field_name">Teren *</Label>
-                  <Select value={newTask.field_name} onValueChange={value => setNewTask(prev => ({
-                  ...prev,
-                  field_name: value
-                }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selectează terenul" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {fields.map(field => <SelectItem key={field.id} value={field.name}>
-                          {field.name} ({field.crop})
-                        </SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="date">Data *</Label>
-                    <Input id="date" type="date" value={newTask.date} onChange={e => setNewTask(prev => ({
-                    ...prev,
-                    date: e.target.value
-                  }))} />
-                  </div>
-                  <div>
-                    <Label htmlFor="time">Ora</Label>
-                    <Input id="time" type="time" value={newTask.time} onChange={e => setNewTask(prev => ({
-                    ...prev,
-                    time: e.target.value
-                  }))} />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="priority">Prioritate</Label>
-                    <Select value={newTask.priority} onValueChange={(value: 'high' | 'medium' | 'low') => setNewTask(prev => ({
-                    ...prev,
-                    priority: value
-                  }))}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="high">Urgent</SelectItem>
-                        <SelectItem value="medium">Mediu</SelectItem>
-                        <SelectItem value="low">Scăzut</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="category">Categorie</Label>
-                    <Select value={newTask.category} onValueChange={value => setNewTask(prev => ({
-                    ...prev,
-                    category: value
-                  }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selectează categoria" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Plantare">Plantare</SelectItem>
-                        <SelectItem value="Îngrijire">Îngrijire</SelectItem>
-                        <SelectItem value="Tratamente">Tratamente</SelectItem>
-                        <SelectItem value="Recoltare">Recoltare</SelectItem>
-                        <SelectItem value="Mentenanță">Mentenanță</SelectItem>
-                        <SelectItem value="Altele">Altele</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="estimated_duration">Durata estimată (minute)</Label>
-                  <Input id="estimated_duration" type="number" value={newTask.estimated_duration} onChange={e => setNewTask(prev => ({
-                  ...prev,
-                  estimated_duration: e.target.value
-                }))} placeholder="Ex: 120" />
-                </div>
-
-                <div className="flex justify-end space-x-2">
-                  <Button variant="outline" onClick={() => setIsAddingTask(false)}>
-                    Anulează
-                  </Button>
-                  <Button onClick={handleAddTask} className="bg-green-600 hover:bg-green-700">
-                    Adaugă Sarcina
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-green-800 mb-2">Planificare Activități</h1>
+          <p className="text-green-600">Organizează și urmărește toate activitățile fermei</p>
         </div>
 
-        {/* Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-white/80 backdrop-blur-sm border-orange-200">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="bg-orange-100 p-3 rounded-lg">
-                  <Clock className="h-6 w-6 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-orange-800">{pendingTasks.length}</p>
-                  <p className="text-sm text-orange-600">În așteptare</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <Tabs defaultValue="calendar" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 lg:w-[400px] bg-white/80 backdrop-blur-sm">
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            <TabsTrigger value="today">De astăzi</TabsTrigger>
+            <TabsTrigger value="tasks">Sarcini</TabsTrigger>
+          </TabsList>
 
-          
-
-          <Card className="bg-white/80 backdrop-blur-sm border-green-200">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="bg-green-100 p-3 rounded-lg">
-                  <CheckCircle2 className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-green-800">{completedTasks.length}</p>
-                  <p className="text-sm text-green-600">Completate</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-white/80 backdrop-blur-sm border-purple-200">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-3">
-                <div className="bg-purple-100 p-3 rounded-lg">
-                  <Calendar className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-purple-800">{upcomingTasks.length}</p>
-                  <p className="text-sm text-purple-600">Săptămâna aceasta</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tasks Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Upcoming Tasks */}
-          <Card className="bg-white border-green-200">
-            <CardHeader>
-              <CardTitle className="text-green-800 flex items-center space-x-2">
-                <Calendar className="h-5 w-5" />
-                <span>Sarcini viitoare</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {upcomingTasks.length > 0 ? upcomingTasks.map(task => <div key={task.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold text-gray-900">{task.title}</h4>
-                    <Badge className={getPriorityColor(task.priority)}>
-                      {task.priority === 'high' ? 'Urgent' : task.priority === 'medium' ? 'Mediu' : 'Scăzut'}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">{task.description}</p>
-                  <div className="flex justify-between items-center text-sm">
-                    <div className="flex items-center space-x-2">
-                      {getCategoryIcon(task.category)}
-                      <span className="text-gray-500">{task.field_name}</span>
+          <TabsContent value="calendar" className="space-y-6">
+            <Card className="bg-white border-green-200">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="text-green-800">Calendar Activități</CardTitle>
+                <Dialog open={isAddingTask} onOpenChange={setIsAddingTask}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-green-600 hover:bg-green-700">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Adaugă sarcină
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Adaugă sarcină nouă</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="title">Titlu sarcină *</Label>
+                        <Input id="title" value={newTask.title} onChange={e => setNewTask({
+                        ...newTask,
+                        title: e.target.value
+                      })} placeholder="ex: Fertilizare NPK" />
+                      </div>
+                      <div>
+                        <Label htmlFor="field">Teren *</Label>
+                        <Select onValueChange={value => setNewTask({
+                        ...newTask,
+                        field: value
+                      })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selectează terenul" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {fields.map(field => <SelectItem key={field.id} value={field.name}>
+                                {field.name} ({field.parcelCode})
+                              </SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label htmlFor="dueDate">Data *</Label>
+                          <Input id="dueDate" type="date" value={newTask.dueDate} onChange={e => setNewTask({
+                          ...newTask,
+                          dueDate: e.target.value
+                        })} />
+                        </div>
+                        <div>
+                          <Label htmlFor="dueTime">Ora</Label>
+                          <Input id="dueTime" type="time" value={newTask.dueTime} onChange={e => setNewTask({
+                          ...newTask,
+                          dueTime: e.target.value
+                        })} />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="priority">Prioritate</Label>
+                        <Select onValueChange={value => setNewTask({
+                        ...newTask,
+                        priority: value
+                      })}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selectează prioritatea" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Scăzută</SelectItem>
+                            <SelectItem value="medium">Medie</SelectItem>
+                            <SelectItem value="high">Ridicată</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="duration">Durata estimată (ore)</Label>
+                        <Input id="duration" type="number" value={newTask.duration} onChange={e => setNewTask({
+                        ...newTask,
+                        duration: e.target.value
+                      })} placeholder="ex: 3" />
+                      </div>
+                      <div>
+                        <Label htmlFor="description">Descriere</Label>
+                        <Textarea id="description" value={newTask.description} onChange={e => setNewTask({
+                        ...newTask,
+                        description: e.target.value
+                      })} placeholder="Detalii suplimentare despre sarcină..." />
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button onClick={() => setIsAddingTask(false)} variant="outline" className="flex-1">
+                          Anulează
+                        </Button>
+                        <Button onClick={handleAddTask} className="flex-1 bg-green-600 hover:bg-green-700">
+                          Adaugă sarcină
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Clock className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-500">
-                        {task.due_date} {task.due_time && `la ${task.due_time}`}
-                      </span>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <Calendar mode="single" selected={selectedDate} onSelect={date => date && setSelectedDate(date)} locale={ro} className="rounded-lg border p-3 pointer-events-auto" modifiers={{
+                    hasTask: date => hasTasksOnDate(date)
+                  }} modifiersStyles={{
+                    hasTask: {
+                      backgroundColor: '#22c55e',
+                      color: 'white',
+                      fontWeight: 'bold'
+                    }
+                  }} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-4">
+                      Sarcini pentru {format(selectedDate, 'dd MMMM yyyy', {
+                      locale: ro
+                    })}
+                    </h3>
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {selectedDateTasks.length === 0 ? <p className="text-gray-500 text-center py-8">
+                          Nu există sarcini programate pentru această zi
+                        </p> : selectedDateTasks.map(task => <div key={task.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+                            <div className="flex justify-between items-start mb-2">
+                              <h4 className="font-medium text-gray-900 text-sm">{task.title}</h4>
+                              <Badge className={getPriorityColor(task.priority)}>
+                                {task.priority === 'high' ? 'Ridicată' : task.priority === 'medium' ? 'Medie' : 'Scăzută'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center space-x-2 text-xs text-gray-600 mb-1">
+                              <MapPin className="h-3 w-3" />
+                              <span>{task.field}</span>
+                            </div>
+                            <div className="flex items-center space-x-2 text-xs text-gray-600 mb-1">
+                              <Clock className="h-3 w-3" />
+                              <span>{(task.dueTime || task.time) && `${task.dueTime || task.time}`}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Badge className={getStatusColor(task.status)}>
+                                {task.status === 'pending' ? 'În așteptare' : task.status === 'in-progress' ? 'În progres' : 'Completat'}
+                              </Badge>
+                            </div>
+                            {task.description && <p className="text-xs text-gray-600 mt-2">{task.description}</p>}
+                          </div>)}
                     </div>
                   </div>
-                </div>) : <div className="text-center py-8 text-gray-500">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p>Nu există sarcini programate pentru săptămâna aceasta</p>
-                  <p className="text-sm">Adaugă sarcini noi pentru a le vedea aici</p>
-                </div>}
-            </CardContent>
-          </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-          {/* All Tasks */}
-          <Card className="bg-white border-green-200">
-            <CardHeader>
-              <CardTitle className="text-green-800">Toate sarcinile</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 max-h-96 overflow-y-auto">
-              {tasks.length > 0 ? tasks.slice(0, 10).map(task => <div key={task.id} className={`border rounded-lg p-3 ${task.status === 'completed' ? 'bg-green-50 border-green-200' : task.status === 'in_progress' ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
-                  <div className="flex justify-between items-start mb-1">
-                    <h5 className="font-medium text-gray-900">{task.title}</h5>
-                    <div className="flex items-center space-x-1">
-                      <Badge variant="secondary" className="text-xs">{task.category}</Badge>
-                      <Badge className={getPriorityColor(task.priority)}>
-                        {task.priority === 'high' ? 'H' : task.priority === 'medium' ? 'M' : 'L'}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">{task.field_name}</span>
-                    <span className="text-gray-500">{task.due_date || task.date}</span>
-                  </div>
-                </div>) : <div className="text-center py-8 text-gray-500">
-                  <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                  <p>Nu există sarcini create</p>
-                  <p className="text-sm">Începe prin a adăuga prima sarcină</p>
-                </div>}
-            </CardContent>
-          </Card>
-        </div>
+          <TabsContent value="today" className="space-y-6">
+            <Card className="bg-white border-green-200">
+              <CardHeader>
+                <CardTitle className="text-green-800 flex items-center space-x-2">
+                  <CalendarIcon className="h-5 w-5 text-green-600" />
+                  <span>Sarcini de astăzi ({todayTasks.length})</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {todayTasks.length === 0 ? <div className="text-center py-8">
+                    <CalendarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500">Nu aveți sarcini programate pentru astăzi</p>
+                  </div> : todayTasks.map(task => <div key={task.id} className="border border-green-200 rounded-lg p-4 hover:shadow-sm transition-shadow bg-green-50/50">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-medium text-gray-900">{task.title}</h4>
+                        <Badge className={getPriorityColor(task.priority)}>
+                          {task.priority === 'high' ? 'Ridicată' : task.priority === 'medium' ? 'Medie' : 'Scăzută'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                        <MapPin className="h-4 w-4" />
+                        <span>{task.field}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+                        <Clock className="h-4 w-4" />
+                        <span>{task.dueTime || task.time ? `${task.dueTime || task.time}` : 'Oră neprecizată'}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Badge className={getStatusColor(task.status)}>
+                          {task.status === 'pending' ? 'În așteptare' : task.status === 'in-progress' ? 'În progres' : 'Completat'}
+                        </Badge>
+                        {task.estimatedDuration && <span className="text-xs text-gray-500">Durată: {task.estimatedDuration}</span>}
+                      </div>
+                      {task.description && <p className="text-sm text-gray-600 mt-2 p-2 bg-white rounded border-l-4 border-green-200">
+                          {task.description}
+                        </p>}
+                    </div>)}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="tasks" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Pending Tasks */}
+              <Card className="bg-white border-gray-200">
+                <CardHeader>
+                  <CardTitle className="text-gray-800 flex items-center space-x-2">
+                    <Clock className="h-5 w-5 text-gray-600" />
+                    <span>În așteptare ({pendingTasks.length})</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {pendingTasks.map(task => <div key={task.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-medium text-gray-900 text-sm">{task.title}</h4>
+                        <Badge className={getPriorityColor(task.priority)}>
+                          {task.priority === 'high' ? 'Ridicată' : task.priority === 'medium' ? 'Medie' : 'Scăzută'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-gray-600 mb-1">
+                        <MapPin className="h-3 w-3" />
+                        <span>{task.field}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-gray-600">
+                        <CalendarIcon className="h-3 w-3" />
+                        <span>{task.dueDate || task.date} {(task.dueTime || task.time) && `la ${task.dueTime || task.time}`}</span>
+                      </div>
+                    </div>)}
+                  {pendingTasks.length === 0 && <p className="text-gray-500 text-center py-4">Nu există sarcini în așteptare</p>}
+                </CardContent>
+              </Card>
+
+              {/* In Progress Tasks */}
+              
+
+              {/* Completed Tasks */}
+              <Card className="bg-white border-green-200">
+                <CardHeader>
+                  <CardTitle className="text-green-800 flex items-center space-x-2">
+                    <CalendarIcon className="h-5 w-5 text-green-600" />
+                    <span>Completate ({completedTasks.length})</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {completedTasks.map(task => <div key={task.id} className="border border-green-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-medium text-gray-900 text-sm">{task.title}</h4>
+                        <Badge className="bg-green-100 text-green-800 border-green-200">
+                          Finalizat
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-gray-600 mb-1">
+                        <MapPin className="h-3 w-3" />
+                        <span>{task.field}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-xs text-gray-600">
+                        <CalendarIcon className="h-3 w-3" />
+                        <span>{task.dueDate || task.date} {(task.dueTime || task.time) && `la ${task.dueTime || task.time}`}</span>
+                      </div>
+                    </div>)}
+                  {completedTasks.length === 0 && <p className="text-gray-500 text-center py-4">Nu există sarcini completate</p>}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>;
 };

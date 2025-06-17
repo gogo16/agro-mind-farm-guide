@@ -46,7 +46,7 @@ const FieldCard = ({ field }: FieldCardProps) => {
     }
   };
 
-  const handleDeleteField = (fieldId: string, fieldName: string) => {
+  const handleDeleteField = (fieldId: number, fieldName: string) => {
     deleteField(fieldId);
     toast({
       title: "Teren șters",
@@ -61,7 +61,7 @@ const FieldCard = ({ field }: FieldCardProps) => {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-lg text-green-800">{field.name}</CardTitle>
-            <p className="text-sm text-green-600 font-medium">{field.parcel_code}</p>
+            <p className="text-sm text-green-600 font-medium">{field.parcelCode}</p>
           </div>
           <div className="flex items-center space-x-2">
             <TaskBadges fieldName={field.name} tasks={tasks} />
@@ -76,10 +76,10 @@ const FieldCard = ({ field }: FieldCardProps) => {
             <Sprout className="h-4 w-4 text-green-600" />
             <span className="text-sm">{field.crop}</span>
           </div>
-          {field.planting_date && (
+          {field.plantingDate && (
             <div className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-blue-600" />
-              <span className="text-sm">Plantat: {field.planting_date}</span>
+              <span className="text-sm">Plantat: {field.plantingDate}</span>
             </div>
           )}
           {field.coordinates && (

@@ -1,178 +1,198 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import type { Database } from '@/integrations/supabase/types';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-type Json = Database['public']['Tables']['fields']['Row']['coordinates']
+interface WeatherData {
+  temperature: number;
+  condition: 'sunny' | 'rainy' | 'cloudy' | 'partly-cloudy' | 'stormy';
+  humidity: number;
+  windSpeed: number;
+  windDirection?: string;
+  pressure?: number;
+  uvIndex?: number;
+  visibility?: number;
+  lastUpdated: string;
+  forecast?: {
+    date: string;
+    temperature: { min: number; max: number };
+    condition: string;
+    precipitation: number;
+  }[];
+}
 
 interface Field {
-  id: string;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
+  id: number;
   name: string;
+  parcelCode: string; // New field for parcel code
   size: number;
   crop: string;
-  location: string;
-  coordinates: Json;
-  parcel_code: string;
-  planting_date: string;
-  harvest_date: string;
-  costs: number;
-  inputs: string;
-  color: string;
-  work_type: string;
   status: string;
-  soil_data: Json;
+  location?: string;
+  coordinates?: { lat: number; lng: number };
+  plantingDate?: string;
+  harvestDate?: string;
+  workType?: string;
+  costs?: number;
+  inputs?: string;
+  roi?: number;
+  color?: string; // Added color property
+  weather?: WeatherData; // Added weather property
 }
 
-interface Task {
-  id: string;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-  title: string;
+interface WorkHistory {
+  id: number;
+  parcelId: number;
+  workType: string;
+  date: string;
   description: string;
-  date: string;
-  time: string;
-  due_date: string;
-  due_time: string;
-  status: 'pending' | 'completed' | 'in_progress';
-  priority: 'high' | 'medium' | 'low';
-  category: string;
-  duration: number;
-  estimated_duration: string;
-  field_name: string;
-  field_id: string;
-  ai_suggested: boolean;
-  completed_at: string | null;
+  worker: string;
+  cost?: number;
 }
 
-interface FieldPhoto {
-  id: string;
-  created_at: string;
-  user_id: string;
-  field_id: string;
-  image_url: string;
-  date: string;
-  activity: string;
-  crop_stage: string;
-  weather_conditions: string;
-  notes: string;
-}
-
-interface Transaction {
-  id: string;
-  created_at: string;
-  user_id: string;
-  date: string;
-  amount: number;
-  type: 'income' | 'expense';
-  category: string;
-  description: string;
-  field_id: string;
-}
-
-interface Notification {
-  id: string;
-  created_at: string;
-  user_id: string;
-  type: 'inventory' | 'task' | 'weather' | 'ai' | 'financial' | 'system';
-  title: string;
-  message: string;
-  read: boolean;
-  is_read: boolean;
-  read_at: string | null;
-  priority: 'high' | 'medium' | 'low';
-}
-
-interface InventoryItem {
-  id: string;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-  name: string;
-  type: 'equipment' | 'chemical' | 'seeds' | 'fuel' | 'other';
-  quantity: string;
-  unit: string;
-  condition: string;
-  location: string;
-  last_used: string;
-  next_maintenance: string;
-  expiration_date: string;
-  stock_level: 'low' | 'normal' | 'high';
-  purchase_cost: number;
-  current_value: number;
-  purpose: string;
+interface OwnerHistory {
+  id: number;
+  parcelId: number;
+  ownerName: string;
+  startDate: string;
+  endDate?: string;
+  ownershipType: string;
+  notes?: string;
 }
 
 interface PropertyDocument {
-  id: string;
-  created_at: string;
-  user_id: string;
-  field_id?: string;
-  document_type: string;
+  id: number;
+  parcelId?: number;
+  type: string;
   name: string;
-  file_name: string;
-  upload_date: string;
-  issue_date?: string;
-  valid_until?: string;
+  fileName: string;
+  uploadDate: string;
+  issueDate?: string;
+  validUntil?: string;
   status: 'verified' | 'missing' | 'expired' | 'complete';
   notes?: string;
-  file_url?: string;
+}
+
+interface SatelliteData {
+  parcelId: number;
+  currentImage: string;
+  previousImage: string;
+  changeDetected: boolean;
+  changePercentage: number;
+  lastUpdated: string;
+}
+
+interface Task {
+  id: number;
+  title: string;
+  field: string;
+  priority: 'high' | 'medium' | 'low';
+  date: string;
+  time: string;
+  dueDate?: string; // Added dueDate property
+  dueTime?: string; // Added dueTime property
+  status: 'pending' | 'completed' | 'in-progress'; // Added 'in-progress' status
+  aiSuggested: boolean;
+  description: string;
+  estimatedDuration?: string;
+  duration?: number; // Added duration property
+  category?: string; // Added category property
+}
+
+interface Transaction {
+  id: number;
+  type: 'income' | 'expense';
+  amount: number;
+  description: string;
+  category: string;
+  field: string;
+  date: string;
+}
+
+interface InventoryItem {
+  id: number;
+  name: string;
+  type: string;
+  quantity?: string;
+  condition?: string;
+  location?: string;
+  lastUsed?: string;
+  nextMaintenance?: string;
+  expiration?: string;
+  purpose?: string;
+  stockLevel?: 'low' | 'normal' | 'high';
+}
+
+interface Notification {
+  id: number;
+  type: 'task' | 'weather' | 'inventory' | 'ai' | 'financial';
+  title: string;
+  message: string;
+  date: string;
+  isRead: boolean;
+  priority: 'high' | 'medium' | 'low';
+}
+
+interface User {
+  name: string;
+  email: string;
+  phone: string;
+  location: string;
+  farmName: string;
+}
+
+interface FieldPhoto {
+  id: number;
+  fieldId: number;
+  fieldName: string;
+  date: string;
+  activity: string;
+  cropStage: string;
+  weather: string;
+  notes: string;
+  imageUrl: string;
 }
 
 interface AppContextType {
   fields: Field[];
   tasks: Task[];
-  fieldPhotos: FieldPhoto[];
-  financialTransactions: Transaction[];
   transactions: Transaction[];
-  notifications: Notification[];
   inventory: InventoryItem[];
+  notifications: Notification[];
+  satelliteData: SatelliteData[];
+  workHistory: WorkHistory[];
+  ownerHistory: OwnerHistory[];
   propertyDocuments: PropertyDocument[];
-  
-  // User
-  user: { id: string; email: string; first_name?: string; last_name?: string; } | null;
-  
-  // Field methods
-  addField: (field: Omit<Field, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
-  updateField: (id: string, updates: Partial<Field>) => Promise<void>;
-  deleteField: (id: string) => Promise<void>;
-  
-  // Task methods  
-  addTask: (task: Omit<Task, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
-  updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
-  deleteTask: (id: string) => Promise<void>;
-  
-  // Photo methods
-  addFieldPhoto: (photo: Omit<FieldPhoto, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
-  
-  // Transaction methods
-  addTransaction: (transaction: Omit<Transaction, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
-  updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
-  deleteTransaction: (id: string) => Promise<void>;
-  
-  // Property document methods
-  addPropertyDocument: (doc: Omit<PropertyDocument, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
-  updatePropertyDocument: (id: string, updates: Partial<PropertyDocument>) => Promise<void>;
-  deletePropertyDocument: (id: string) => Promise<void>;
-  
-  // Notification methods
-  addNotification: (notification: Omit<Notification, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
-  markNotificationAsRead: (id: string) => Promise<void>;
-  
-  // Inventory methods
-  addInventoryItem: (item: Omit<InventoryItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
-  updateInventoryItem: (id: string, updates: Partial<InventoryItem>) => Promise<void>;
-  deleteInventoryItem: (id: string) => Promise<void>;
-  
-  // APIA methods
-  generateAPIADocument: (templateId: string, data: any) => any;
-  
-  // Report methods
-  generateReport: (type: string, data: any) => Promise<void>;
-  currentSeason: { name: string; startDate: string; endDate: string; };
+  fieldPhotos: FieldPhoto[];
+  user: User;
+  currentSeason: string;
+  addField: (field: Omit<Field, 'id'>) => void;
+  updateField: (id: number, field: Partial<Field>) => void;
+  deleteField: (id: number) => void;
+  addTask: (task: Omit<Task, 'id'>) => void;
+  updateTask: (id: number, task: Partial<Task>) => void;
+  deleteTask: (id: number) => void;
+  addTransaction: (transaction: Omit<Transaction, 'id'>) => void;
+  updateTransaction: (id: number, transaction: Partial<Transaction>) => void;
+  deleteTransaction: (id: number) => void;
+  addInventoryItem: (item: Omit<InventoryItem, 'id'>) => void;
+  updateInventoryItem: (id: number, item: Partial<InventoryItem>) => void;
+  deleteInventoryItem: (id: number) => void;
+  addWorkHistory: (work: Omit<WorkHistory, 'id'>) => void;
+  updateWorkHistory: (id: number, work: Partial<WorkHistory>) => void;
+  deleteWorkHistory: (id: number) => void;
+  addOwnerHistory: (owner: Omit<OwnerHistory, 'id'>) => void;
+  updateOwnerHistory: (id: number, owner: Partial<OwnerHistory>) => void;
+  deleteOwnerHistory: (id: number) => void;
+  addPropertyDocument: (doc: Omit<PropertyDocument, 'id'>) => void;
+  updatePropertyDocument: (id: number, doc: Partial<PropertyDocument>) => void;
+  deletePropertyDocument: (id: number) => void;
+  addFieldPhoto: (photo: Omit<FieldPhoto, 'id'>) => void;
+  markNotificationAsRead: (id: number) => void;
+  updateUser: (userData: Partial<User>) => void;
+  generateReport: (type: string) => any;
+  generateAPIADocument: (type: string, data: any) => any;
+  fetchSatelliteData: (parcelId: number) => void;
+  addNotification: (notification: Omit<Notification, 'id'>) => void;
+  updateFieldWeather: (fieldId: number, weatherData: WeatherData) => void; // New method for weather updates
+  fetchWeatherData: (fieldId: number) => Promise<void>; // New method for fetching weather
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -180,577 +200,593 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const useAppContext = () => {
   const context = useContext(AppContext);
   if (!context) {
-    throw new Error("useAppContext must be used within an AppProvider");
+    throw new Error('useAppContext must be used within an AppProvider');
   }
   return context;
 };
 
+const getCurrentSeason = () => {
+  const month = new Date().getMonth();
+  if (month >= 2 && month <= 4) return 'Primăvară';
+  if (month >= 5 && month <= 7) return 'Vară';
+  if (month >= 8 && month <= 10) return 'Toamnă';
+  return 'Iarnă';
+};
+
 export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const { toast } = useToast();
-  const [fields, setFields] = useState<Field[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [fields, setFields] = useState<Field[]>([
+    { 
+      id: 1, 
+      name: 'Parcela Nord', 
+      parcelCode: 'PN-001',
+      size: 15.5, 
+      crop: 'Grâu de toamnă', 
+      status: 'Plantat', 
+      location: 'Nord', 
+      coordinates: { lat: 44.4268, lng: 26.1025 },
+      plantingDate: '2024-10-15',
+      harvestDate: '2024-07-20',
+      workType: 'Arătură conventională',
+      costs: 2500,
+      inputs: 'NPK 16:16:16, Herbicid',
+      roi: 15.2,
+      color: '#22c55e',
+      weather: {
+        temperature: 18,
+        condition: 'cloudy',
+        humidity: 68,
+        windSpeed: 15,
+        windDirection: 'NV',
+        pressure: 1015,
+        uvIndex: 4,
+        visibility: 10,
+        lastUpdated: 'acum 25 min'
+      }
+    },
+    { 
+      id: 2, 
+      name: 'Câmp Sud', 
+      parcelCode: 'CS-002',
+      size: 22.3, 
+      crop: 'Porumb', 
+      status: 'Pregătire teren', 
+      location: 'Sud', 
+      coordinates: { lat: 44.4168, lng: 26.1125 },
+      plantingDate: '2024-04-20',
+      harvestDate: '2024-09-15',
+      workType: 'Arătură + Grăpare',
+      costs: 3200,
+      inputs: 'Semințe hibrid, Îngrășământ starter',
+      roi: 18.7,
+      color: '#3b82f6',
+      weather: {
+        temperature: 24,
+        condition: 'sunny',
+        humidity: 45,
+        windSpeed: 8,
+        windDirection: 'S',
+        pressure: 1018,
+        uvIndex: 7,
+        visibility: 15,
+        lastUpdated: 'acum 15 min'
+      }
+    },
+    { 
+      id: 3, 
+      name: 'Livada Est', 
+      parcelCode: 'LE-003',
+      size: 8.7, 
+      crop: 'Măr', 
+      status: 'Maturitate', 
+      location: 'Est', 
+      coordinates: { lat: 44.4368, lng: 26.1225 },
+      plantingDate: '2020-03-10',
+      harvestDate: '2024-08-30',
+      workType: 'Întreținere livadă',
+      costs: 1800,
+      inputs: 'Fungicide, Insecticide',
+      roi: 22.1,
+      color: '#f59e0b',
+      weather: {
+        temperature: 20,
+        condition: 'rainy',
+        humidity: 85,
+        windSpeed: 12,
+        windDirection: 'E',
+        pressure: 1010,
+        uvIndex: 2,
+        visibility: 8,
+        lastUpdated: 'acum 10 min'
+      }
+    }
+  ]);
+
+  const [tasks, setTasks] = useState<Task[]>([
+    {
+      id: 1,
+      title: 'Irigarea Parcelei Nord',
+      field: 'Parcela Nord',
+      priority: 'high',
+      date: '2024-06-06',
+      time: '06:00',
+      dueDate: '2024-06-06',
+      dueTime: '06:00',
+      status: 'pending',
+      aiSuggested: true,
+      description: 'Condițiile meteo sunt ideale pentru irigare dimineața devreme.',
+      estimatedDuration: '2 ore'
+    },
+    {
+      id: 2,
+      title: 'Fertilizare Câmp Sud',
+      field: 'Câmp Sud',
+      priority: 'medium',
+      date: '2024-06-07',
+      time: '14:00',
+      dueDate: '2024-06-07',
+      dueTime: '14:00',
+      status: 'pending',
+      aiSuggested: true,
+      description: 'Aplicare îngrășământ NPK conform planificării.',
+      estimatedDuration: '3 ore'
+    }
+  ]);
+
+  const [transactions, setTransactions] = useState<Transaction[]>([
+    {
+      id: 1,
+      type: 'expense',
+      amount: 1800,
+      description: 'Îngrășământ NPK 16:16:16',
+      category: 'Fertilizatori',
+      field: 'Parcela Nord',
+      date: '2024-06-01'
+    },
+    {
+      id: 2,
+      type: 'income',
+      amount: 12000,
+      description: 'Vânzare grâu - 20 tone',
+      category: 'Vânzări',
+      field: 'Parcela Nord',
+      date: '2024-05-15'
+    }
+  ]);
+
+  const [inventory, setInventory] = useState<InventoryItem[]>([
+    {
+      id: 1,
+      name: 'Tractor Fendt 724',
+      type: 'equipment',
+      condition: 'Bună',
+      location: 'Hangar Principal',
+      lastUsed: '2024-06-05',
+      nextMaintenance: '2024-07-01'
+    },
+    {
+      id: 2,
+      name: 'NPK 16-16-16',
+      type: 'chemical',
+      quantity: '500kg',
+      expiration: '2025-12-31',
+      purpose: 'Fertilizare de bază',
+      stockLevel: 'low'
+    }
+  ]);
+
+  const [notifications, setNotifications] = useState<Notification[]>([
+    {
+      id: 1,
+      type: 'task',
+      title: 'Sarcină urgentă',
+      message: 'Irigarea Parcelei Nord trebuie efectuată mâine dimineață',
+      date: '2024-06-05',
+      isRead: false,
+      priority: 'high'
+    },
+    {
+      id: 2,
+      type: 'inventory',
+      title: 'Stoc scăzut',
+      message: 'NPK 16-16-16 este la nivel scăzut (500kg rămase)',
+      date: '2024-06-05',
+      isRead: false,
+      priority: 'medium'
+    },
+    {
+      id: 3,
+      type: 'ai',
+      title: 'Recomandare AI',
+      message: 'Condițiile meteo sunt optime pentru tratamente în următoarele 3 zile',
+      date: '2024-06-04',
+      isRead: true,
+      priority: 'low'
+    }
+  ]);
+
+  const [satelliteData, setSatelliteData] = useState<SatelliteData[]>([]);
+
+  const [workHistory, setWorkHistory] = useState<WorkHistory[]>([
+    {
+      id: 1,
+      parcelId: 1,
+      workType: 'Arătură',
+      date: '2024-03-15',
+      description: 'Arătură de primăvară cu tractorul',
+      worker: 'Ion Popescu',
+      cost: 500
+    },
+    {
+      id: 2,
+      parcelId: 1,
+      workType: 'Însămânțare',
+      date: '2024-04-10',
+      description: 'Însămânțare grâu de toamnă',
+      worker: 'Maria Ionescu',
+      cost: 800
+    }
+  ]);
+
+  const [ownerHistory, setOwnerHistory] = useState<OwnerHistory[]>([
+    {
+      id: 1,
+      parcelId: 1,
+      ownerName: 'Ion Popescu',
+      startDate: '2020-01-01',
+      ownershipType: 'Proprietar',
+      notes: 'Cumpărat prin succesiune'
+    },
+    {
+      id: 2,
+      parcelId: 2,
+      ownerName: 'Ferma AgroMind SRL',
+      startDate: '2021-06-15',
+      ownershipType: 'Închiriere',
+      notes: 'Contract închiriere pe 10 ani'
+    }
+  ]);
+
+  const [propertyDocuments, setPropertyDocuments] = useState<PropertyDocument[]>([
+    {
+      id: 1,
+      parcelId: 1,
+      type: 'Certificat de Atestare Fiscală',
+      name: 'CF Parcela Nord',
+      fileName: 'cf_parcela_nord.pdf',
+      uploadDate: '2024-01-15',
+      issueDate: '2024-01-10',
+      validUntil: '2025-01-10',
+      status: 'complete',
+      notes: 'Document valabil pentru APIA'
+    },
+    {
+      id: 2,
+      parcelId: 2,
+      type: 'Contract închiriere',
+      name: 'Contract Câmp Sud',
+      fileName: 'contract_camp_sud.pdf',
+      uploadDate: '2024-02-01',
+      issueDate: '2021-06-15',
+      validUntil: '2031-06-15',
+      status: 'verified'
+    }
+  ]);
+
   const [fieldPhotos, setFieldPhotos] = useState<FieldPhoto[]>([]);
-  const [financialTransactions, setFinancialTransactions] = useState<Transaction[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [user, setUser] = useState<{ id: string; email: string; first_name?: string; last_name?: string; } | null>(null);
-  const [propertyDocuments, setPropertyDocuments] = useState<PropertyDocument[]>([]);
 
-  useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+  const [user, setUser] = useState<User>({
+    name: 'Ion Popescu',
+    email: 'ion.popescu@email.com',
+    phone: '+40 123 456 789',
+    location: 'Buzău, România',
+    farmName: 'Ferma AgroMind'
+  });
 
-      if (session) {
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+  const [currentSeason, setCurrentSeason] = useState(getCurrentSeason());
 
-        if (profileError) {
-          console.error("Error fetching profile:", profileError);
-          toast({ title: "Eroare", description: "Failed to fetch user profile.", variant: "destructive" });
-        } else {
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            first_name: profile?.first_name,
-            last_name: profile?.last_name
-          });
-        }
-      }
-    };
-
-    getSession();
-
-    supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          first_name: profile?.first_name,
-          last_name: profile?.last_name
-        });
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-      }
-    });
-  }, [toast]);
-
-  useEffect(() => {
-    const loadData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const userId = user.id;
-
-      try {
-        const { data: fieldsData, error: fieldsError } = await supabase
-          .from('fields')
-          .select('*')
-          .eq('user_id', userId);
-
-        if (fieldsError) {
-          console.error("Error fetching fields:", fieldsError);
-          toast({ title: "Eroare", description: "Failed to load fields.", variant: "destructive" });
-        } else {
-          setFields(fieldsData || []);
-        }
-
-        const { data: tasksData, error: tasksError } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('user_id', userId);
-
-        if (tasksError) {
-          console.error("Error fetching tasks:", tasksError);
-          toast({ title: "Eroare", description: "Failed to load tasks.", variant: "destructive" });
-        } else {
-          setTasks(tasksData || []);
-        }
-
-        const { data: photosData, error: photosError } = await supabase
-          .from('field_photos')
-          .select('*')
-          .eq('user_id', userId);
-
-        if (photosError) {
-          console.error("Error fetching field photos:", photosError);
-        } else {
-          setFieldPhotos(photosData || []);
-        }
-
-        const { data: transactionsData, error: transactionsError } = await supabase
-          .from('financial_transactions')
-          .select('*')
-          .eq('user_id', userId);
-
-        if (transactionsError) {
-          console.error("Error fetching financial transactions:", transactionsError);
-        } else {
-          setFinancialTransactions(transactionsData || []);
-        }
-
-        const { data: notificationsData, error: notificationsError } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('user_id', userId);
-
-        if (notificationsError) {
-          console.error("Error fetching notifications:", notificationsError);
-        } else {
-          const formattedNotifications = (notificationsData || []).map(notification => ({
-            ...notification,
-            read: notification.is_read || false,
-          }));
-          setNotifications(formattedNotifications);
-        }
-
-        const { data: inventoryData, error: inventoryError } = await supabase
-          .from('inventory')
-          .select('*')
-          .eq('user_id', userId);
-
-        if (inventoryError) {
-          console.error("Error fetching inventory:", inventoryError);
-        } else {
-          const formattedInventory = (inventoryData || []).map(item => ({
-            ...item,
-            purchase_date: '',
-            expiry_date: item.expiration_date || '',
-            cost_per_unit: 0,
-            notes: '',
-          }));
-          setInventory(formattedInventory);
-        }
-
-        const { data: propertyDocumentsData, error: propertyDocumentsError } = await supabase
-          .from('property_documents')
-          .select('*')
-          .eq('user_id', userId);
-
-        if (propertyDocumentsError) {
-          console.error("Error fetching property documents:", propertyDocumentsError);
-        } else {
-          setPropertyDocuments(propertyDocumentsData || []);
-        }
-
-      } catch (error: any) {
-        console.error("Error loading data:", error);
-        toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      }
-    };
-
-    loadData();
-  }, [toast]);
-
-  // Field methods
-  const addField = async (fieldData: Omit<Field, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('fields')
-      .insert([{ ...fieldData, user_id: user.id }])
-      .select()
-      .single();
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    setFields(prev => [...prev, data]);
+  const addField = (field: Omit<Field, 'id'>) => {
+    const newField = { ...field, id: Date.now() };
+    setFields(prev => [...prev, newField]);
   };
 
-  const updateField = async (id: string, updates: Partial<Field>) => {
-    const { error } = await supabase
-      .from('fields')
-      .update(updates)
-      .eq('id', id);
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    setFields(prev => prev.map(field => field.id === id ? { ...field, ...updates } : field));
+  const updateField = (id: number, fieldUpdate: Partial<Field>) => {
+    setFields(prev => prev.map(field => field.id === id ? { ...field, ...fieldUpdate } : field));
   };
 
-  const deleteField = async (id: string) => {
-    const { error } = await supabase
-      .from('fields')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
+  const deleteField = (id: number) => {
     setFields(prev => prev.filter(field => field.id !== id));
   };
 
-  // Task methods
-  const addTask = async (taskData: Omit<Task, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('tasks')
-      .insert({ ...taskData, user_id: user.id })
-      .select()
-      .single();
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    setTasks(prev => [...prev, data]);
+  // New weather-related functions
+  const updateFieldWeather = (fieldId: number, weatherData: WeatherData) => {
+    setFields(prev => prev.map(field => 
+      field.id === fieldId ? { ...field, weather: weatherData } : field
+    ));
   };
 
-  const updateTask = async (id: string, updates: Partial<Task>) => {
-    const { error } = await supabase
-      .from('tasks')
-      .update(updates)
-      .eq('id', id);
+  const fetchWeatherData = async (fieldId: number) => {
+    // This function will be called by the weather API integration
+    // For now, it's a placeholder that simulates fetching weather data
+    const field = fields.find(f => f.id === fieldId);
+    if (!field || !field.coordinates) return;
 
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
+    try {
+      // Future implementation will call weather API here
+      // Example: const response = await fetch(`/api/weather?lat=${field.coordinates.lat}&lng=${field.coordinates.lng}`);
+      
+      // Simulate API call for now
+      console.log(`Fetching weather for field ${fieldId} at coordinates ${field.coordinates.lat}, ${field.coordinates.lng}`);
+      
+      // Add notification about weather update
+      const newNotification: Notification = {
+        id: Date.now(),
+        type: 'weather',
+        title: 'Date meteo actualizate',
+        message: `Informațiile meteo pentru ${field.name} au fost actualizate`,
+        date: new Date().toISOString().split('T')[0],
+        isRead: false,
+        priority: 'low'
+      };
+      setNotifications(prev => [newNotification, ...prev]);
+      
+    } catch (error) {
+      console.error('Error fetching weather data:', error);
     }
-
-    setTasks(prev => prev.map(task => task.id === id ? { ...task, ...updates } : task));
   };
 
-  const deleteTask = async (id: string) => {
-    const { error } = await supabase
-      .from('tasks')
-      .delete()
-      .eq('id', id);
+  const addTask = (task: Omit<Task, 'id'>) => {
+    const newTask = { ...task, id: Date.now() };
+    setTasks(prev => [...prev, newTask]);
+  };
 
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
+  const updateTask = (id: number, taskUpdate: Partial<Task>) => {
+    setTasks(prev => prev.map(task => task.id === id ? { ...task, ...taskUpdate } : task));
+  };
 
+  const deleteTask = (id: number) => {
     setTasks(prev => prev.filter(task => task.id !== id));
   };
 
-  // Field Photo methods
-  const addFieldPhoto = async (photoData: Omit<FieldPhoto, 'id' | 'user_id' | 'created_at'>) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('field_photos')
-      .insert([{ ...photoData, user_id: user.id }])
-      .select()
-      .single();
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    setFieldPhotos(prev => [...prev, data]);
+  const addTransaction = (transaction: Omit<Transaction, 'id'>) => {
+    const newTransaction = { ...transaction, id: Date.now() };
+    setTransactions(prev => [...prev, newTransaction]);
   };
 
-  // Transaction methods
-  const addTransaction = async (transactionData: Omit<Transaction, 'id' | 'user_id' | 'created_at'>) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('financial_transactions')
-      .insert([{ ...transactionData, user_id: user.id }])
-      .select()
-      .single();
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    setFinancialTransactions(prev => [...prev, data]);
+  const updateTransaction = (id: number, transactionUpdate: Partial<Transaction>) => {
+    setTransactions(prev => prev.map(transaction => 
+      transaction.id === id ? { ...transaction, ...transactionUpdate } : transaction
+    ));
   };
 
-  const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
-    const { error } = await supabase
-      .from('financial_transactions')
-      .update(updates)
-      .eq('id', id);
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    setFinancialTransactions(prev => prev.map(transaction => transaction.id === id ? { ...transaction, ...updates } : transaction));
+  const deleteTransaction = (id: number) => {
+    setTransactions(prev => prev.filter(transaction => transaction.id !== id));
   };
 
-  const deleteTransaction = async (id: string) => {
-    const { error } = await supabase
-      .from('financial_transactions')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    setFinancialTransactions(prev => prev.filter(transaction => transaction.id !== id));
+  const addInventoryItem = (item: Omit<InventoryItem, 'id'>) => {
+    const newItem = { ...item, id: Date.now() };
+    setInventory(prev => [...prev, newItem]);
   };
 
-  // Property Documents methods
-  const addPropertyDocument = async (docData: Omit<PropertyDocument, 'id' | 'user_id' | 'created_at'>) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('property_documents')
-      .insert([{ ...docData, user_id: user.id }])
-      .select()
-      .single();
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    setPropertyDocuments(prev => [...prev, data]);
+  const updateInventoryItem = (id: number, itemUpdate: Partial<InventoryItem>) => {
+    setInventory(prev => prev.map(item => item.id === id ? { ...item, ...itemUpdate } : item));
   };
 
-  const updatePropertyDocument = async (id: string, updates: Partial<PropertyDocument>) => {
-    const { error } = await supabase
-      .from('property_documents')
-      .update(updates)
-      .eq('id', id);
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    setPropertyDocuments(prev => prev.map(doc => doc.id === id ? { ...doc, ...updates } : doc));
-  };
-
-  const deletePropertyDocument = async (id: string) => {
-    const { error } = await supabase
-      .from('property_documents')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    setPropertyDocuments(prev => prev.filter(doc => doc.id !== id));
-  };
-
-  // Notification methods
-  const addNotification = async (notificationData: Omit<Notification, 'id' | 'user_id' | 'created_at'>) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('notifications')
-      .insert([{ 
-        title: notificationData.title,
-        message: notificationData.message,
-        type: notificationData.type,
-        priority: notificationData.priority,
-        is_read: notificationData.read,
-        read_at: notificationData.read_at,
-        user_id: user.id
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    const formattedNotification = {
-      ...data,
-      read: data.is_read || false,
-    };
-    setNotifications(prev => [...prev, formattedNotification]);
-  };
-
-  const markNotificationAsRead = async (id: string) => {
-    const { error } = await supabase
-      .from('notifications')
-      .update({ is_read: true })
-      .eq('id', id);
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    setNotifications(prev => prev.map(notification => notification.id === id ? { ...notification, read: true, is_read: true } : notification));
-  };
-
-  // Inventory methods
-  const addInventoryItem = async (itemData: Omit<InventoryItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const dbItem = {
-      name: itemData.name,
-      type: itemData.type,
-      quantity: itemData.quantity,
-      unit: itemData.unit || '',
-      condition: itemData.condition || '',
-      location: itemData.location || '',
-      last_used: itemData.last_used || null,
-      next_maintenance: itemData.next_maintenance || null,
-      expiration_date: itemData.expiration_date || null,
-      stock_level: (itemData.stock_level || 'normal') as 'low' | 'normal' | 'high',
-      purchase_cost: itemData.purchase_cost || 0,
-      current_value: itemData.current_value || 0,
-      purpose: itemData.purpose || '',
-      user_id: user.id
-    };
-
-    const { data, error } = await supabase
-      .from('inventory')
-      .insert([dbItem])
-      .select()
-      .single();
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    setInventory(prev => [...prev, data]);
-  };
-
-  const updateInventoryItem = async (id: string, updates: Partial<InventoryItem>) => {
-    const dbUpdates: any = { ...updates };
-    if (updates.stock_level) {
-      dbUpdates.stock_level = updates.stock_level as 'low' | 'normal' | 'high';
-    }
-
-    const { error } = await supabase
-      .from('inventory')
-      .update(dbUpdates)
-      .eq('id', id);
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
-    setInventory(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
-  };
-
-  const deleteInventoryItem = async (id: string) => {
-    const { error } = await supabase
-      .from('inventory')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      toast({ title: "Eroare", description: error.message, variant: "destructive" });
-      return;
-    }
-
+  const deleteInventoryItem = (id: number) => {
     setInventory(prev => prev.filter(item => item.id !== id));
   };
 
-  // APIA Document Generator
-  const generateAPIADocument = (templateId: string, data: any) => {
-    const currentDate = new Date().toISOString().split('T')[0];
-    
+  const addWorkHistory = (work: Omit<WorkHistory, 'id'>) => {
+    const newWork = { ...work, id: Date.now() };
+    setWorkHistory(prev => [...prev, newWork]);
+  };
+
+  const updateWorkHistory = (id: number, workUpdate: Partial<WorkHistory>) => {
+    setWorkHistory(prev => prev.map(work => work.id === id ? { ...work, ...workUpdate } : work));
+  };
+
+  const deleteWorkHistory = (id: number) => {
+    setWorkHistory(prev => prev.filter(work => work.id !== id));
+  };
+
+  const addOwnerHistory = (owner: Omit<OwnerHistory, 'id'>) => {
+    const newOwner = { ...owner, id: Date.now() };
+    setOwnerHistory(prev => [...prev, newOwner]);
+  };
+
+  const updateOwnerHistory = (id: number, ownerUpdate: Partial<OwnerHistory>) => {
+    setOwnerHistory(prev => prev.map(owner => owner.id === id ? { ...owner, ...ownerUpdate } : owner));
+  };
+
+  const deleteOwnerHistory = (id: number) => {
+    setOwnerHistory(prev => prev.filter(owner => owner.id !== id));
+  };
+
+  const addPropertyDocument = (doc: Omit<PropertyDocument, 'id'>) => {
+    const newDoc = { ...doc, id: Date.now() };
+    setPropertyDocuments(prev => [...prev, newDoc]);
+  };
+
+  const updatePropertyDocument = (id: number, docUpdate: Partial<PropertyDocument>) => {
+    setPropertyDocuments(prev => prev.map(doc => doc.id === id ? { ...doc, ...docUpdate } : doc));
+  };
+
+  const deletePropertyDocument = (id: number) => {
+    setPropertyDocuments(prev => prev.filter(doc => doc.id !== id));
+  };
+
+  const addFieldPhoto = (photo: Omit<FieldPhoto, 'id'>) => {
+    const newPhoto = { ...photo, id: Date.now() };
+    setFieldPhotos(prev => [...prev, newPhoto]);
+  };
+
+  const markNotificationAsRead = (id: number) => {
+    setNotifications(prev => prev.map(notification => 
+      notification.id === id ? { ...notification, isRead: true } : notification
+    ));
+  };
+
+  const updateUser = (userData: Partial<User>) => {
+    setUser(prev => ({ ...prev, ...userData }));
+  };
+
+  const generateAPIADocument = (type: string, data: any) => {
     const baseData = {
-      documentType: templateId,
-      farmerCode: user?.id?.substring(0, 8) || 'FARM001',
-      farmName: `Ferma ${user?.first_name || 'Agricola'}`,
-      location: 'România',
-      generatedDate: currentDate,
+      farmerCode: user.farmName.substring(0, 8).toUpperCase(),
+      farmName: user.farmName,
+      location: user.location,
+      generatedDate: new Date().toLocaleDateString('ro-RO'),
+      ...data
     };
 
-    if (templateId === 'apia-cereale') {
-      const cerealFields = fields.filter(f => 
-        ['grau', 'porumb', 'orz', 'ovaz', 'secara'].includes(f.crop?.toLowerCase() || '')
-      );
-      
-      return {
-        ...baseData,
-        parcels: cerealFields.map(field => ({
-          name: field.name,
-          parcel_code: field.parcel_code,
-          crop: field.crop,
-          size: field.size,
-          planting_date: field.planting_date,
-          costs: field.costs || 0
-        })),
-        totalArea: cerealFields.reduce((sum, f) => sum + f.size, 0),
-        estimatedProduction: cerealFields.reduce((sum, f) => sum + (f.size * 4), 0)
-      };
+    switch (type) {
+      case 'apia-cereale':
+        return {
+          documentType: 'APIA - Cerere Cereale',
+          ...baseData,
+          parcels: fields.filter(f => ['Grâu', 'Orz', 'Ovăz'].includes(f.crop.split(' ')[0])),
+          totalArea: fields.reduce((sum, field) => sum + field.size, 0),
+          estimatedProduction: fields.reduce((sum, field) => sum + (field.size * 4.5), 0)
+        };
+      case 'apia-eco-scheme':
+        return {
+          documentType: 'APIA - Eco-scheme',
+          ...baseData,
+          ecoMeasures: ['Rotația culturilor', 'Zone tampon', 'Păstrarea vegetației permanente'],
+          parcels: fields,
+          totalEcoArea: fields.reduce((sum, field) => sum + field.size, 0)
+        };
+      case 'afir-modernizare':
+        return {
+          documentType: 'AFIR - Modernizare Exploatații',
+          ...baseData,
+          investmentType: 'Modernizare echipamente agricole',
+          requestedAmount: 150000,
+          cofinancing: 75000,
+          timeline: '24 luni',
+          equipment: inventory.filter(item => item.type === 'equipment')
+        };
+      default:
+        return baseData;
     }
-
-    return baseData;
   };
 
-  // Report methods
-  const generateReport = async (type: string, data: any) => {
-    toast({ title: "Raport generat", description: `Raportul ${type} a fost generat cu succes.` });
+  const fetchSatelliteData = (parcelId: number) => {
+    // Simulate satellite data fetch
+    setTimeout(() => {
+      const mockData: SatelliteData = {
+        parcelId,
+        currentImage: `/api/satellite/current/${parcelId}`,
+        previousImage: `/api/satellite/previous/${parcelId}`,
+        changeDetected: Math.random() > 0.7,
+        changePercentage: Math.random() * 15,
+        lastUpdated: new Date().toISOString()
+      };
+
+      setSatelliteData(prev => [...prev.filter(d => d.parcelId !== parcelId), mockData]);
+
+      if (mockData.changeDetected) {
+        const field = fields.find(f => f.id === parcelId);
+        const newNotification: Notification = {
+          id: Date.now(),
+          type: 'ai',
+          title: 'Modificare teren detectată',
+          message: `Modificare detectată pe ${field?.name} (${field?.parcelCode}) în ultimele 7 zile - ${mockData.changePercentage.toFixed(1)}% din suprafață`,
+          date: new Date().toISOString().split('T')[0],
+          isRead: false,
+          priority: 'high'
+        };
+        setNotifications(prev => [newNotification, ...prev]);
+      }
+    }, 2000);
   };
 
-  const currentSeason = {
-    name: 'Sezonul 2024',
-    startDate: '2024-03-01',
-    endDate: '2024-11-30'
+  const generateReport = (type: string) => {
+    const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+    const profit = totalIncome - totalExpenses;
+    const roi = totalExpenses > 0 ? ((profit / totalExpenses) * 100) : 0;
+
+    switch (type) {
+      case 'productivity':
+        return {
+          totalFields: fields.length,
+          totalArea: fields.reduce((sum, field) => sum + field.size, 0),
+          avgProductivity: 8.5,
+          topPerformingField: fields.reduce((max, field) => field.size > max.size ? field : max, fields[0])
+        };
+      case 'financial':
+        return {
+          totalIncome,
+          totalExpenses,
+          profit,
+          roi: roi.toFixed(1),
+          profitMargin: totalIncome > 0 ? ((profit / totalIncome) * 100).toFixed(1) : 0
+        };
+      case 'seasonal':
+        return {
+          currentSeason: 'Vară',
+          completedTasks: tasks.filter(t => t.status === 'completed').length,
+          pendingTasks: tasks.filter(t => t.status === 'pending').length,
+          seasonalRecommendations: ['Irigare frecventă', 'Monitorizare dăunători', 'Pregătire recoltare']
+        };
+      default:
+        return {};
+    }
   };
 
-  const value: AppContextType = {
-    fields,
-    tasks,
-    fieldPhotos,
-    financialTransactions,
-    transactions: financialTransactions,
-    notifications,
-    inventory,
-    user,
-    propertyDocuments,
-    addField,
-    updateField,
-    deleteField,
-    addTask,
-    updateTask,
-    deleteTask,
-    addFieldPhoto,
-    addTransaction,
-    updateTransaction,
-    deleteTransaction,
-    addPropertyDocument,
-    updatePropertyDocument,
-    deletePropertyDocument,
-    addNotification,
-    markNotificationAsRead,
-    addInventoryItem,
-    updateInventoryItem,
-    deleteInventoryItem,
-    generateAPIADocument,
-    generateReport,
-    currentSeason,
+  const addNotification = (notification: Omit<Notification, 'id'>) => {
+    const newNotification = { ...notification, id: Date.now() };
+    setNotifications(prev => [newNotification, ...prev]);
   };
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return (
+    <AppContext.Provider value={{
+      fields,
+      tasks,
+      transactions,
+      inventory,
+      notifications,
+      satelliteData,
+      workHistory,
+      ownerHistory,
+      propertyDocuments,
+      fieldPhotos,
+      user,
+      currentSeason,
+      addField,
+      updateField,
+      deleteField,
+      addTask,
+      updateTask,
+      deleteTask,
+      addTransaction,
+      updateTransaction,
+      deleteTransaction,
+      addInventoryItem,
+      updateInventoryItem,
+      deleteInventoryItem,
+      addWorkHistory,
+      updateWorkHistory,
+      deleteWorkHistory,
+      addOwnerHistory,
+      updateOwnerHistory,
+      deleteOwnerHistory,
+      addPropertyDocument,
+      updatePropertyDocument,
+      deletePropertyDocument,
+      addFieldPhoto,
+      markNotificationAsRead,
+      updateUser,
+      generateReport,
+      generateAPIADocument,
+      fetchSatelliteData,
+      addNotification,
+      updateFieldWeather,
+      fetchWeatherData
+    }}>
+      {children}
+    </AppContext.Provider>
+  );
 };
 
-export default AppContext;
+export default AppProvider;
