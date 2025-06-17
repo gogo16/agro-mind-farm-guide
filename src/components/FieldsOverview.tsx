@@ -64,16 +64,13 @@ const FieldsOverview = () => {
     <Card className="bg-white border-green-200">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-green-800">Terenurile Mele</CardTitle>
-        <AddFieldDialog 
-          isOpen={isAddingField} 
-          onOpenChange={setIsAddingField}
-          trigger={
-            <Button className="bg-green-600 hover:bg-green-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Adaugă teren
-            </Button>
-          }
-        />
+        <Button 
+          onClick={() => setIsAddingField(true)}
+          className="bg-green-600 hover:bg-green-700"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Adaugă teren
+        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {fields.length === 0 ? (
@@ -178,6 +175,11 @@ const FieldsOverview = () => {
             </div>
           ))
         )}
+
+        <AddFieldDialog 
+          isOpen={isAddingField} 
+          onOpenChange={setIsAddingField}
+        />
 
         {editingField && (
           <EditFieldDialog

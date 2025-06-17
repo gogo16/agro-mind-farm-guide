@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,105 +8,75 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAppContext } from '@/contexts/AppContext';
+import { useFields } from '@/hooks/useFields';
 
 interface Field {
-  id: number;
-  name: string;
-  parcelCode: string;
-  size: number;
-  crop: string;
-  status: string;
-  location?: string;
-  coordinates?: { lat: number; lng: number } | Array<{ lat: number; lng: number }>;
-  coordinatesType?: string;
-  plantingDate?: string;
-  harvestDate?: string;
-  workType?: string;
-  costs?: number;
-  inputs?: string;
-  roi?: number;
-  variety?: string;
-  color?: string;
+  id: string;
+  user_id: string;
+  nume_teren: string;
+  cod_parcela: string;
+  suprafata: number;
+  cultura?: string;
+  varietate?: string;
+  data_insamantare?: string;
+  data_recoltare?: string;
+  culoare?: string;
+  ingrasaminte_folosite?: string;
+  coordonate_gps?: { lat: number; lng: number } | null;
+  created_at: string;
+  updated_at: string;
+  data_stergerii?: string;
+  istoric_activitati?: any[];
 }
 
 interface EditFieldDialogProps {
   field: Field;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  trigger: React.ReactNode;
 }
 
-const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDialogProps) => {
+const EditFieldDialog = ({ field, isOpen, onOpenChange }: EditFieldDialogProps) => {
   const { toast } = useToast();
-  const { updateField } = useAppContext();
+  const { updateField } = useFields();
   
   // Format coordonatele pentru afișare
-  const formatCoordinatesForDisplay = (coordinates: any, type?: string) => {
+  const formatCoordinatesForDisplay = (coordinates?: { lat: number; lng: number } | null) => {
     if (!coordinates) return '';
-    
-    if (Array.isArray(coordinates)) {
-      return coordinates.map(coord => `${coord.lat}, ${coord.lng}`).join('\n');
-    } else {
-      return `${coordinates.lat}, ${coordinates.lng}`;
-    }
+    return `${coordinates.lat}, ${coordinates.lng}`;
   };
 
   const [editedField, setEditedField] = useState({
-    name: field.name,
-    parcelCode: field.parcelCode,
-    size: field.size.toString(),
-    crop: field.crop,
-    variety: field.variety || '',
-    plantingDate: field.plantingDate || '',
-    harvestDate: field.harvestDate || '',
-    workType: field.workType || '',
-    costs: field.costs?.toString() || '',
-    inputs: field.inputs || '',
-    coords: formatCoordinatesForDisplay(field.coordinates, field.coordinatesType),
-    color: field.color || '#22c55e'
+    nume_teren: field.nume_teren,
+    cod_parcela: field.cod_parcela,
+    suprafata: field.suprafata.toString(),
+    cultura: field.cultura || '',
+    varietate: field.varietate || '',
+    data_insamantare: field.data_insamantare || '',
+    data_recoltare: field.data_recoltare || '',
+    ingrasaminte_folosite: field.ingrasaminte_folosite || '',
+    coords: formatCoordinatesForDisplay(field.coordonate_gps),
+    culoare: field.culoare || '#22c55e'
   });
 
   const validateCoordinates = (coordsString: string) => {
     if (!coordsString.trim()) return { isValid: true, coordinates: undefined };
     
     try {
-      const coordPairs = coordsString.split(/[\n;]/).map(line => line.trim()).filter(line => line);
-      
-      if (coordPairs.length === 1) {
-        const [lat, lng] = coordPairs[0].split(',').map(coord => parseFloat(coord.trim()));
-        if (isNaN(lat) || isNaN(lng)) {
-          return { isValid: false, error: 'Coordonatele trebuie să fie în format: latitudine,longitudine' };
-        }
-        return { 
-          isValid: true, 
-          coordinates: { lat, lng },
-          type: 'point'
-        };
-      } else if (coordPairs.length >= 3) {
-        const coordinates = [];
-        for (const pair of coordPairs) {
-          const [lat, lng] = pair.split(',').map(coord => parseFloat(coord.trim()));
-          if (isNaN(lat) || isNaN(lng)) {
-            return { isValid: false, error: 'Toate coordonatele trebuie să fie în format: latitudine,longitudine' };
-          }
-          coordinates.push({ lat, lng });
-        }
-        return { 
-          isValid: true, 
-          coordinates: coordinates,
-          type: 'polygon'
-        };
-      } else {
-        return { isValid: false, error: 'Pentru un poligon sunt necesare minimum 3 puncte' };
+      const [lat, lng] = coordsString.split(',').map(coord => parseFloat(coord.trim()));
+      if (isNaN(lat) || isNaN(lng)) {
+        return { isValid: false, error: 'Coordonatele trebuie să fie în format: latitudine,longitudine' };
       }
+      return { 
+        isValid: true, 
+        coordinates: { lat, lng }
+      };
     } catch (error) {
       return { isValid: false, error: 'Format invalid de coordonate' };
     }
   };
 
-  const handleSave = () => {
-    if (!editedField.name || !editedField.parcelCode || !editedField.size) {
+  const handleSave = async () => {
+    if (!editedField.nume_teren || !editedField.cod_parcela || !editedField.suprafata) {
       toast({
         title: "Eroare",
         description: "Te rugăm să completezi toate câmpurile obligatorii.",
@@ -125,69 +95,69 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
       return;
     }
 
-    updateField(field.id, {
-      name: editedField.name,
-      parcelCode: editedField.parcelCode,
-      size: parseFloat(editedField.size),
-      crop: editedField.crop || 'Necunoscută',
-      coordinates: coordValidation.coordinates,
-      plantingDate: editedField.plantingDate,
-      harvestDate: editedField.harvestDate,
-      workType: editedField.workType,
-      costs: editedField.costs ? parseFloat(editedField.costs) : undefined,
-      inputs: editedField.inputs,
-      color: editedField.color
-    });
+    try {
+      await updateField(field.id, {
+        nume_teren: editedField.nume_teren,
+        cod_parcela: editedField.cod_parcela,
+        suprafata: parseFloat(editedField.suprafata),
+        cultura: editedField.cultura || undefined,
+        varietate: editedField.varietate || undefined,
+        coordonate_gps: coordValidation.coordinates,
+        data_insamantare: editedField.data_insamantare || undefined,
+        data_recoltare: editedField.data_recoltare || undefined,
+        ingrasaminte_folosite: editedField.ingrasaminte_folosite || undefined,
+        culoare: editedField.culoare
+      });
 
-    toast({
-      title: "Succes",
-      description: `Terenul "${editedField.name}" a fost actualizat cu succes.`,
-    });
-    
-    onOpenChange(false);
+      toast({
+        title: "Succes",
+        description: `Terenul "${editedField.nume_teren}" a fost actualizat cu succes.`,
+      });
+      
+      onOpenChange(false);
+    } catch (error) {
+      // Error is already handled in useFields hook
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        {trigger}
-      </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Editează teren: {field.name}</DialogTitle>
+          <DialogTitle>Editează teren: {field.nume_teren}</DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="name">Nume teren *</Label>
+            <Label htmlFor="nume_teren">Nume teren *</Label>
             <Input
-              id="name"
-              value={editedField.name}
-              onChange={(e) => setEditedField({...editedField, name: e.target.value})}
+              id="nume_teren"
+              value={editedField.nume_teren}
+              onChange={(e) => setEditedField({...editedField, nume_teren: e.target.value})}
               placeholder="ex: Parcela Vest"
             />
           </div>
           <div>
-            <Label htmlFor="parcelCode">Cod parcelă *</Label>
+            <Label htmlFor="cod_parcela">Cod parcelă *</Label>
             <Input
-              id="parcelCode"
-              value={editedField.parcelCode}
-              onChange={(e) => setEditedField({...editedField, parcelCode: e.target.value})}
+              id="cod_parcela"
+              value={editedField.cod_parcela}
+              onChange={(e) => setEditedField({...editedField, cod_parcela: e.target.value})}
               placeholder="ex: PV-001"
             />
           </div>
           <div>
-            <Label htmlFor="size">Suprafață (ha) *</Label>
+            <Label htmlFor="suprafata">Suprafață (ha) *</Label>
             <Input
-              id="size"
+              id="suprafata"
               type="number"
-              value={editedField.size}
-              onChange={(e) => setEditedField({...editedField, size: e.target.value})}
+              value={editedField.suprafata}
+              onChange={(e) => setEditedField({...editedField, suprafata: e.target.value})}
               placeholder="ex: 10.5"
             />
           </div>
           <div>
-            <Label htmlFor="crop">Cultură</Label>
-            <Select value={editedField.crop} onValueChange={(value) => setEditedField({...editedField, crop: value})}>
+            <Label htmlFor="cultura">Cultură</Label>
+            <Select value={editedField.cultura} onValueChange={(value) => setEditedField({...editedField, cultura: value})}>
               <SelectTrigger>
                 <SelectValue placeholder="Selectează cultura" />
               </SelectTrigger>
@@ -203,60 +173,35 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
             </Select>
           </div>
           <div>
-            <Label htmlFor="variety">Varietate</Label>
+            <Label htmlFor="varietate">Varietate</Label>
             <Input
-              id="variety"
-              value={editedField.variety}
-              onChange={(e) => setEditedField({...editedField, variety: e.target.value})}
+              id="varietate"
+              value={editedField.varietate}
+              onChange={(e) => setEditedField({...editedField, varietate: e.target.value})}
               placeholder="ex: Antonius, Glosa"
             />
           </div>
           <div>
-            <Label htmlFor="plantingDate">Data însămânțare</Label>
+            <Label htmlFor="data_insamantare">Data însămânțare</Label>
             <Input
-              id="plantingDate"
+              id="data_insamantare"
               type="date"
-              value={editedField.plantingDate}
-              onChange={(e) => setEditedField({...editedField, plantingDate: e.target.value})}
+              value={editedField.data_insamantare}
+              onChange={(e) => setEditedField({...editedField, data_insamantare: e.target.value})}
             />
           </div>
           <div>
-            <Label htmlFor="harvestDate">Data recoltare</Label>
+            <Label htmlFor="data_recoltare">Data recoltare</Label>
             <Input
-              id="harvestDate"
+              id="data_recoltare"
               type="date"
-              value={editedField.harvestDate}
-              onChange={(e) => setEditedField({...editedField, harvestDate: e.target.value})}
+              value={editedField.data_recoltare}
+              onChange={(e) => setEditedField({...editedField, data_recoltare: e.target.value})}
             />
           </div>
           <div>
-            <Label htmlFor="workType">Tip lucrare</Label>
-            <Select value={editedField.workType} onValueChange={(value) => setEditedField({...editedField, workType: value})}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selectează tipul de lucrare" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Arătură conventională">Arătură conventională</SelectItem>
-                <SelectItem value="Cultivare minimă">Cultivare minimă</SelectItem>
-                <SelectItem value="No-till">No-till</SelectItem>
-                <SelectItem value="Disc">Disc</SelectItem>
-                <SelectItem value="Combinatorul">Combinatorul</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="costs">Costuri (RON)</Label>
-            <Input
-              id="costs"
-              type="number"
-              value={editedField.costs}
-              onChange={(e) => setEditedField({...editedField, costs: e.target.value})}
-              placeholder="ex: 2500"
-            />
-          </div>
-          <div>
-            <Label htmlFor="color">Culoare pe hartă</Label>
-            <Select value={editedField.color} onValueChange={(value) => setEditedField({...editedField, color: value})}>
+            <Label htmlFor="culoare">Culoare pe hartă</Label>
+            <Select value={editedField.culoare} onValueChange={(value) => setEditedField({...editedField, culoare: value})}>
               <SelectTrigger>
                 <SelectValue placeholder="Selectează culoarea" />
               </SelectTrigger>
@@ -271,11 +216,11 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
             </Select>
           </div>
           <div className="col-span-2">
-            <Label htmlFor="inputs">Îngrășăminte folosite</Label>
+            <Label htmlFor="ingrasaminte_folosite">Îngrășăminte folosite</Label>
             <Input
-              id="inputs"
-              value={editedField.inputs}
-              onChange={(e) => setEditedField({...editedField, inputs: e.target.value})}
+              id="ingrasaminte_folosite"
+              value={editedField.ingrasaminte_folosite}
+              onChange={(e) => setEditedField({...editedField, ingrasaminte_folosite: e.target.value})}
               placeholder="ex: NPK 16:16:16, Uree"
             />
           </div>
@@ -284,15 +229,14 @@ const EditFieldDialog = ({ field, isOpen, onOpenChange, trigger }: EditFieldDial
               <MapPin className="h-4 w-4" />
               <span>Coordonate GPS</span>
             </Label>
-            <Textarea
+            <Input
               id="coords"
               value={editedField.coords}
               onChange={(e) => setEditedField({...editedField, coords: e.target.value})}
-              placeholder="Pentru un punct: 45.7489, 21.2087&#10;Pentru un poligon (min. 3 puncte):&#10;45.7489, 21.2087&#10;45.7490, 21.2088&#10;45.7491, 21.2089"
-              className="min-h-[80px]"
+              placeholder="Format: latitudine,longitudine (ex: 45.7489, 21.2087)"
             />
             <p className="text-xs text-gray-600 mt-1">
-              Format: latitudine,longitudine. Pentru poligon, introduceți minimum 3 puncte pe linii separate.
+              Format: latitudine,longitudine
             </p>
           </div>
         </div>

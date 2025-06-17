@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Json } from '@/integrations/supabase/types';
 
 interface Field {
   id: string;
@@ -15,7 +16,7 @@ interface Field {
   data_recoltare?: string;
   culoare?: string;
   ingrasaminte_folosite?: string;
-  coordonate_gps?: { lat: number; lng: number };
+  coordonate_gps?: { lat: number; lng: number } | null;
   created_at: string;
   updated_at: string;
   data_stergerii?: string;
@@ -37,6 +38,29 @@ interface CreateFieldData {
 
 interface UpdateFieldData extends Partial<CreateFieldData> {}
 
+// Helper function to transform GPS coordinates
+const transformCoordinates = (coords: Json | null): { lat: number; lng: number } | null => {
+  if (!coords) return null;
+  
+  if (typeof coords === 'object' && coords !== null && 'lat' in coords && 'lng' in coords) {
+    return {
+      lat: Number(coords.lat),
+      lng: Number(coords.lng)
+    };
+  }
+  
+  return null;
+};
+
+// Helper function to transform field data from database
+const transformFieldFromDB = (dbField: any): Field => {
+  return {
+    ...dbField,
+    coordonate_gps: transformCoordinates(dbField.coordonate_gps),
+    suprafata: Number(dbField.suprafata)
+  };
+};
+
 export const useFields = () => {
   const [fields, setFields] = useState<Field[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +80,8 @@ export const useFields = () => {
 
       if (error) throw error;
 
-      setFields(data || []);
+      const transformedFields = (data || []).map(transformFieldFromDB);
+      setFields(transformedFields);
     } catch (err: any) {
       console.error('Error fetching fields:', err);
       setError(err.message);
@@ -72,21 +97,34 @@ export const useFields = () => {
 
   const addField = async (fieldData: CreateFieldData) => {
     try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) throw userError;
+      if (!user) throw new Error('User not authenticated');
+
+      const dataToInsert = {
+        ...fieldData,
+        user_id: user.id,
+        coordonate_gps: fieldData.coordonate_gps ? JSON.stringify(fieldData.coordonate_gps) : null
+      };
+
       const { data, error } = await supabase
         .from('fields')
-        .insert([fieldData])
+        .insert([dataToInsert])
         .select()
         .single();
 
       if (error) throw error;
 
-      setFields(prev => [data, ...prev]);
+      const transformedField = transformFieldFromDB(data);
+      setFields(prev => [transformedField, ...prev]);
+      
       toast({
         title: "Succes",
         description: "Terenul a fost adăugat cu succes"
       });
 
-      return data;
+      return transformedField;
     } catch (err: any) {
       console.error('Error adding field:', err);
       toast({
@@ -100,17 +138,23 @@ export const useFields = () => {
 
   const updateField = async (id: string, updates: UpdateFieldData) => {
     try {
+      const dataToUpdate = {
+        ...updates,
+        coordonate_gps: updates.coordonate_gps ? JSON.stringify(updates.coordonate_gps) : undefined
+      };
+
       const { data, error } = await supabase
         .from('fields')
-        .update(updates)
+        .update(dataToUpdate)
         .eq('id', id)
         .select()
         .single();
 
       if (error) throw error;
 
+      const transformedField = transformFieldFromDB(data);
       setFields(prev => prev.map(field => 
-        field.id === id ? { ...field, ...data } : field
+        field.id === id ? transformedField : field
       ));
 
       toast({
@@ -118,7 +162,7 @@ export const useFields = () => {
         description: "Terenul a fost actualizat cu succes"
       });
 
-      return data;
+      return transformedField;
     } catch (err: any) {
       console.error('Error updating field:', err);
       toast({

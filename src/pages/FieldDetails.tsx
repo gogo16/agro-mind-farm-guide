@@ -87,17 +87,13 @@ const FieldDetails = () => {
               <Camera className="h-4 w-4 mr-2" />
               Adaugă poză (Temporar indisponibil)
             </Button>
-            <EditFieldDialog 
-              field={field} 
-              isOpen={isEditingField} 
-              onOpenChange={setIsEditingField}
-              trigger={
-                <Button className="bg-green-600 hover:bg-green-700">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editează
-                </Button>
-              }
-            />
+            <Button 
+              onClick={() => setIsEditingField(true)}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Editează
+            </Button>
           </div>
         </div>
 
@@ -258,6 +254,14 @@ const FieldDetails = () => {
             <SoilSection fieldId={field.id} />
           </TabsContent>
         </Tabs>
+
+        {isEditingField && (
+          <EditFieldDialog
+            field={field}
+            isOpen={isEditingField}
+            onOpenChange={setIsEditingField}
+          />
+        )}
       </div>
     </div>
   );
