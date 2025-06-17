@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -7,14 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAppContext } from '@/contexts/AppContext';
+import { useFields } from '@/hooks/useFields';
+
 const AddFieldDialog = () => {
-  const {
-    toast
-  } = useToast();
-  const {
-    addField
-  } = useAppContext();
+  const { toast } = useToast();
+  const { addField } = useFields();
   const [isAddingField, setIsAddingField] = useState(false);
   const [newField, setNewField] = useState({
     name: '',
@@ -25,19 +23,20 @@ const AddFieldDialog = () => {
     coords: '',
     plantingDate: '',
     harvestDate: '',
-    workType: '',
-    costs: '',
     inputs: '',
     color: '#22c55e'
   });
+
   const validateCoordinates = (coordsString: string) => {
     if (!coordsString.trim()) return {
       isValid: true,
       coordinates: undefined
     };
+
     try {
       // Împarte coordonatele pe linii noi sau puncte și virgule
       const coordPairs = coordsString.split(/[\n;]/).map(line => line.trim()).filter(line => line);
+      
       if (coordPairs.length === 1) {
         // Un singur punct (centru)
         const [lat, lng] = coordPairs[0].split(',').map(coord => parseFloat(coord.trim()));
@@ -49,10 +48,7 @@ const AddFieldDialog = () => {
         }
         return {
           isValid: true,
-          coordinates: {
-            lat,
-            lng
-          },
+          coordinates: { lat, lng },
           type: 'point'
         };
       } else if (coordPairs.length >= 3) {
@@ -66,10 +62,7 @@ const AddFieldDialog = () => {
               error: 'Toate coordonatele trebuie să fie în format: latitudine,longitudine'
             };
           }
-          coordinates.push({
-            lat,
-            lng
-          });
+          coordinates.push({ lat, lng });
         }
         return {
           isValid: true,
@@ -89,7 +82,8 @@ const AddFieldDialog = () => {
       };
     }
   };
-  const handleAddField = () => {
+
+  const handleAddField = async () => {
     if (!newField.name || !newField.parcelCode || !newField.size) {
       toast({
         title: "Eroare",
@@ -110,93 +104,55 @@ const AddFieldDialog = () => {
       return;
     }
 
-    // Creează obiectul teren cu toate datele necesare pentru toate secțiunile
-    const fieldData = {
-      name: newField.name,
-      parcelCode: newField.parcelCode,
-      size: parseFloat(newField.size),
-      crop: newField.crop || 'Necunoscută',
-      variety: newField.variety,
-      status: 'healthy',
-      location: newField.name,
-      coordinates: coordValidation.coordinates,
-      coordinatesType: coordValidation.type || 'point',
-      plantingDate: newField.plantingDate,
-      harvestDate: newField.harvestDate,
-      workType: newField.workType,
-      costs: newField.costs ? parseFloat(newField.costs) : undefined,
-      inputs: newField.inputs,
-      roi: 0,
-      color: newField.color,
-      // Date pentru secțiunile aplicației
-      mapData: {
-        geometry: coordValidation.coordinates,
-        type: coordValidation.type || 'point',
-        color: newField.color,
-        style: {
-          fillColor: newField.color,
-          fillOpacity: 0.3,
-          strokeColor: newField.color,
-          strokeWeight: 2
-        }
-      },
-      // Date pentru inventar
-      inventoryData: {
-        inputs: newField.inputs,
-        costs: newField.costs ? parseFloat(newField.costs) : 0,
-        workType: newField.workType
-      },
-      // Date pentru documente și APIA/AFIR
-      documentData: {
-        parcelCode: newField.parcelCode,
-        size: parseFloat(newField.size),
-        crop: newField.crop || 'Necunoscută',
-        variety: newField.variety,
-        coordinates: coordValidation.coordinates,
-        coordinatesType: coordValidation.type || 'point'
-      },
-      // Date pentru calendar
-      calendarData: {
-        plantingDate: newField.plantingDate,
-        harvestDate: newField.harvestDate,
-        workType: newField.workType,
-        crop: newField.crop || 'Necunoscută'
-      },
-      // Date pentru AI
-      aiData: {
-        crop: newField.crop || 'Necunoscută',
-        variety: newField.variety,
-        size: parseFloat(newField.size),
-        plantingDate: newField.plantingDate,
-        harvestDate: newField.harvestDate,
-        inputs: newField.inputs,
-        soilType: 'unknown',
-        // va fi actualizat ulterior
-        climateZone: 'temperate' // va fi actualizat ulterior
-      }
-    };
-    addField(fieldData);
-    toast({
-      title: "Succes",
-      description: `Terenul "${newField.name}" (${newField.parcelCode}) a fost adăugat cu succes.`
-    });
-    setNewField({
-      name: '',
-      parcelCode: '',
-      size: '',
-      crop: '',
-      variety: '',
-      coords: '',
-      plantingDate: '',
-      harvestDate: '',
-      workType: '',
-      costs: '',
-      inputs: '',
-      color: '#22c55e'
-    });
-    setIsAddingField(false);
+    try {
+      // Creează obiectul teren în formatul așteptat de useFields
+      const fieldData = {
+        nume_teren: newField.name,
+        cod_parcela: newField.parcelCode,
+        suprafata: parseFloat(newField.size),
+        cultura: newField.crop || undefined,
+        varietate: newField.variety || undefined,
+        data_insamantare: newField.plantingDate || undefined,
+        data_recoltare: newField.harvestDate || undefined,
+        culoare: newField.color,
+        ingrasaminte_folosite: newField.inputs || undefined,
+        coordonate_gps: coordValidation.coordinates
+      };
+
+      await addField(fieldData);
+      
+      toast({
+        title: "Succes",
+        description: `Terenul "${newField.name}" (${newField.parcelCode}) a fost adăugat cu succes.`
+      });
+
+      // Resetează formularul
+      setNewField({
+        name: '',
+        parcelCode: '',
+        size: '',
+        crop: '',
+        variety: '',
+        coords: '',
+        plantingDate: '',
+        harvestDate: '',
+        inputs: '',
+        color: '#22c55e'
+      });
+      
+      setIsAddingField(false);
+    } catch (error) {
+      console.error('Error adding field:', error);
+      toast({
+        title: "Eroare",
+        description: "Nu s-a putut adăuga terenul. Încearcă din nou.",
+        variant: "destructive"
+      });
+    }
   };
-  return <Dialog open={isAddingField} onOpenChange={setIsAddingField}>
+
+  return (
+    <Dialog open={isAddingField} onOpenChange={setIsAddingField}>
       <DialogTrigger asChild>
         <Button size="sm" className="bg-green-600 hover:bg-green-700">
           <Plus className="h-4 w-4 mr-1" />
@@ -210,31 +166,35 @@ const AddFieldDialog = () => {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="name">Nume teren *</Label>
-            <Input id="name" value={newField.name} onChange={e => setNewField({
-            ...newField,
-            name: e.target.value
-          })} placeholder="ex: Parcela Vest" />
+            <Input 
+              id="name" 
+              value={newField.name} 
+              onChange={e => setNewField({ ...newField, name: e.target.value })} 
+              placeholder="ex: Parcela Vest" 
+            />
           </div>
           <div>
             <Label htmlFor="parcelCode">Cod parcelă *</Label>
-            <Input id="parcelCode" value={newField.parcelCode} onChange={e => setNewField({
-            ...newField,
-            parcelCode: e.target.value
-          })} placeholder="ex: PV-001" />
+            <Input 
+              id="parcelCode" 
+              value={newField.parcelCode} 
+              onChange={e => setNewField({ ...newField, parcelCode: e.target.value })} 
+              placeholder="ex: PV-001" 
+            />
           </div>
           <div>
             <Label htmlFor="size">Suprafață (ha) *</Label>
-            <Input id="size" type="number" value={newField.size} onChange={e => setNewField({
-            ...newField,
-            size: e.target.value
-          })} placeholder="ex: 10.5" />
+            <Input 
+              id="size" 
+              type="number" 
+              value={newField.size} 
+              onChange={e => setNewField({ ...newField, size: e.target.value })} 
+              placeholder="ex: 10.5" 
+            />
           </div>
           <div>
             <Label htmlFor="crop">Cultură</Label>
-            <Select onValueChange={value => setNewField({
-            ...newField,
-            crop: value
-          })}>
+            <Select onValueChange={value => setNewField({ ...newField, crop: value })}>
               <SelectTrigger>
                 <SelectValue placeholder="Selectează cultura" />
               </SelectTrigger>
@@ -271,34 +231,34 @@ const AddFieldDialog = () => {
           </div>
           <div>
             <Label htmlFor="variety">Varietate</Label>
-            <Input id="variety" value={newField.variety} onChange={e => setNewField({
-            ...newField,
-            variety: e.target.value
-          })} placeholder="ex: Antonius, Glosa" />
+            <Input 
+              id="variety" 
+              value={newField.variety} 
+              onChange={e => setNewField({ ...newField, variety: e.target.value })} 
+              placeholder="ex: Antonius, Glosa" 
+            />
           </div>
           <div>
             <Label htmlFor="plantingDate">Data însămânțare</Label>
-            <Input id="plantingDate" type="date" value={newField.plantingDate} onChange={e => setNewField({
-            ...newField,
-            plantingDate: e.target.value
-          })} />
+            <Input 
+              id="plantingDate" 
+              type="date" 
+              value={newField.plantingDate} 
+              onChange={e => setNewField({ ...newField, plantingDate: e.target.value })} 
+            />
           </div>
           <div>
             <Label htmlFor="harvestDate">Data recoltare</Label>
-            <Input id="harvestDate" type="date" value={newField.harvestDate} onChange={e => setNewField({
-            ...newField,
-            harvestDate: e.target.value
-          })} />
+            <Input 
+              id="harvestDate" 
+              type="date" 
+              value={newField.harvestDate} 
+              onChange={e => setNewField({ ...newField, harvestDate: e.target.value })} 
+            />
           </div>
-          
-          
-          
           <div>
             <Label htmlFor="color">Culoare pe hartă</Label>
-            <Select onValueChange={value => setNewField({
-            ...newField,
-            color: value
-          })}>
+            <Select onValueChange={value => setNewField({ ...newField, color: value })}>
               <SelectTrigger>
                 <SelectValue placeholder="Selectează culoarea" />
               </SelectTrigger>
@@ -323,20 +283,25 @@ const AddFieldDialog = () => {
           </div>
           <div className="col-span-2">
             <Label htmlFor="inputs">Îngrășăminte folosite</Label>
-            <Input id="inputs" value={newField.inputs} onChange={e => setNewField({
-            ...newField,
-            inputs: e.target.value
-          })} placeholder="ex: NPK 16:16:16, Uree" />
+            <Input 
+              id="inputs" 
+              value={newField.inputs} 
+              onChange={e => setNewField({ ...newField, inputs: e.target.value })} 
+              placeholder="ex: NPK 16:16:16, Uree" 
+            />
           </div>
           <div className="col-span-2">
             <Label htmlFor="coords" className="flex items-center space-x-2">
               <MapPin className="h-4 w-4" />
               <span>Coordonate GPS</span>
             </Label>
-            <Textarea id="coords" value={newField.coords} onChange={e => setNewField({
-            ...newField,
-            coords: e.target.value
-          })} placeholder="Pentru un punct: 45.7489, 21.2087&#10;Pentru un poligon (min. 3 puncte):&#10;45.7489, 21.2087&#10;45.7490, 21.2088&#10;45.7491, 21.2089" className="min-h-[80px]" />
+            <Textarea 
+              id="coords" 
+              value={newField.coords} 
+              onChange={e => setNewField({ ...newField, coords: e.target.value })} 
+              placeholder="Pentru un punct: 45.7489, 21.2087&#10;Pentru un poligon (min. 3 puncte):&#10;45.7489, 21.2087&#10;45.7490, 21.2088&#10;45.7491, 21.2089" 
+              className="min-h-[80px]" 
+            />
             <p className="text-xs text-gray-600 mt-1">
               Format: latitudine,longitudine. Pentru poligon, introduceți minimum 3 puncte pe linii separate.
             </p>
@@ -351,6 +316,8 @@ const AddFieldDialog = () => {
           </Button>
         </div>
       </DialogContent>
-    </Dialog>;
+    </Dialog>
+  );
 };
+
 export default AddFieldDialog;
