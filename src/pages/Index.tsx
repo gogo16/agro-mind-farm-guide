@@ -13,7 +13,6 @@ import { useAppContext } from '@/contexts/AppContext';
 import { MapPin, Sprout, Calendar, Package, Sun, Snowflake, Leaf, CloudRain, TrendingUp, BarChart, FileText, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAIRecommendations } from '@/hooks/useAIRecommendations';
-import AIChatSystem from '@/components/AIChatSystem';
 
 const Index = () => {
   const {
@@ -358,9 +357,6 @@ const Index = () => {
               
               <div className="space-y-6">
                 <TasksWidget />
-                
-                {/* AI Chat System */}
-                <AIChatSystem />
                 
                 {/* Generated Report Preview */}
                 {generatedReport && (
