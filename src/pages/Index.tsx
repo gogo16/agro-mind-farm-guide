@@ -14,7 +14,6 @@ import { useInventory } from '@/hooks/useInventory';
 import { MapPin, Sprout, Calendar, Package, Sun, Snowflake, Leaf, CloudRain, TrendingUp, BarChart, FileText, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAIRecommendations } from '@/hooks/useAIRecommendations';
-
 const Index = () => {
   const {
     fields,
@@ -23,44 +22,41 @@ const Index = () => {
     generateReport,
     currentSeason
   } = useAppContext();
-  
+
   // Folosim noul hook pentru inventar în loc de inventarul din AppContext
-  const { inventory } = useInventory();
-  
-  const { toast } = useToast();
+  const {
+    inventory
+  } = useInventory();
+  const {
+    toast
+  } = useToast();
   const [seasonalBackground, setSeasonalBackground] = useState('');
   const [seasonalTips, setSeasonalTips] = useState<string[]>([]);
   const [seasonIcon, setSeasonIcon] = useState<React.ReactNode>(null);
   const [generatedReport, setGeneratedReport] = useState<any>(null);
   const [reportType, setReportType] = useState<string>('');
   const [generatingReports, setGeneratingReports] = useState<Record<number, boolean>>({});
-  
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-  
   const today = new Date().toISOString().split('T')[0];
   const todayTasks = tasks.filter(t => {
     const taskDate = t.dueDate || t.date;
     return taskDate === today && t.status === 'pending';
   }).length;
   const totalTasks = tasks.length;
-  
   const totalArea = fields.reduce((sum, field) => sum + field.size, 0);
   const profit = totalIncome - totalExpenses;
-  const efficiency = totalExpenses > 0 ? ((profit / totalExpenses) * 100) : 0;
-  
-  const plantedCrops = fields.filter(field => 
-    field.crop && 
-    field.crop.trim() !== '' && 
-    field.crop !== 'Necunoscută'
-  ).length;
+  const efficiency = totalExpenses > 0 ? profit / totalExpenses * 100 : 0;
+  const plantedCrops = fields.filter(field => field.crop && field.crop.trim() !== '' && field.crop !== 'Necunoscută').length;
 
   // Actualizăm calculul pentru inventarul din Supabase
   const inventoryItemsCount = inventory ? inventory.length : 0;
   const monthlyInventoryChange = Math.floor(Math.random() * 20) - 10;
-  
-  const { getRecommendationsByZone, isLoading: aiLoading, refreshRecommendations } = useAIRecommendations();
-  
+  const {
+    getRecommendationsByZone,
+    isLoading: aiLoading,
+    refreshRecommendations
+  } = useAIRecommendations();
   useEffect(() => {
     const month = new Date().getMonth();
     let season = '';
@@ -92,62 +88,58 @@ const Index = () => {
     setSeasonalTips(tips);
     setSeasonIcon(icon);
   }, []);
-
   const generateReportHandler = (reportId: number, type: string, reportTitle: string) => {
-    setGeneratingReports(prev => ({ ...prev, [reportId]: true }));
-    
+    setGeneratingReports(prev => ({
+      ...prev,
+      [reportId]: true
+    }));
     setTimeout(() => {
       const report = generateReport(type);
       setGeneratedReport(report);
       setReportType(type);
-      setGeneratingReports(prev => ({ ...prev, [reportId]: false }));
+      setGeneratingReports(prev => ({
+        ...prev,
+        [reportId]: false
+      }));
       toast({
         title: "Raport generat cu succes",
-        description: `${reportTitle} a fost generat și este gata pentru vizualizare.`,
+        description: `${reportTitle} a fost generat și este gata pentru vizualizare.`
       });
     }, 2000);
   };
-
-  const reportTypes = [
-    {
-      id: 1,
-      title: 'Raport Productivitate',
-      description: 'Analiza randamentului pe hectar pentru fiecare parcelă',
-      icon: TrendingUp,
-      color: 'text-green-600',
-      lastGenerated: '2024-06-05',
-      status: 'ready',
-      type: 'productivity'
-    },
-    {
-      id: 2,
-      title: 'Raport Financiar',
-      description: 'Analiza cheltuielilor, veniturilor și profitabilității',
-      icon: BarChart,
-      color: 'text-blue-600',
-      lastGenerated: '2024-06-03',
-      status: 'ready',
-      type: 'financial'
-    },
-    {
-      id: 3,
-      title: 'Raport Sezonier',
-      description: 'Comparația performanței între sezoane',
-      icon: Calendar,
-      color: 'text-purple-600',
-      lastGenerated: '2024-05-28',
-      status: 'ready',
-      type: 'seasonal'
-    }
-  ];
-
+  const reportTypes = [{
+    id: 1,
+    title: 'Raport Productivitate',
+    description: 'Analiza randamentului pe hectar pentru fiecare parcelă',
+    icon: TrendingUp,
+    color: 'text-green-600',
+    lastGenerated: '2024-06-05',
+    status: 'ready',
+    type: 'productivity'
+  }, {
+    id: 2,
+    title: 'Raport Financiar',
+    description: 'Analiza cheltuielilor, veniturilor și profitabilității',
+    icon: BarChart,
+    color: 'text-blue-600',
+    lastGenerated: '2024-06-03',
+    status: 'ready',
+    type: 'financial'
+  }, {
+    id: 3,
+    title: 'Raport Sezonier',
+    description: 'Comparația performanței între sezoane',
+    icon: Calendar,
+    color: 'text-purple-600',
+    lastGenerated: '2024-05-28',
+    status: 'ready',
+    type: 'seasonal'
+  }];
   const renderGeneratedReport = () => {
     if (!generatedReport || !reportType) return null;
-
     switch (reportType) {
       case 'productivity':
-        return (
-          <div className="space-y-4">
+        return <div className="space-y-4">
             <h3 className="text-lg font-semibold">Raport Productivitate</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
@@ -159,11 +151,9 @@ const Index = () => {
                 <p><strong>Cel mai productiv teren:</strong> {generatedReport.topPerformingField?.name}</p>
               </div>
             </div>
-          </div>
-        );
+          </div>;
       case 'financial':
-        return (
-          <div className="space-y-4">
+        return <div className="space-y-4">
             <h3 className="text-lg font-semibold">Raport Financiar</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
@@ -175,60 +165,41 @@ const Index = () => {
                 <p><strong>ROI:</strong> {generatedReport.roi}%</p>
               </div>
             </div>
-          </div>
-        );
+          </div>;
       case 'seasonal':
-        return (
-          <div className="space-y-4">
+        return <div className="space-y-4">
             <h3 className="text-lg font-semibold">Raport Sezonier</h3>
             <div className="space-y-2 text-sm">
               <p><strong>Sezonul curent:</strong> {generatedReport.currentSeason}</p>
               <p><strong>Sarcini completate:</strong> {generatedReport.completedTasks}</p>
               <p><strong>Sarcini pendente:</strong> {generatedReport.pendingTasks}</p>
             </div>
-          </div>
-        );
+          </div>;
       default:
         return null;
     }
   };
-
   const renderAIRecommendations = (zoneId: string, recommendations: any[]) => {
     if (aiLoading) {
-      return (
-        <div className="space-y-2">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white/10 rounded-lg p-3 animate-pulse">
+      return <div className="space-y-2">
+          {[1, 2, 3].map(i => <div key={i} className="bg-white/10 rounded-lg p-3 animate-pulse">
               <div className="h-4 bg-white/20 rounded mb-2"></div>
               <div className="h-3 bg-white/15 rounded"></div>
-            </div>
-          ))}
-        </div>
-      );
+            </div>)}
+        </div>;
     }
-
-    return (
-      <div className="space-y-3">
-        {recommendations.map((rec) => (
-          <div key={rec.id} className="bg-white/10 rounded-lg p-3 relative">
-            {rec.isNew && (
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full"></div>
-            )}
+    return <div className="space-y-3">
+        {recommendations.map(rec => <div key={rec.id} className="bg-white/10 rounded-lg p-3 relative">
+            {rec.isNew && <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full"></div>}
             <p className="text-sm font-medium mb-1">{rec.title}</p>
             <p className="text-xs">{rec.content}</p>
-            {rec.priority === 'high' && (
-              <div className="mt-2">
+            {rec.priority === 'high' && <div className="mt-2">
                 <span className="text-xs bg-red-500/20 text-red-100 px-2 py-1 rounded">Prioritate înaltă</span>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    );
+              </div>}
+          </div>)}
+      </div>;
   };
-
-  return (
-    <div className={`min-h-screen bg-gradient-to-br ${seasonalBackground}`}>
+  return <div className={`min-h-screen bg-gradient-to-br ${seasonalBackground}`}>
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
@@ -292,14 +263,7 @@ const Index = () => {
                 <div>
                   <p className="text-sm text-green-600 font-medium">Stoc Inventar</p>
                   <p className="text-3xl font-bold text-green-800">{inventoryItemsCount}</p>
-                  <p className="text-xs text-green-500">
-                    articole în inventar
-                    {monthlyInventoryChange !== 0 && (
-                      <span className={`ml-1 ${monthlyInventoryChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {monthlyInventoryChange > 0 ? '+' : ''}{monthlyInventoryChange}
-                      </span>
-                    )}
-                  </p>
+                  
                 </div>
                 <Package className="h-8 w-8 text-emerald-500" />
               </div>
@@ -327,11 +291,10 @@ const Index = () => {
                     <CardTitle className="text-green-800">Rapoarte și Analize</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {reportTypes.map((report) => {
-                      const IconComponent = report.icon;
-                      const isGenerating = generatingReports[report.id];
-                      return (
-                        <div key={report.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    {reportTypes.map(report => {
+                    const IconComponent = report.icon;
+                    const isGenerating = generatingReports[report.id];
+                    return <div key={report.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                           <div className="flex items-center space-x-4">
                             <div className="bg-gray-100 p-3 rounded-lg">
                               <IconComponent className={`h-6 w-6 ${report.color}`} />
@@ -341,17 +304,11 @@ const Index = () => {
                               <p className="text-sm text-gray-600">{report.description}</p>
                             </div>
                           </div>
-                          <Button 
-                            size="sm" 
-                            className="bg-green-600 hover:bg-green-700"
-                            disabled={isGenerating}
-                            onClick={() => generateReportHandler(report.id, report.type, report.title)}
-                          >
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700" disabled={isGenerating} onClick={() => generateReportHandler(report.id, report.type, report.title)}>
                             {isGenerating ? 'În progres...' : 'Generează'}
                           </Button>
-                        </div>
-                      );
-                    })}
+                        </div>;
+                  })}
                   </CardContent>
                 </Card>
               </div>
@@ -360,8 +317,7 @@ const Index = () => {
                 <TasksWidget />
                 
                 {/* Generated Report Preview */}
-                {generatedReport && (
-                  <Card className="bg-white border-green-200">
+                {generatedReport && <Card className="bg-white border-green-200">
                     <CardHeader>
                       <CardTitle className="text-green-800">Previzualizare Raport</CardTitle>
                     </CardHeader>
@@ -374,14 +330,10 @@ const Index = () => {
                         </Button>
                       </div>
                     </CardContent>
-                  </Card>
-                )}
+                  </Card>}
 
                 {/* AI Main Insights */}
-                <Card 
-                  className="bg-gradient-to-r from-purple-500 to-blue-600 text-white border-0"
-                  data-ai-zone="ai-main-insights"
-                >
+                <Card className="bg-gradient-to-r from-purple-500 to-blue-600 text-white border-0" data-ai-zone="ai-main-insights">
                   <CardHeader>
                     <CardTitle>🤖 Perspective AI</CardTitle>
                   </CardHeader>
@@ -391,10 +343,7 @@ const Index = () => {
                 </Card>
 
                 {/* AI Daily Recommendation */}
-                <Card 
-                  className="bg-gradient-to-r from-green-500 to-teal-600 text-white border-0"
-                  data-ai-zone="ai-daily-recommendation"
-                >
+                <Card className="bg-gradient-to-r from-green-500 to-teal-600 text-white border-0" data-ai-zone="ai-daily-recommendation">
                   <CardHeader>
                     <CardTitle>💡 Recomandarea Zilei</CardTitle>
                   </CardHeader>
@@ -415,8 +364,6 @@ const Index = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
