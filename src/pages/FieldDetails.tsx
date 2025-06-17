@@ -214,7 +214,8 @@ const FieldDetails = () => {
                     <div>
                       <div className="flex justify-between text-sm mb-1">
                         <span>Zile până la recoltare</span>
-                        <span>{fieldProgress.daysToHarvest} zile</span>
+                      <span>{parseInt(fieldProgress.daysToHarvest as string, 10) || 0} zile</span>
+
                       </div>
                       <Progress 
                         value={Math.max(0, 100 - (fieldProgress.daysToHarvest / 120) * 100)} 
