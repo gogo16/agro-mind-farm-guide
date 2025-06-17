@@ -77,7 +77,7 @@ const FieldDetails = () => {
             <div>
               <h1 className="text-3xl font-bold text-green-800">{field.nume_teren}</h1>
               <p className="text-green-600">
-                {field.cultura || 'Fără cultură'} • {field.suprafata} ha • {field.cod_parcela}
+                {field.cultura || 'Fără cultură'} • {Number(field.suprafata)} ha • {field.cod_parcela}
               </p>
             </div>
           </div>
@@ -116,7 +116,7 @@ const FieldDetails = () => {
                 <MapPin className="h-5 w-5 text-blue-600" />
                 <span className="text-sm font-medium text-gray-700">Suprafață</span>
               </div>
-              <p className="text-lg font-bold text-green-800">{field.suprafata} ha</p>
+              <p className="text-lg font-bold text-green-800">{Number(field.suprafata)} ha</p>
               <p className="text-sm text-gray-600">
                 {field.coordonate_gps ? 
                   `${field.coordonate_gps.lat}, ${field.coordonate_gps.lng}` : 
@@ -180,7 +180,7 @@ const FieldDetails = () => {
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Suprafață</p>
-                      <p className="font-medium">{field.suprafata} ha</p>
+                      <p className="font-medium">{Number(field.suprafata)} ha</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">Cultură</p>

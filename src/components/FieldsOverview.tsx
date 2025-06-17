@@ -12,7 +12,6 @@ import { useFields } from '@/hooks/useFields';
 const FieldsOverview = () => {
   const navigate = useNavigate();
   const { fields, loading, error } = useFields();
-  const [isAddingField, setIsAddingField] = useState(false);
   const [editingField, setEditingField] = useState<any>(null);
 
   if (loading) {
@@ -64,13 +63,7 @@ const FieldsOverview = () => {
     <Card className="bg-white border-green-200">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-green-800">Terenurile Mele</CardTitle>
-        <Button 
-          onClick={() => setIsAddingField(true)}
-          className="bg-green-600 hover:bg-green-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Adaugă teren
-        </Button>
+        <AddFieldDialog />
       </CardHeader>
       <CardContent className="space-y-4">
         {fields.length === 0 ? (
@@ -80,13 +73,7 @@ const FieldsOverview = () => {
             <p className="text-gray-600 mb-4">
               Începeți prin a adăuga primul teren pentru a gestiona activitățile agricole.
             </p>
-            <Button 
-              onClick={() => setIsAddingField(true)}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Adaugă primul teren
-            </Button>
+            <AddFieldDialog />
           </div>
         ) : (
           fields.map((field) => (
@@ -175,11 +162,6 @@ const FieldsOverview = () => {
             </div>
           ))
         )}
-
-        <AddFieldDialog 
-          isOpen={isAddingField} 
-          onOpenChange={setIsAddingField}
-        />
 
         {editingField && (
           <EditFieldDialog
