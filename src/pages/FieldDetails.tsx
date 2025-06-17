@@ -74,7 +74,6 @@ const FieldDetails = () => {
 
   // Convert size to number for consistent usage
   const fieldSize = Number(field.size);
-  const fieldRoi = field.roi ? Number(field.roi) : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
@@ -108,8 +107,7 @@ const FieldDetails = () => {
             <EditFieldDialog 
               field={{ 
                 ...field, 
-                size: fieldSize,
-                roi: fieldRoi
+                size: fieldSize
               }} 
               isOpen={isEditingField} 
               onOpenChange={setIsEditingField} 
@@ -195,13 +193,9 @@ const FieldDetails = () => {
                       <p className="text-sm text-gray-600">Tip lucrare</p>
                       <p className="font-medium">{lastCompletedTask?.title || field.work_type || 'N/A'}</p>
                     </div>
-                    <div>
+                    <div className="col-span-2">
                       <p className="text-sm text-gray-600">Istoric îngrășăminte/chimicale</p>
                       <p className="font-medium">{field.inputs || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">ROI</p>
-                      <p className="font-medium text-green-600">{fieldRoi ? `${fieldRoi}%` : 'N/A'}</p>
                     </div>
                   </div>
                 </CardContent>

@@ -25,7 +25,6 @@ interface Field {
   work_type?: string;
   costs?: number;
   inputs?: string;
-  roi?: number;
   variety?: string;
   color?: string;
   soil_data?: any;

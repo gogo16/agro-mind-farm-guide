@@ -181,7 +181,6 @@ export type Database = {
           name: string
           parcel_code: string | null
           planting_date: string | null
-          roi: number | null
           size: number
           soil_data: Json | null
           status: string | null
@@ -202,7 +201,6 @@ export type Database = {
           name: string
           parcel_code?: string | null
           planting_date?: string | null
-          roi?: number | null
           size: number
           soil_data?: Json | null
           status?: string | null
@@ -223,7 +221,6 @@ export type Database = {
           name?: string
           parcel_code?: string | null
           planting_date?: string | null
-          roi?: number | null
           size?: number
           soil_data?: Json | null
           status?: string | null
