@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -17,6 +18,31 @@ const FieldDetails = () => {
   const [isEditingField, setIsEditingField] = useState(false);
 
   const field = fields.find(f => f.id === id);
+
+  // Helper function to display GPS coordinates
+  const displayCoordinates = (coords: { lat: number; lng: number } | { lat: number; lng: number }[] | null) => {
+    if (!coords) return 'Coordonate nedefinite';
+    
+    if (Array.isArray(coords)) {
+      if (coords.length === 1) {
+        return `${coords[0].lat}, ${coords[0].lng}`;
+      }
+      return `${coords.length} puncte GPS`;
+    }
+    
+    return `${coords.lat}, ${coords.lng}`;
+  };
+
+  // Helper function to get first coordinate for display
+  const getFirstCoordinate = (coords: { lat: number; lng: number } | { lat: number; lng: number }[] | null) => {
+    if (!coords) return null;
+    
+    if (Array.isArray(coords)) {
+      return coords.length > 0 ? coords[0] : null;
+    }
+    
+    return coords;
+  };
 
   if (loading) {
     return (
@@ -116,12 +142,7 @@ const FieldDetails = () => {
                 <span className="text-sm font-medium text-gray-700">Suprafață</span>
               </div>
               <p className="text-lg font-bold text-green-800">{Number(field.suprafata)} ha</p>
-              <p className="text-sm text-gray-600">
-                {field.coordonate_gps ? 
-                  `${field.coordonate_gps.lat}, ${field.coordonate_gps.lng}` : 
-                  'Coordonate nedefinite'
-                }
-              </p>
+              <p className="text-sm text-gray-600">{displayCoordinates(field.coordonate_gps)}</p>
             </CardContent>
           </Card>
 
@@ -218,8 +239,23 @@ const FieldDetails = () => {
                 <CardContent>
                   {field.coordonate_gps ? (
                     <div className="space-y-2">
-                      <p><strong>Latitudine:</strong> {field.coordonate_gps.lat}</p>
-                      <p><strong>Longitudine:</strong> {field.coordonate_gps.lng}</p>
+                      {Array.isArray(field.coordonate_gps) ? (
+                        <div>
+                          <p><strong>Număr de puncte:</strong> {field.coordonate_gps.length}</p>
+                          <div className="mt-2 space-y-1">
+                            {field.coordonate_gps.map((coord, index) => (
+                              <p key={index} className="text-sm">
+                                <strong>Punct {index + 1}:</strong> {coord.lat}, {coord.lng}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <p><strong>Latitudine:</strong> {field.coordonate_gps.lat}</p>
+                          <p><strong>Longitudine:</strong> {field.coordonate_gps.lng}</p>
+                        </div>
+                      )}
                       {/* TODO: Reconnect map functionality */}
                       <div className="mt-4 p-4 bg-gray-100 rounded-lg text-center">
                         <p className="text-gray-600">Harta va fi disponibilă în curând</p>
