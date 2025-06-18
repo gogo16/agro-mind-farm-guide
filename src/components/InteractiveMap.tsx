@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { useAppContext } from '@/contexts/AppContext';
 import { useToast } from '@/hooks/use-toast';
@@ -15,11 +16,12 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
   const polygonsRef = useRef<google.maps.Polygon[]>([]);
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
+  const [isMapInitialized, setIsMapInitialized] = useState(false);
 
   const GOOGLE_MAPS_API_KEY = "AIzaSyDloS4Jj3CMvgpmdrWUECSOKs12A8wX1io";
 
   // Enhanced coordinate parsing with support for multiple GPS points
-  const parseCoordinates = (field: any) => {
+  const parseCoordinates = useCallback((field: any) => {
     console.log('Parsing coordinates for field:', field.name, 'coordinates:', field.coordinates);
     
     if (!field.coordinates) {
@@ -49,10 +51,10 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
 
     console.log('Invalid coordinate format for field:', field.name, 'type:', typeof field.coordinates);
     return null;
-  };
+  }, []);
 
   // Enhanced polygon creation for multiple GPS points
-  const createFieldPolygon = (field: any, map: google.maps.Map) => {
+  const createFieldPolygon = useCallback((field: any, map: google.maps.Map) => {
     const coordinates = parseCoordinates(field);
     if (!coordinates || coordinates.length === 0) {
       console.log('No valid coordinates for field:', field.name);
@@ -152,10 +154,10 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
     });
 
     return polygon;
-  };
+  }, [parseCoordinates, onFieldSelect, toast]);
 
   // Enhanced bounds calculation with fallback
-  const calculateMapBounds = () => {
+  const calculateMapBounds = useCallback(() => {
     const bounds = new google.maps.LatLngBounds();
     let hasCoordinates = false;
 
@@ -181,20 +183,80 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
 
     console.log('Bounds calculated successfully');
     return bounds;
-  };
+  }, [fields, parseCoordinates]);
 
-  useEffect(() => {
-    if (!mapRef.current || !GOOGLE_MAPS_API_KEY) {
-      console.log('Map container or API key not available');
+  // Function to update polygons without reinitializing the map
+  const updatePolygons = useCallback(() => {
+    if (!mapInstanceRef.current) return;
+
+    console.log('Updating polygons for', fields.length, 'fields');
+    
+    // Clear existing polygons
+    polygonsRef.current.forEach(polygon => {
+      polygon.setMap(null);
+    });
+    polygonsRef.current = [];
+
+    // Create new polygons
+    const newPolygons: google.maps.Polygon[] = [];
+    fields.forEach((field, index) => {
+      console.log(`Processing field ${index + 1}/${fields.length}:`, field.name);
+      const polygon = createFieldPolygon(field, mapInstanceRef.current!);
+      if (polygon) {
+        newPolygons.push(polygon);
+        console.log(`✓ Polygon created for field: ${field.name}`);
+      } else {
+        console.log(`✗ Failed to create polygon for field: ${field.name}`);
+      }
+    });
+
+    polygonsRef.current = newPolygons;
+    console.log(`Polygons update complete. Created ${newPolygons.length} polygons`);
+  }, [fields, createFieldPolygon]);
+
+  // Function to center on a specific field
+  const centerOnField = useCallback((field: any) => {
+    if (!mapInstanceRef.current) {
+      console.log('Map not initialized, cannot center on field');
       return;
     }
 
-    console.log('Initializing map with', fields.length, 'fields');
-    console.log('Fields data:', fields.map(f => ({
-      name: f.name,
-      coordinates: f.coordinates,
-      type: Array.isArray(f.coordinates) ? 'array' : typeof f.coordinates
-    })));
+    console.log('Centering map on field:', field.name, 'coordinates:', field.coordinates);
+    const coordinates = parseCoordinates(field);
+    if (coordinates && coordinates.length > 0) {
+      let center;
+      if (coordinates.length === 1) {
+        center = coordinates[0];
+      } else if (coordinates.length === 2) {
+        center = {
+          lat: (coordinates[0].lat + coordinates[1].lat) / 2,
+          lng: (coordinates[0].lng + coordinates[1].lng) / 2
+        };
+      } else {
+        // Calculate centroid for polygon
+        const sumLat = coordinates.reduce((sum, coord) => sum + coord.lat, 0);
+        const sumLng = coordinates.reduce((sum, coord) => sum + coord.lng, 0);
+        center = {
+          lat: sumLat / coordinates.length,
+          lng: sumLng / coordinates.length
+        };
+      }
+      
+      console.log('Centering map on:', center);
+      mapInstanceRef.current.setCenter(center);
+      mapInstanceRef.current.setZoom(16);
+    } else {
+      console.log('No valid coordinates found for centering');
+    }
+  }, [parseCoordinates]);
+
+  // Initialize map only once
+  useEffect(() => {
+    if (!mapRef.current || !GOOGLE_MAPS_API_KEY || isMapInitialized) {
+      return;
+    }
+
+    console.log('Initializing map for the first time');
 
     const initMap = async () => {
       try {
@@ -227,6 +289,7 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
 
         const map = new google.maps.Map(mapRef.current!, mapOptions);
         mapInstanceRef.current = map;
+        setIsMapInitialized(true);
         console.log('Map instance created');
 
         // Fit bounds to show all fields
@@ -240,31 +303,8 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
           });
         }
 
-        // Clear existing polygons
-        polygonsRef.current.forEach(polygon => {
-          polygon.setMap(null);
-        });
-        polygonsRef.current = [];
-
-        // Create polygons for all fields
-        const newPolygons: google.maps.Polygon[] = [];
-        console.log('Creating polygons for fields...');
-        
-        fields.forEach((field, index) => {
-          console.log(`Processing field ${index + 1}/${fields.length}:`, field.name, 'coordinates:', field.coordinates);
-          const polygon = createFieldPolygon(field, map);
-          if (polygon) {
-            newPolygons.push(polygon);
-            console.log(`✓ Polygon created for field: ${field.name}`);
-          } else {
-            console.log(`✗ Failed to create polygon for field: ${field.name}`);
-          }
-        });
-
-        polygonsRef.current = newPolygons;
         setIsLoading(false);
-
-        console.log(`Map initialization complete. Created ${newPolygons.length} polygons for ${fields.length} fields`);
+        console.log('Map initialization complete');
 
       } catch (error) {
         console.error('Error loading Google Maps:', error);
@@ -278,55 +318,39 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
     };
 
     initMap();
+  }, [GOOGLE_MAPS_API_KEY, isMapInitialized, calculateMapBounds, mapType, fields.length, toast]);
 
-    // Cleanup
+  // Update polygons when fields change (without reinitializing map)
+  useEffect(() => {
+    if (isMapInitialized && mapInstanceRef.current) {
+      updatePolygons();
+    }
+  }, [fields, isMapInitialized, updatePolygons]);
+
+  // Update map type when changed (without reinitializing map)
+  useEffect(() => {
+    if (mapInstanceRef.current && isMapInitialized) {
+      console.log('Updating map type to:', mapType);
+      mapInstanceRef.current.setMapTypeId(mapType as google.maps.MapTypeId);
+    }
+  }, [mapType, isMapInitialized]);
+
+  // Expose function globally
+  useEffect(() => {
+    (window as any).centerMapOnField = centerOnField;
+    return () => {
+      delete (window as any).centerMapOnField;
+    };
+  }, [centerOnField]);
+
+  // Cleanup
+  useEffect(() => {
     return () => {
       polygonsRef.current.forEach(polygon => {
         polygon.setMap(null);
       });
       polygonsRef.current = [];
     };
-  }, [fields, mapType]);
-
-  // Update map type when changed
-  useEffect(() => {
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.setMapTypeId(mapType as google.maps.MapTypeId);
-    }
-  }, [mapType]);
-
-  // Function to center on a specific field
-  const centerOnField = (field: any) => {
-    if (!mapInstanceRef.current) return;
-
-    const coordinates = parseCoordinates(field);
-    if (coordinates && coordinates.length > 0) {
-      let center;
-      if (coordinates.length === 1) {
-        center = coordinates[0];
-      } else if (coordinates.length === 2) {
-        center = {
-          lat: (coordinates[0].lat + coordinates[1].lat) / 2,
-          lng: (coordinates[0].lng + coordinates[1].lng) / 2
-        };
-      } else {
-        // Calculate centroid for polygon
-        const sumLat = coordinates.reduce((sum, coord) => sum + coord.lat, 0);
-        const sumLng = coordinates.reduce((sum, coord) => sum + coord.lng, 0);
-        center = {
-          lat: sumLat / coordinates.length,
-          lng: sumLng / coordinates.length
-        };
-      }
-      
-      mapInstanceRef.current.setCenter(center);
-      mapInstanceRef.current.setZoom(16);
-    }
-  };
-
-  // Expose function globally
-  useEffect(() => {
-    (window as any).centerMapOnField = centerOnField;
   }, []);
 
   if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY.includes("YOUR_GOOGLE_MAPS_API_KEY")) {

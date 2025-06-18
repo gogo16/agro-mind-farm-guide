@@ -36,20 +36,33 @@ const MapView = () => {
       }))
     });
   }, [fields, loading]);
+
   const handleViewFieldDetails = (field: any) => {
     navigate(`/field/${field.id}`);
   };
+
   const handleCenterOnMap = (field: any) => {
+    console.log('Attempting to center map on field:', field.name, 'coordinates:', field.coordinates);
+    
     if (field.coordinates) {
       // Use the global function exposed by InteractiveMap
       if ((window as any).centerMapOnField) {
+        console.log('Calling centerMapOnField function');
         (window as any).centerMapOnField(field);
+        toast({
+          title: "Hartă centrată",
+          description: `Harta a fost centrată pe ${field.name}`
+        });
+      } else {
+        console.log('centerMapOnField function not available');
+        toast({
+          title: "Eroare",
+          description: "Funcția de centrare nu este disponibilă",
+          variant: "destructive"
+        });
       }
-      toast({
-        title: "Hartă centrată",
-        description: `Harta a fost centrată pe ${field.name}`
-      });
     } else {
+      console.log('No coordinates available for field:', field.name);
       toast({
         title: "Coordonate lipsă",
         description: `Nu sunt disponibile coordonate pentru ${field.name}`,
@@ -57,6 +70,7 @@ const MapView = () => {
       });
     }
   };
+
   const handleFieldSelect = (field: any) => {
     setSelectedField(field);
     setShowFieldInfo(true);
