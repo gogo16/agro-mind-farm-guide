@@ -10,43 +10,40 @@ import EditFieldDialog from '@/components/EditFieldDialog';
 import SoilSection from '@/components/SoilSection';
 import { useFields } from '@/hooks/useFields';
 import { Coordinate } from '@/types/field';
-
 const FieldDetails = () => {
-  const { id } = useParams();
+  const {
+    id
+  } = useParams();
   const navigate = useNavigate();
-  const { fields, loading } = useFields();
+  const {
+    fields,
+    loading
+  } = useFields();
   const [isEditingField, setIsEditingField] = useState(false);
-
   const field = fields.find(f => f.id === id);
 
   // Helper function to display GPS coordinates
   const displayCoordinates = (coords: Coordinate | Coordinate[] | null) => {
     if (!coords) return 'Coordonate nedefinite';
-    
     if (Array.isArray(coords)) {
       if (coords.length === 1) {
         return `${coords[0].lat}, ${coords[0].lng}`;
       }
       return `${coords.length} puncte GPS`;
     }
-    
     return `${coords.lat}, ${coords.lng}`;
   };
 
   // Helper function to get first coordinate for display
   const getFirstCoordinate = (coords: Coordinate | Coordinate[] | null) => {
     if (!coords) return null;
-    
     if (Array.isArray(coords)) {
       return coords.length > 0 ? coords[0] : null;
     }
-    
     return coords;
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+    return <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
         <Navigation />
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-center py-20">
@@ -54,13 +51,10 @@ const FieldDetails = () => {
             <span className="ml-4 text-lg text-gray-600">Se încarcă detaliile terenului...</span>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   if (!field) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+    return <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
         <Navigation />
         <div className="container mx-auto px-4 py-6">
           <div className="text-center py-20">
@@ -72,23 +66,18 @@ const FieldDetails = () => {
             </Button>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   const getStatusColor = (cultura?: string) => {
     if (!cultura) return 'bg-gray-100 text-gray-800';
     return 'bg-green-100 text-green-800';
   };
-
   const getStatusText = (cultura?: string, data_insamantare?: string) => {
     if (!cultura) return 'Fără cultură';
     if (data_insamantare) return 'Plantat';
     return 'Pregătire teren';
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+  return <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
@@ -112,10 +101,7 @@ const FieldDetails = () => {
               <Camera className="h-4 w-4 mr-2" />
               Adaugă poză (Temporar indisponibil)
             </Button>
-            <Button 
-              onClick={() => setIsEditingField(true)}
-              className="bg-green-600 hover:bg-green-700"
-            >
+            <Button onClick={() => setIsEditingField(true)} className="bg-green-600 hover:bg-green-700">
               <Edit className="h-4 w-4 mr-2" />
               Editează
             </Button>
@@ -162,10 +148,9 @@ const FieldDetails = () => {
           <Card className="bg-white/80 backdrop-blur-sm border-green-200">
             <CardContent className="p-4">
               <div className="flex items-center space-x-2 mb-2">
-                <div 
-                  className="w-5 h-5 rounded-full"
-                  style={{ backgroundColor: field.culoare || '#22c55e' }}
-                ></div>
+                <div className="w-5 h-5 rounded-full" style={{
+                backgroundColor: field.culoare || '#22c55e'
+              }}></div>
                 <span className="text-sm font-medium text-gray-700">Status</span>
               </div>
               <Badge className={getStatusColor(field.cultura)}>
@@ -212,12 +197,10 @@ const FieldDetails = () => {
                     </div>
                   </div>
                   
-                  {field.ingrasaminte_folosite && (
-                    <div>
+                  {field.ingrasaminte_folosite && <div>
                       <p className="text-sm text-gray-600">Îngrășăminte folosite</p>
                       <p className="font-medium">{field.ingrasaminte_folosite}</p>
-                    </div>
-                  )}
+                    </div>}
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -237,33 +220,21 @@ const FieldDetails = () => {
                   <CardTitle className="text-green-800">Coordonate GPS</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {field.coordonate_gps ? (
-                    <div className="space-y-2">
-                      {Array.isArray(field.coordonate_gps) ? (
-                        <div>
+                  {field.coordonate_gps ? <div className="space-y-2">
+                      {Array.isArray(field.coordonate_gps) ? <div>
                           <p><strong>Număr de puncte:</strong> {field.coordonate_gps.length}</p>
                           <div className="mt-2 space-y-1">
-                            {field.coordonate_gps.map((coord, index) => (
-                              <p key={index} className="text-sm">
+                            {field.coordonate_gps.map((coord, index) => <p key={index} className="text-sm">
                                 <strong>Punct {index + 1}:</strong> {coord.lat}, {coord.lng}
-                              </p>
-                            ))}
+                              </p>)}
                           </div>
-                        </div>
-                      ) : (
-                        <div>
+                        </div> : <div>
                           <p><strong>Latitudine:</strong> {field.coordonate_gps.lat}</p>
                           <p><strong>Longitudine:</strong> {field.coordonate_gps.lng}</p>
-                        </div>
-                      )}
+                        </div>}
                       {/* TODO: Reconnect map functionality */}
-                      <div className="mt-4 p-4 bg-gray-100 rounded-lg text-center">
-                        <p className="text-gray-600">Harta va fi disponibilă în curând</p>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-gray-600">Coordonate GPS nedefinite</p>
-                  )}
+                      
+                    </div> : <p className="text-gray-600">Coordonate GPS nedefinite</p>}
                 </CardContent>
               </Card>
             </div>
@@ -291,16 +262,8 @@ const FieldDetails = () => {
           </TabsContent>
         </Tabs>
 
-        {isEditingField && (
-          <EditFieldDialog
-            field={field}
-            isOpen={isEditingField}
-            onOpenChange={setIsEditingField}
-          />
-        )}
+        {isEditingField && <EditFieldDialog field={field} isOpen={isEditingField} onOpenChange={setIsEditingField} />}
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default FieldDetails;
