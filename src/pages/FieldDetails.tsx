@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
@@ -10,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import EditFieldDialog from '@/components/EditFieldDialog';
 import SoilSection from '@/components/SoilSection';
 import { useFields } from '@/hooks/useFields';
+import { Coordinate } from '@/types/field';
 
 const FieldDetails = () => {
   const { id } = useParams();
@@ -20,7 +20,7 @@ const FieldDetails = () => {
   const field = fields.find(f => f.id === id);
 
   // Helper function to display GPS coordinates
-  const displayCoordinates = (coords: { lat: number; lng: number } | { lat: number; lng: number }[] | null) => {
+  const displayCoordinates = (coords: Coordinate | Coordinate[] | null) => {
     if (!coords) return 'Coordonate nedefinite';
     
     if (Array.isArray(coords)) {
@@ -34,7 +34,7 @@ const FieldDetails = () => {
   };
 
   // Helper function to get first coordinate for display
-  const getFirstCoordinate = (coords: { lat: number; lng: number } | { lat: number; lng: number }[] | null) => {
+  const getFirstCoordinate = (coords: Coordinate | Coordinate[] | null) => {
     if (!coords) return null;
     
     if (Array.isArray(coords)) {

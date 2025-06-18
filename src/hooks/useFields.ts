@@ -2,43 +2,10 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Json } from '@/integrations/supabase/types';
-
-interface Field {
-  id: string;
-  user_id: string;
-  nume_teren: string;
-  cod_parcela: string;
-  suprafata: number;
-  cultura?: string;
-  varietate?: string;
-  data_insamantare?: string;
-  data_recoltare?: string;
-  culoare?: string;
-  ingrasaminte_folosite?: string;
-  coordonate_gps?: { lat: number; lng: number } | { lat: number; lng: number }[] | null;
-  created_at: string;
-  updated_at: string;
-  data_stergerii?: string;
-  istoric_activitati?: any[];
-}
-
-interface CreateFieldData {
-  nume_teren: string;
-  cod_parcela: string;
-  suprafata: number;
-  cultura?: string;
-  varietate?: string;
-  data_insamantare?: string;
-  data_recoltare?: string;
-  culoare?: string;
-  ingrasaminte_folosite?: string;
-  coordonate_gps?: { lat: number; lng: number } | { lat: number; lng: number }[];
-}
-
-interface UpdateFieldData extends Partial<CreateFieldData> {}
+import { Field, CreateFieldData, UpdateFieldData, Coordinate } from '@/types/field';
 
 // Enhanced helper function to transform GPS coordinates
-const transformCoordinates = (coords: Json | null): { lat: number; lng: number } | { lat: number; lng: number }[] | null => {
+const transformCoordinates = (coords: Json | null): Coordinate | Coordinate[] | null => {
   if (!coords) {
     console.log('No coordinates provided');
     return null;
@@ -58,8 +25,8 @@ const transformCoordinates = (coords: Json | null): { lat: number; lng: number }
     console.log('Parsed coordinates:', parsedCoords);
     
     // Handle single coordinate object
-    if (parsedCoords && typeof parsedCoords === 'object' && 'lat' in parsedCoords && 'lng' in parsedCoords) {
-      const result = {
+    if (parsedCoords && typeof parsedCoords === 'object' && 'lat' in parsedCoords && 'lng' in parsedCoords && !Array.isArray(parsedCoords)) {
+      const result: Coordinate = {
         lat: Number(parsedCoords.lat),
         lng: Number(parsedCoords.lng)
       };
@@ -69,7 +36,7 @@ const transformCoordinates = (coords: Json | null): { lat: number; lng: number }
     
     // Handle array of coordinates
     if (Array.isArray(parsedCoords)) {
-      const result = parsedCoords.map(coord => ({
+      const result: Coordinate[] = parsedCoords.map(coord => ({
         lat: Number(coord.lat),
         lng: Number(coord.lng)
       }));
