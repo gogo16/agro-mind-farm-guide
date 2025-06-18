@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import SatelliteMonitoring from '@/components/SatelliteMonitoring';
@@ -14,30 +14,44 @@ import { useFields } from '@/hooks/useFields';
 
 const MapView = () => {
   const { toast } = useToast();
-  const { fields } = useFields();
+  const { fields, loading } = useFields();
   const navigate = useNavigate();
   const [mapType, setMapType] = useState('roadmap');
   const [showFieldInfo, setShowFieldInfo] = useState(false);
   const [selectedField, setSelectedField] = useState<any>(null);
+
+  // Debug fields data
+  useEffect(() => {
+    console.log('MapView: Fields data updated:', {
+      fieldsCount: fields.length,
+      loading,
+      fields: fields.map(field => ({
+        id: field.id,
+        nume: field.nume_teren,
+        coordonate: field.coordonate_gps,
+        culoare: field.culoare
+      }))
+    });
+  }, [fields, loading]);
 
   const handleViewFieldDetails = (field: any) => {
     navigate(`/field/${field.id}`);
   };
 
   const handleCenterOnMap = (field: any) => {
-    if (field.coordonate_gps) {
-      // Folosește funcția globală expusă de InteractiveMap
+    if (field.coordinates) {
+      // Use the global function exposed by InteractiveMap
       if ((window as any).centerMapOnField) {
         (window as any).centerMapOnField(field);
       }
       toast({
         title: "Hartă centrată",
-        description: `Harta a fost centrată pe ${field.nume_teren}`
+        description: `Harta a fost centrată pe ${field.name}`
       });
     } else {
       toast({
         title: "Coordonate lipsă",
-        description: `Nu sunt disponibile coordonate pentru ${field.nume_teren}`,
+        description: `Nu sunt disponibile coordonate pentru ${field.name}`,
         variant: "destructive"
       });
     }
@@ -48,16 +62,28 @@ const MapView = () => {
     setShowFieldInfo(true);
   };
 
-  // Transform field data for compatibility with InteractiveMap
-  const transformedFields = fields.map(field => ({
-    id: field.id,
-    name: field.nume_teren,
-    parcelCode: field.cod_parcela,
-    size: field.suprafata,
-    crop: field.cultura || 'Necunoscută',
-    coordinates: field.coordonate_gps,
-    color: field.culoare || '#22c55e'
-  }));
+  // Enhanced field transformation with better debugging
+  const transformedFields = fields.map(field => {
+    const transformed = {
+      id: field.id,
+      name: field.nume_teren,
+      parcelCode: field.cod_parcela,
+      size: field.suprafata,
+      crop: field.cultura || 'Necunoscută',
+      coordinates: field.coordonate_gps,
+      color: field.culoare || '#22c55e'
+    };
+    
+    console.log('Transforming field:', field.nume_teren, {
+      original: field.coordonate_gps,
+      transformed: transformed.coordinates,
+      color: transformed.color
+    });
+    
+    return transformed;
+  });
+
+  console.log('MapView: Transformed fields for map:', transformedFields);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
@@ -107,6 +133,14 @@ const MapView = () => {
                 <div className="border-t pt-4">
                   <AddFieldDialog />
                 </div>
+
+                {/* Debug Info */}
+                {process.env.NODE_ENV === 'development' && (
+                  <div className="bg-gray-100 p-2 rounded text-xs">
+                    <p>Debug: {fields.length} terenuri încărcate</p>
+                    <p>Loading: {loading ? 'Da' : 'Nu'}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -116,7 +150,12 @@ const MapView = () => {
                 <CardTitle className="text-green-800">Terenurile tale</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {fields.length === 0 ? (
+                {loading ? (
+                  <div className="text-center py-4 text-gray-500">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto mb-2"></div>
+                    <p className="text-sm">Se încarcă terenurile...</p>
+                  </div>
+                ) : fields.length === 0 ? (
                   <div className="text-center py-4 text-gray-500">
                     <Sprout className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">Nu ai încă terenuri adăugate</p>
@@ -153,6 +192,11 @@ const MapView = () => {
                         {field.data_insamantare && (
                           <p className="text-xs text-green-600">
                             Însămânțat: {new Date(field.data_insamantare).toLocaleDateString('ro-RO')}
+                          </p>
+                        )}
+                        {field.coordonate_gps && (
+                          <p className="text-xs text-blue-600">
+                            📍 Coordonate disponibile
                           </p>
                         )}
                       </div>

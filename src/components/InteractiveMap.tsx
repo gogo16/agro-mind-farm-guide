@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { useAppContext } from '@/contexts/AppContext';
@@ -18,73 +19,106 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
 
   const GOOGLE_MAPS_API_KEY = "AIzaSyDloS4Jj3CMvgpmdrWUECSOKs12A8wX1io";
 
-  // Convertește coordonatele din string în format Google Maps
+  // Improved coordinate parsing with better debugging
   const parseCoordinates = (field: any) => {
-    if (!field.coordinates) return null;
+    console.log('Parsing coordinates for field:', field.name, 'coordinates:', field.coordinates);
+    
+    if (!field.coordinates) {
+      console.log('No coordinates found for field:', field.name);
+      return null;
+    }
 
-    // Dacă sunt coordonate simple (un punct)
+    // If coordinates are a simple point object
     if (field.coordinates.lat && field.coordinates.lng) {
+      console.log('Single point coordinates found:', field.coordinates);
       return [{
-        lat: field.coordinates.lat,
-        lng: field.coordinates.lng
+        lat: parseFloat(field.coordinates.lat),
+        lng: parseFloat(field.coordinates.lng)
       }];
     }
 
-    // Dacă sunt coordonate pentru poligon (array)
+    // If coordinates are an array of points (polygon)
     if (Array.isArray(field.coordinates)) {
-      return field.coordinates.map((coord: any) => ({
-        lat: coord.lat,
-        lng: coord.lng
+      console.log('Array coordinates found, length:', field.coordinates.length);
+      const parsedCoords = field.coordinates.map((coord: any) => ({
+        lat: parseFloat(coord.lat),
+        lng: parseFloat(coord.lng)
       }));
+      console.log('Parsed array coordinates:', parsedCoords);
+      return parsedCoords;
     }
 
+    console.log('Invalid coordinate format for field:', field.name);
     return null;
   };
 
-  // Creează un poligon pentru teren
+  // Enhanced polygon creation with better handling for different scenarios
   const createFieldPolygon = (field: any, map: google.maps.Map) => {
     const coordinates = parseCoordinates(field);
-    if (!coordinates) return null;
+    if (!coordinates || coordinates.length === 0) {
+      console.log('No valid coordinates for field:', field.name);
+      return null;
+    }
 
     let path: google.maps.LatLng[];
+    const color = field.color || '#22c55e';
 
     if (coordinates.length === 1) {
-      // Pentru un punct, creează un poligon mic circular
+      // For a single point, create a small circular polygon
       const center = coordinates[0];
-      const radius = 0.002; // aproximativ 200m
+      const radius = 0.002; // approximately 200m
       path = [];
-      for (let i = 0; i < 8; i++) {
-        const angle = (i * Math.PI) / 4;
+      for (let i = 0; i < 12; i++) {
+        const angle = (i * 2 * Math.PI) / 12;
         path.push(new google.maps.LatLng(
           center.lat + radius * Math.cos(angle),
           center.lng + radius * Math.sin(angle)
         ));
       }
+      console.log('Created circle for single point:', field.name);
+    } else if (coordinates.length === 2) {
+      // For exactly 2 points, create a circle at the midpoint
+      const center = {
+        lat: (coordinates[0].lat + coordinates[1].lat) / 2,
+        lng: (coordinates[0].lng + coordinates[1].lng) / 2
+      };
+      const radius = 0.003; // slightly larger for 2-point fields
+      path = [];
+      for (let i = 0; i < 16; i++) {
+        const angle = (i * 2 * Math.PI) / 16;
+        path.push(new google.maps.LatLng(
+          center.lat + radius * Math.cos(angle),
+          center.lng + radius * Math.sin(angle)
+        ));
+      }
+      console.log('Created circle for 2 points at midpoint:', field.name, center);
     } else {
-      // Pentru coordonate multiple, folosește-le direct
+      // For 3+ points, create a polygon
       path = coordinates.map(coord => new google.maps.LatLng(coord.lat, coord.lng));
-      // Închide poligonul dacă nu e deja închis
+      // Close the polygon if it's not already closed
       if (coordinates.length > 2 && 
           (coordinates[0].lat !== coordinates[coordinates.length - 1].lat ||
            coordinates[0].lng !== coordinates[coordinates.length - 1].lng)) {
         path.push(path[0]);
       }
+      console.log('Created polygon for field:', field.name, 'with', coordinates.length, 'points');
     }
 
     const polygon = new google.maps.Polygon({
       paths: path,
-      strokeColor: field.color || '#22c55e',
+      strokeColor: color,
       strokeOpacity: 0.8,
       strokeWeight: 2,
-      fillColor: field.color || '#22c55e',
-      fillOpacity: 0.5,
-      editable: false, // Va fi activat ulterior pentru editare
+      fillColor: color,
+      fillOpacity: 0.35,
+      editable: false,
       draggable: false
     });
 
     polygon.setMap(map);
+    console.log('Polygon created and added to map for field:', field.name);
 
-    // Adaugă event listener pentru click
+    // Add click listener
     polygon.addListener('click', () => {
       if (onFieldSelect) {
         onFieldSelect(field);
@@ -96,7 +130,7 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
       });
     });
 
-    // Adaugă tooltip la hover
+    // Add hover info window
     const infoWindow = new google.maps.InfoWindow({
       content: `
         <div class="p-2">
@@ -121,10 +155,12 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
     return polygon;
   };
 
-  // Calculează centrul și zoom pentru a include toate terenurile
+  // Enhanced bounds calculation with fallback
   const calculateMapBounds = () => {
     const bounds = new google.maps.LatLngBounds();
     let hasCoordinates = false;
+
+    console.log('Calculating bounds for', fields.length, 'fields');
 
     fields.forEach(field => {
       const coordinates = parseCoordinates(field);
@@ -137,18 +173,24 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
     });
 
     if (!hasCoordinates) {
-      // Coordonate default pentru România (Buzău)
+      console.log('No coordinates found, using default center for Romania');
       return {
-        center: { lat: 45.75, lng: 21.21 },
-        zoom: 10
+        center: { lat: 45.75, lng: 26.21 },
+        zoom: 7
       };
     }
 
+    console.log('Bounds calculated successfully');
     return bounds;
   };
 
   useEffect(() => {
-    if (!mapRef.current || !GOOGLE_MAPS_API_KEY) return;
+    if (!mapRef.current || !GOOGLE_MAPS_API_KEY) {
+      console.log('Map container or API key not available');
+      return;
+    }
+
+    console.log('Initializing map with', fields.length, 'fields');
 
     const initMap = async () => {
       try {
@@ -159,6 +201,7 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
         });
 
         await loader.load();
+        console.log('Google Maps loaded successfully');
 
         const bounds = calculateMapBounds();
         const mapOptions: google.maps.MapOptions = {
@@ -169,7 +212,7 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
           zoomControl: true
         };
 
-        // Setează centrul și zoom
+        // Set center and zoom
         if (bounds instanceof google.maps.LatLngBounds) {
           mapOptions.center = bounds.getCenter().toJSON();
           mapOptions.zoom = 12;
@@ -180,34 +223,47 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
 
         const map = new google.maps.Map(mapRef.current!, mapOptions);
         mapInstanceRef.current = map;
+        console.log('Map instance created');
 
-        // Ajustează view-ul pentru a include toate terenurile
+        // Fit bounds to show all fields
         if (bounds instanceof google.maps.LatLngBounds && fields.length > 0) {
           map.fitBounds(bounds);
           
-          // Limitează zoom-ul maxim pentru a nu fi prea aproape
+          // Limit maximum zoom
           const listener = google.maps.event.addListener(map, 'idle', () => {
             if (map.getZoom()! > 16) map.setZoom(16);
             google.maps.event.removeListener(listener);
           });
         }
 
-        // Creează poligoanele pentru terenuri
+        // Clear existing polygons
+        polygonsRef.current.forEach(polygon => {
+          polygon.setMap(null);
+        });
+        polygonsRef.current = [];
+
+        // Create polygons for all fields
         const newPolygons: google.maps.Polygon[] = [];
-        fields.forEach(field => {
+        console.log('Creating polygons for fields...');
+        
+        fields.forEach((field, index) => {
+          console.log(`Processing field ${index + 1}/${fields.length}:`, field.name);
           const polygon = createFieldPolygon(field, map);
           if (polygon) {
             newPolygons.push(polygon);
+            console.log(`Polygon created for field: ${field.name}`);
+          } else {
+            console.log(`Failed to create polygon for field: ${field.name}`);
           }
         });
 
         polygonsRef.current = newPolygons;
         setIsLoading(false);
 
-        console.log(`Harta încărcată cu ${newPolygons.length} poligoane pentru terenuri`);
+        console.log(`Map initialization complete. Created ${newPolygons.length} polygons for ${fields.length} fields`);
 
       } catch (error) {
-        console.error('Eroare la încărcarea Google Maps:', error);
+        console.error('Error loading Google Maps:', error);
         toast({
           title: "Eroare",
           description: "Nu s-a putut încărca harta Google Maps",
@@ -228,26 +284,43 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
     };
   }, [fields, mapType]);
 
-  // Actualizează tipul de hartă
+  // Update map type when changed
   useEffect(() => {
     if (mapInstanceRef.current) {
       mapInstanceRef.current.setMapTypeId(mapType as google.maps.MapTypeId);
     }
   }, [mapType]);
 
-  // Funcție pentru centrarea pe un teren specific
+  // Function to center on a specific field
   const centerOnField = (field: any) => {
     if (!mapInstanceRef.current) return;
 
     const coordinates = parseCoordinates(field);
     if (coordinates && coordinates.length > 0) {
-      const center = coordinates[0];
+      let center;
+      if (coordinates.length === 1) {
+        center = coordinates[0];
+      } else if (coordinates.length === 2) {
+        center = {
+          lat: (coordinates[0].lat + coordinates[1].lat) / 2,
+          lng: (coordinates[0].lng + coordinates[1].lng) / 2
+        };
+      } else {
+        // Calculate centroid for polygon
+        const sumLat = coordinates.reduce((sum, coord) => sum + coord.lat, 0);
+        const sumLng = coordinates.reduce((sum, coord) => sum + coord.lng, 0);
+        center = {
+          lat: sumLat / coordinates.length,
+          lng: sumLng / coordinates.length
+        };
+      }
+      
       mapInstanceRef.current.setCenter(center);
       mapInstanceRef.current.setZoom(16);
     }
   };
 
-  // Expune funcția pentru a putea fi apelată din parent
+  // Expose function globally
   useEffect(() => {
     (window as any).centerMapOnField = centerOnField;
   }, []);
