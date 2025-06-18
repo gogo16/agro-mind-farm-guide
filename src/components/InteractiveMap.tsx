@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Loader } from '@googlemaps/js-api-loader';
 import { useAppContext } from '@/contexts/AppContext';
@@ -19,7 +18,7 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
 
   const GOOGLE_MAPS_API_KEY = "AIzaSyDloS4Jj3CMvgpmdrWUECSOKs12A8wX1io";
 
-  // Improved coordinate parsing with better debugging
+  // Enhanced coordinate parsing with support for multiple GPS points
   const parseCoordinates = (field: any) => {
     console.log('Parsing coordinates for field:', field.name, 'coordinates:', field.coordinates);
     
@@ -28,7 +27,7 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
       return null;
     }
 
-    // If coordinates are a simple point object
+    // Handle single point coordinates {lat: number, lng: number}
     if (field.coordinates.lat && field.coordinates.lng) {
       console.log('Single point coordinates found:', field.coordinates);
       return [{
@@ -37,7 +36,7 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
       }];
     }
 
-    // If coordinates are an array of points (polygon)
+    // Handle array of coordinates [{lat: number, lng: number}, ...]
     if (Array.isArray(field.coordinates)) {
       console.log('Array coordinates found, length:', field.coordinates.length);
       const parsedCoords = field.coordinates.map((coord: any) => ({
@@ -48,11 +47,11 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
       return parsedCoords;
     }
 
-    console.log('Invalid coordinate format for field:', field.name);
+    console.log('Invalid coordinate format for field:', field.name, 'type:', typeof field.coordinates);
     return null;
   };
 
-  // Enhanced polygon creation with better handling for different scenarios
+  // Enhanced polygon creation for multiple GPS points
   const createFieldPolygon = (field: any, map: google.maps.Map) => {
     const coordinates = parseCoordinates(field);
     if (!coordinates || coordinates.length === 0) {
@@ -191,6 +190,11 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
     }
 
     console.log('Initializing map with', fields.length, 'fields');
+    console.log('Fields data:', fields.map(f => ({
+      name: f.name,
+      coordinates: f.coordinates,
+      type: Array.isArray(f.coordinates) ? 'array' : typeof f.coordinates
+    })));
 
     const initMap = async () => {
       try {
@@ -247,13 +251,13 @@ const InteractiveMap = ({ mapType, onFieldSelect, fields = [] }: InteractiveMapP
         console.log('Creating polygons for fields...');
         
         fields.forEach((field, index) => {
-          console.log(`Processing field ${index + 1}/${fields.length}:`, field.name);
+          console.log(`Processing field ${index + 1}/${fields.length}:`, field.name, 'coordinates:', field.coordinates);
           const polygon = createFieldPolygon(field, map);
           if (polygon) {
             newPolygons.push(polygon);
-            console.log(`Polygon created for field: ${field.name}`);
+            console.log(`✓ Polygon created for field: ${field.name}`);
           } else {
-            console.log(`Failed to create polygon for field: ${field.name}`);
+            console.log(`✗ Failed to create polygon for field: ${field.name}`);
           }
         });
 

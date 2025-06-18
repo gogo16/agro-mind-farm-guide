@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -51,8 +50,8 @@ const AddFieldDialog = () => {
           coordinates: { lat, lng },
           type: 'point'
         };
-      } else if (coordPairs.length >= 3) {
-        // Poligon (minimum 3 puncte)
+      } else if (coordPairs.length >= 2) {
+        // Multiple puncte (2 sau mai multe pentru poligon/zonă)
         const coordinates = [];
         for (const pair of coordPairs) {
           const [lat, lng] = pair.split(',').map(coord => parseFloat(coord.trim()));
@@ -67,12 +66,12 @@ const AddFieldDialog = () => {
         return {
           isValid: true,
           coordinates: coordinates,
-          type: 'polygon'
+          type: coordinates.length === 2 ? 'two-points' : 'polygon'
         };
       } else {
         return {
           isValid: false,
-          error: 'Pentru un poligon sunt necesare minimum 3 puncte'
+          error: 'Introduceți cel puțin o coordonată'
         };
       }
     } catch (error) {
@@ -118,6 +117,8 @@ const AddFieldDialog = () => {
         ingrasaminte_folosite: newField.inputs || undefined,
         coordonate_gps: coordValidation.coordinates
       };
+
+      console.log('Adding field with coordinates:', coordValidation.coordinates);
 
       await addField(fieldData);
       
@@ -299,11 +300,11 @@ const AddFieldDialog = () => {
               id="coords" 
               value={newField.coords} 
               onChange={e => setNewField({ ...newField, coords: e.target.value })} 
-              placeholder="Pentru un punct: 45.7489, 21.2087&#10;Pentru un poligon (min. 3 puncte):&#10;45.7489, 21.2087&#10;45.7490, 21.2088&#10;45.7491, 21.2089" 
+              placeholder="Pentru un punct: 44.3121, 23.7942&#10;Pentru mai multe puncte (zonă sau poligon):&#10;44.3121, 23.7942&#10;44.3122, 23.7943&#10;44.3123, 23.7944&#10;44.3124, 23.7945" 
               className="min-h-[80px]" 
             />
             <p className="text-xs text-gray-600 mt-1">
-              Format: latitudine,longitudine. Pentru poligon, introduceți minimum 3 puncte pe linii separate.
+              Format: latitudine,longitudine. Pentru zonă complexă, introduceți toate punctele GPS pe linii separate (minim 2 puncte).
             </p>
           </div>
         </div>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -16,7 +15,7 @@ interface Field {
   data_recoltare?: string;
   culoare?: string;
   ingrasaminte_folosite?: string;
-  coordonate_gps?: { lat: number; lng: number } | null;
+  coordonate_gps?: { lat: number; lng: number } | { lat: number; lng: number }[] | null;
   created_at: string;
   updated_at: string;
   data_stergerii?: string;
@@ -33,32 +32,74 @@ interface CreateFieldData {
   data_recoltare?: string;
   culoare?: string;
   ingrasaminte_folosite?: string;
-  coordonate_gps?: { lat: number; lng: number };
+  coordonate_gps?: { lat: number; lng: number } | { lat: number; lng: number }[];
 }
 
 interface UpdateFieldData extends Partial<CreateFieldData> {}
 
-// Helper function to transform GPS coordinates
-const transformCoordinates = (coords: Json | null): { lat: number; lng: number } | null => {
-  if (!coords) return null;
-  
-  if (typeof coords === 'object' && coords !== null && 'lat' in coords && 'lng' in coords) {
-    return {
-      lat: Number(coords.lat),
-      lng: Number(coords.lng)
-    };
+// Enhanced helper function to transform GPS coordinates
+const transformCoordinates = (coords: Json | null): { lat: number; lng: number } | { lat: number; lng: number }[] | null => {
+  if (!coords) {
+    console.log('No coordinates provided');
+    return null;
   }
   
-  return null;
+  try {
+    let parsedCoords;
+    
+    // If coords is a string, parse it as JSON
+    if (typeof coords === 'string') {
+      console.log('Parsing coordinates from string:', coords);
+      parsedCoords = JSON.parse(coords);
+    } else {
+      parsedCoords = coords;
+    }
+    
+    console.log('Parsed coordinates:', parsedCoords);
+    
+    // Handle single coordinate object
+    if (parsedCoords && typeof parsedCoords === 'object' && 'lat' in parsedCoords && 'lng' in parsedCoords) {
+      const result = {
+        lat: Number(parsedCoords.lat),
+        lng: Number(parsedCoords.lng)
+      };
+      console.log('Single coordinate transformed:', result);
+      return result;
+    }
+    
+    // Handle array of coordinates
+    if (Array.isArray(parsedCoords)) {
+      const result = parsedCoords.map(coord => ({
+        lat: Number(coord.lat),
+        lng: Number(coord.lng)
+      }));
+      console.log('Array coordinates transformed:', result);
+      return result;
+    }
+    
+    console.log('Invalid coordinate format:', parsedCoords);
+    return null;
+  } catch (error) {
+    console.error('Error parsing coordinates:', error, 'Input:', coords);
+    return null;
+  }
 };
 
 // Helper function to transform field data from database
 const transformFieldFromDB = (dbField: any): Field => {
-  return {
+  const transformed = {
     ...dbField,
     coordonate_gps: transformCoordinates(dbField.coordonate_gps),
     suprafata: Number(dbField.suprafata)
   };
+  
+  console.log('Transformed field from DB:', {
+    name: dbField.nume_teren,
+    originalCoords: dbField.coordonate_gps,
+    transformedCoords: transformed.coordonate_gps
+  });
+  
+  return transformed;
 };
 
 export const useFields = () => {
@@ -72,6 +113,7 @@ export const useFields = () => {
       setLoading(true);
       setError(null);
 
+      console.log('Fetching fields from database...');
       const { data, error } = await supabase
         .from('fields')
         .select('*')
@@ -80,7 +122,9 @@ export const useFields = () => {
 
       if (error) throw error;
 
+      console.log('Raw fields data from DB:', data);
       const transformedFields = (data || []).map(transformFieldFromDB);
+      console.log('Transformed fields:', transformedFields);
       setFields(transformedFields);
     } catch (err: any) {
       console.error('Error fetching fields:', err);
@@ -107,6 +151,8 @@ export const useFields = () => {
         user_id: user.id,
         coordonate_gps: fieldData.coordonate_gps ? JSON.stringify(fieldData.coordonate_gps) : null
       };
+
+      console.log('Inserting field data:', dataToInsert);
 
       const { data, error } = await supabase
         .from('fields')
