@@ -15,7 +15,6 @@ import {
   FolderOpen
 } from 'lucide-react';
 import NotificationCenter from './NotificationCenter';
-import UserProfile from './UserProfile';
 import { useAIRecommendations } from '@/hooks/useAIRecommendations';
 
 const Navigation = () => {
@@ -81,7 +80,6 @@ const Navigation = () => {
               🔄
             </Button>
             <NotificationCenter />
-            <UserProfile />
 
             {/* Mobile Menu */}
             <Sheet>

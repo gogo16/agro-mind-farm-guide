@@ -1,12 +1,19 @@
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Tables } from '@/integrations/supabase/types';
 
-// Folosim tipul din Supabase pentru consistență
-type InventoryItem = Tables<'inventory'>;
+// Local inventory type (no database dependency)
+type InventoryItem = {
+  id: string;
+  nume_element: string;
+  categorie_element: 'equipment' | 'chemical' | 'crop' | 'material' | 'fuel';
+  cantitate_status?: string | null;
+  locatia?: string | null;
+  pret?: number | null;
+  tip_tranzactie?: 'income' | 'expense' | null;
+  created_at: string;
+  updated_at: string;
+};
 
 // Tip pentru adăugarea de elemente noi - doar câmpurile esențiale
 type NewInventoryItem = {
@@ -20,65 +27,35 @@ type NewInventoryItem = {
 
 export const useInventory = () => {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Încarcă inventarul utilizatorului
-  const fetchInventory = async () => {
-    if (!user) {
-      setInventory([]);
-      setLoading(false);
-      return;
-    }
-
+  // Local storage inventory management
+  const fetchInventory = () => {
     try {
-      const { data, error } = await supabase
-        .from('inventory')
-        .select('*')
-        .is('data_stergerii', null) // Nu includem elementele șterse
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setInventory(data || []);
+      const stored = localStorage.getItem('agromind-inventory');
+      if (stored) {
+        setInventory(JSON.parse(stored));
+      }
     } catch (error) {
-      console.error('Error fetching inventory:', error);
-      toast({
-        title: "Eroare",
-        description: "Nu s-a putut încărca inventarul.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+      console.error('Error loading inventory:', error);
     }
   };
 
-  // Adaugă element în inventar
+  // Add item to local inventory
   const addInventoryItem = async (item: NewInventoryItem) => {
-    if (!user) {
-      toast({
-        title: "Eroare",
-        description: "Trebuie să fii autentificat pentru a adăuga elemente.",
-        variant: "destructive"
-      });
-      return false;
-    }
-
     try {
-      const { data, error } = await supabase
-        .from('inventory')
-        .insert([{
-          ...item,
-          user_id: user.id
-        }])
-        .select();
-
-      if (error) throw error;
+      const newItem: InventoryItem = {
+        ...item,
+        id: Date.now().toString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
       
-      if (data && data.length > 0) {
-        setInventory(prev => [data[0], ...prev]);
-        return true;
-      }
+      const newInventory = [newItem, ...inventory];
+      setInventory(newInventory);
+      localStorage.setItem('agromind-inventory', JSON.stringify(newInventory));
+      return true;
     } catch (error) {
       console.error('Error adding inventory item:', error);
       toast({
@@ -86,30 +63,19 @@ export const useInventory = () => {
         description: "Nu s-a putut adăuga elementul în inventar.",
         variant: "destructive"
       });
+      return false;
     }
-    return false;
   };
 
-  // Actualizează element din inventar
+  // Update inventory item locally
   const updateInventoryItem = async (id: string, updates: Partial<InventoryItem>) => {
-    if (!user) return false;
-
     try {
-      const { data, error } = await supabase
-        .from('inventory')
-        .update(updates)
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select();
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        setInventory(prev => prev.map(item => 
-          item.id === id ? { ...item, ...data[0] } : item
-        ));
-        return true;
-      }
+      const newInventory = inventory.map(item => 
+        item.id === id ? { ...item, ...updates, updated_at: new Date().toISOString() } : item
+      );
+      setInventory(newInventory);
+      localStorage.setItem('agromind-inventory', JSON.stringify(newInventory));
+      return true;
     } catch (error) {
       console.error('Error updating inventory item:', error);
       toast({
@@ -117,24 +83,16 @@ export const useInventory = () => {
         description: "Nu s-a putut actualiza elementul.",
         variant: "destructive"
       });
+      return false;
     }
-    return false;
   };
 
-  // Șterge element din inventar (soft delete)
+  // Delete inventory item locally
   const deleteInventoryItem = async (id: string) => {
-    if (!user) return false;
-
     try {
-      const { error } = await supabase
-        .from('inventory')
-        .update({ data_stergerii: new Date().toISOString() })
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-
-      setInventory(prev => prev.filter(item => item.id !== id));
+      const newInventory = inventory.filter(item => item.id !== id);
+      setInventory(newInventory);
+      localStorage.setItem('agromind-inventory', JSON.stringify(newInventory));
       return true;
     } catch (error) {
       console.error('Error deleting inventory item:', error);
@@ -143,13 +101,13 @@ export const useInventory = () => {
         description: "Nu s-a putut șterge elementul.",
         variant: "destructive"
       });
+      return false;
     }
-    return false;
   };
 
   useEffect(() => {
     fetchInventory();
-  }, [user]);
+  }, []);
 
   return {
     inventory,

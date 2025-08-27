@@ -12,11 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tractor, Sprout, AlertTriangle, Plus, Edit, Brain, Trash2, Fuel, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useInventory } from '@/hooks/useInventory';
-import { useAuth } from '@/contexts/AuthContext';
 
 const InventorySystem = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
   const { inventory, loading, addInventoryItem, updateInventoryItem, deleteInventoryItem } = useInventory();
   
   const [activeTab, setActiveTab] = useState('equipment');
@@ -153,17 +151,6 @@ const InventorySystem = () => {
     }
   };
 
-  // Verifică dacă utilizatorul este autentificat
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <h3 className="text-lg font-semibold mb-2">Autentificare necesară</h3>
-          <p className="text-gray-600">Trebuie să fii autentificat pentru a accesa inventarul.</p>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
